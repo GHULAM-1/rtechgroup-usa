@@ -61,7 +61,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
       <CardContent className="space-y-2">
         <div className="flex justify-between items-center">
           <span className="text-metadata text-muted-foreground">Acquisition</span>
-          <span className="font-medium">£{vehicle.purchase_price?.toLocaleString()}</span>
+          <span className="font-medium">£{(vehicle.purchase_price || 0).toLocaleString()}</span>
         </div>
         {pl && (
           <>

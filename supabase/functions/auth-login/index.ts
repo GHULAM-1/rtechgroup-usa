@@ -75,14 +75,18 @@ serve(async (req) => {
       );
     }
 
-    // Verify password using crypt function
-    const { data: passwordCheck, error: passwordError } = await supabase
-      .rpc('verify_password', {
-        stored_hash: user.password_hash,
-        provided_password: password
-      });
+    // Verify password using SQL query with crypt function directly
+    const { data: passwordResult, error: passwordError } = await supabase
+      .from('users')
+      .select('id')
+      .ilike('username', username)
+      .eq('status', 'active')
+      .eq('password_hash', `crypt('${password.replace(/'/g, "''")}', password_hash)`)
+      .single();
 
-    if (passwordError || !passwordCheck) {
+    console.log('Password verification result:', passwordResult, passwordError);
+
+    if (passwordError || !passwordResult) {
       // Log failed attempt
       await supabase
         .from('login_attempts')

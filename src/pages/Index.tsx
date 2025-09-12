@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { DashboardStats } from "@/components/DashboardStats";
 import { FleetOverview } from "@/components/FleetOverview";
 import { CustomerManagement } from "@/components/CustomerManagement";
-import { PaymentManagement } from "@/components/PaymentManagement";
+import { AcceptanceTestDashboard } from "@/components/AcceptanceTestDashboard";
 
 const Index = () => {
   return (
@@ -21,13 +21,7 @@ const Index = () => {
 
         <DashboardStats />
 
-        <div className="space-y-6">
-          <FleetOverview />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <CustomerManagement />
-            <PaymentManagement />
-          </div>
-        </div>
+        <AcceptanceTestDashboard />
       </div>
     </Layout>
   );

@@ -1,13 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Layout } from "@/components/Layout";
+import { DashboardStats } from "@/components/DashboardStats";
+import { FleetOverview } from "@/components/FleetOverview";
+import { RecentActivity } from "@/components/RecentActivity";
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <Layout>
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Fleet Dashboard</h1>
+            <p className="text-muted-foreground">Monitor your fleet performance and financial metrics</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Today</p>
+            <p className="text-lg font-semibold">{new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
+
+        <DashboardStats />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FleetOverview />
+          <RecentActivity />
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

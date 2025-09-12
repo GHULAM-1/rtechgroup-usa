@@ -13,6 +13,8 @@ import RentalsList from "@/pages/RentalsList";
 import RentalDetail from "@/pages/RentalDetail";
 import PaymentsList from "@/pages/PaymentsList";
 import CreateRental from "@/pages/CreateRental";
+import RemindersPage from "@/pages/RemindersPage";
+import ReminderSettings from "@/pages/ReminderSettings";
 import { AcceptanceTestDashboard } from "@/components/AcceptanceTestDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/rentals/new" element={<Layout><CreateRental /></Layout>} />
           <Route path="/rentals/:id" element={<Layout><RentalDetail /></Layout>} />
           <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
+          <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
+          <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />
           <Route path="/test" element={<Layout><AcceptanceTestDashboard /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

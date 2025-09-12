@@ -237,6 +237,80 @@ export type Database = {
           },
         ]
       }
+      reminder_events: {
+        Row: {
+          charge_id: string
+          created_at: string
+          customer_id: string
+          delivered_at: string | null
+          delivered_to: string
+          id: string
+          message_preview: string
+          reminder_type: string
+          rental_id: string
+          snoozed_until: string | null
+          status: string
+          vehicle_id: string
+        }
+        Insert: {
+          charge_id: string
+          created_at?: string
+          customer_id: string
+          delivered_at?: string | null
+          delivered_to?: string
+          id?: string
+          message_preview: string
+          reminder_type: string
+          rental_id: string
+          snoozed_until?: string | null
+          status?: string
+          vehicle_id: string
+        }
+        Update: {
+          charge_id?: string
+          created_at?: string
+          customer_id?: string
+          delivered_at?: string | null
+          delivered_to?: string
+          id?: string
+          message_preview?: string
+          reminder_type?: string
+          rental_id?: string
+          snoozed_until?: string | null
+          status?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_events_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_events_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminder_logs: {
         Row: {
           amount: number

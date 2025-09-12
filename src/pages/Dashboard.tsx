@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus } from "lucide-react";
+import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell } from "lucide-react";
 
 interface DashboardWidget {
   title: string;
@@ -91,6 +91,19 @@ const Dashboard = () => {
     },
   });
 
+  // Reminder counts for badges
+  const { data: activeReminders } = useQuery({
+    queryKey: ["active-reminders-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("reminder_events")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["Delivered", "Snoozed"])
+        .in("reminder_type", ["Due", "Overdue1", "Overdue2", "Overdue3", "Overdue4", "Overdue5"]);
+      return count || 0;
+    },
+  });
+
   const widgets: DashboardWidget[] = [
     {
       title: "Overdue Payments",
@@ -102,8 +115,8 @@ const Dashboard = () => {
     },
     {
       title: "Due Today",
-      value: dueToday?.toString() || "0",
-      description: "Payments due today",
+      value: dueToday?.toString() || "0", 
+      description: activeReminders && activeReminders > 0 ? `Payments due today (${activeReminders} active reminders)` : "Payments due today",
       icon: Calendar,
       color: "text-yellow-500",
       href: "/payments?filter=due-today"
@@ -182,6 +195,19 @@ const Dashboard = () => {
               Payment Processing
             </CardTitle>
             <CardDescription>Process payments and view history</CardDescription>
+          </CardHeader>
+        </Card>
+
+        <Card className="card-hover cursor-pointer" onClick={() => navigate("/reminders")}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              Reminders
+              {activeReminders && activeReminders > 0 && (
+                <Badge variant="destructive" className="ml-2">{activeReminders}</Badge>
+              )}
+            </CardTitle>
+            <CardDescription>View in-app payment reminders and notifications</CardDescription>
           </CardHeader>
         </Card>
       </div>

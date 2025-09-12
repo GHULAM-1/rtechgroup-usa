@@ -8,7 +8,8 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  TestTube 
+  TestTube,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Rentals", href: "/rentals", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Reminders", href: "/reminders", icon: Bell },
   { name: "Tests", href: "/test", icon: TestTube },
 ];
 

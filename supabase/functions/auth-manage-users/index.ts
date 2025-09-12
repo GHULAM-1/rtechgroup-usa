@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { hash } from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,11 +95,15 @@ serve(async (req) => {
         const tempPassword = generateTempPassword();
         
         // Hash the temporary password
-        const { data: hashedPassword, error: hashError } = await supabase
-          .rpc('hash_password', { password: tempPassword });
-
-        if (hashError) {
-          throw hashError;
+        let hashedPassword;
+        try {
+          hashedPassword = await hash(tempPassword);
+        } catch (hashError) {
+          console.error('Hash error:', hashError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to process password' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         // Create new user
@@ -173,11 +178,15 @@ serve(async (req) => {
 
         const tempPassword = generateTempPassword();
         
-        const { data: hashedPassword, error: hashError } = await supabase
-          .rpc('hash_password', { password: tempPassword });
-
-        if (hashError) {
-          throw hashError;
+        let hashedPassword;
+        try {
+          hashedPassword = await hash(tempPassword);
+        } catch (hashError) {
+          console.error('Hash error:', hashError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to process password' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
         const { error: updateError } = await supabase

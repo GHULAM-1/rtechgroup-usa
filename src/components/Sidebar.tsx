@@ -10,34 +10,25 @@ import {
   X,
   TestTube,
   Bell,
-  BarChart3,
-  Settings
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, permission: "view_all" },
-  { name: "Vehicles", href: "/vehicles", icon: Car, permission: "manage_vehicles" },
-  { name: "Customers", href: "/customers", icon: Users, permission: "manage_customers" },
-  { name: "Rentals", href: "/rentals", icon: FileText, permission: "manage_rentals" },
-  { name: "Payments", href: "/payments", icon: CreditCard, permission: "manage_payments" },
-  { name: "Reminders", href: "/reminders", icon: Bell, permission: "manage_payments" },
-  { name: "Reports", href: "/reports", icon: BarChart3, permission: "view_all" },
-];
-
-const settingsNavigation = [
-  { name: "Users & Roles", href: "/settings/users", icon: Users, permission: "manage_users" },
-  { name: "Reminders", href: "/settings/reminders", icon: Bell, permission: "manage_payments" },
-  { name: "Tests", href: "/test", icon: TestTube, permission: "manage_settings" },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Vehicles", href: "/vehicles", icon: Car },
+  { name: "Customers", href: "/customers", icon: Users },
+  { name: "Rentals", href: "/rentals", icon: FileText },
+  { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Reminders", href: "/reminders", icon: Bell },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Tests", href: "/test", icon: TestTube },
 ];
 
 export const Sidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const location = useLocation();
-  const { hasPermission } = useAuth();
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -80,10 +71,7 @@ export const Sidebar = () => {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
-            {/* Main Navigation */}
             {navigation.map((item) => {
-              if (!hasPermission(item.permission)) return null;
-              
               const active = isActive(item.href);
               return (
                 <NavLink
@@ -102,54 +90,6 @@ export const Sidebar = () => {
                 </NavLink>
               );
             })}
-
-            {/* Settings Section */}
-            {settingsNavigation.some(item => hasPermission(item.permission)) && (
-              <>
-                <div className="pt-4">
-                  <button
-                    onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-                      "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <Settings className="h-4 w-4" />
-                    Settings
-                    <X className={cn(
-                      "ml-auto h-3 w-3 transition-transform duration-200",
-                      isSettingsOpen ? "rotate-45" : "rotate-0"
-                    )} />
-                  </button>
-                </div>
-                
-                {isSettingsOpen && (
-                  <div className="ml-4 space-y-1">
-                    {settingsNavigation.map((item) => {
-                      if (!hasPermission(item.permission)) return null;
-                      
-                      const active = isActive(item.href);
-                      return (
-                        <NavLink
-                          key={item.name}
-                          to={item.href}
-                          onClick={() => setIsMobileOpen(false)}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-                            active
-                              ? "bg-primary text-primary-foreground shadow-sm"
-                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                          )}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {item.name}
-                        </NavLink>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
           </nav>
 
           {/* Footer */}

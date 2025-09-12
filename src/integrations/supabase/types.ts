@@ -129,30 +129,6 @@ export type Database = {
           },
         ]
       }
-      login_attempts: {
-        Row: {
-          attempted_at: string | null
-          id: string
-          ip_address: string | null
-          success: boolean
-          username: string
-        }
-        Insert: {
-          attempted_at?: string | null
-          id?: string
-          ip_address?: string | null
-          success?: boolean
-          username: string
-        }
-        Update: {
-          attempted_at?: string | null
-          id?: string
-          ip_address?: string | null
-          success?: boolean
-          username?: string
-        }
-        Relationships: []
-      }
       payment_applications: {
         Row: {
           amount_applied: number
@@ -537,39 +513,6 @@ export type Database = {
           },
         ]
       }
-      users: {
-        Row: {
-          created_at: string | null
-          id: string
-          last_login: string | null
-          password_hash: string
-          require_password_change: boolean
-          role: string
-          status: string
-          username: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          last_login?: string | null
-          password_hash: string
-          require_password_change?: boolean
-          role?: string
-          status?: string
-          username: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          last_login?: string | null
-          password_hash?: string
-          require_password_change?: boolean
-          role?: string
-          status?: string
-          username?: string
-        }
-        Relationships: []
-      }
       vehicles: {
         Row: {
           acquisition_date: string | null
@@ -786,10 +729,6 @@ export type Database = {
           whatsapp_opt_in: boolean
         }[]
       }
-      hash_password: {
-        Args: { password: string }
-        Returns: string
-      }
       payment_apply_fifo: {
         Args: { p_id: string }
         Returns: undefined
@@ -809,10 +748,6 @@ export type Database = {
       update_customer_balance: {
         Args: { customer_id: string }
         Returns: undefined
-      }
-      verify_password: {
-        Args: { provided_password: string; stored_hash: string }
-        Returns: boolean
       }
     }
     Enums: {

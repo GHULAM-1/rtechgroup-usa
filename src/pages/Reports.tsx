@@ -10,6 +10,7 @@ import { FilterSidebar } from '@/components/reports/FilterSidebar';
 import { ReportCard } from '@/components/reports/ReportCard';
 import { DataTable } from '@/components/reports/DataTable';
 import { ExportButtons } from '@/components/reports/ExportButtons';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface ReportFilters {
   fromDate: Date;
@@ -22,6 +23,7 @@ export interface ReportFilters {
 }
 
 const Reports = () => {
+  const { hasPermission } = useAuth();
   const [filters, setFilters] = useState<ReportFilters>({
     fromDate: subDays(new Date(), 30),
     toDate: new Date(),
@@ -90,7 +92,7 @@ const Reports = () => {
     }
   });
 
-  const reportCards = [
+  const allReportCards = [
     {
       id: 'payments',
       title: 'Payments Export',
@@ -98,7 +100,8 @@ const Reports = () => {
       icon: CreditCard,
       value: `£${reportStats?.payments.totalAmount?.toLocaleString() || '0'}`,
       subtitle: `${reportStats?.payments.count || 0} payments`,
-      metadata: `Applied: £${reportStats?.payments.appliedAmount?.toLocaleString() || '0'}`
+      metadata: `Applied: £${reportStats?.payments.appliedAmount?.toLocaleString() || '0'}`,
+      permission: 'view_all'
     },
     {
       id: 'pl-report',
@@ -107,7 +110,8 @@ const Reports = () => {
       icon: TrendingUp,
       value: `£${reportStats?.pl.net_profit?.toLocaleString() || '0'}`,
       subtitle: 'Net Profit',
-      metadata: `Revenue: £${reportStats?.pl.total_revenue?.toLocaleString() || '0'}`
+      metadata: `Revenue: £${reportStats?.pl.total_revenue?.toLocaleString() || '0'}`,
+      permission: 'export_reports' // Only admins can see full P&L
     },
     {
       id: 'customer-statements',
@@ -116,7 +120,8 @@ const Reports = () => {
       icon: FileText,
       value: `${reportStats?.aging.count || 0}`,
       subtitle: 'Customers with balances',
-      metadata: `Total Due: £${reportStats?.aging.totalDue?.toLocaleString() || '0'}`
+      metadata: `Total Due: £${reportStats?.aging.totalDue?.toLocaleString() || '0'}`,
+      permission: 'view_all'
     },
     {
       id: 'rentals',
@@ -125,7 +130,8 @@ const Reports = () => {
       icon: Car,
       value: `${reportStats?.rentals.count || 0}`,
       subtitle: 'Active rentals',
-      metadata: `Outstanding: £${reportStats?.rentals.totalBalance?.toLocaleString() || '0'}`
+      metadata: `Outstanding: £${reportStats?.rentals.totalBalance?.toLocaleString() || '0'}`,
+      permission: 'view_all'
     },
     {
       id: 'aging',
@@ -134,9 +140,13 @@ const Reports = () => {
       icon: Clock,
       value: `£${reportStats?.aging.totalDue?.toLocaleString() || '0'}`,
       subtitle: 'Total overdue',
-      metadata: `${reportStats?.aging.count || 0} customers`
+      metadata: `${reportStats?.aging.count || 0} customers`,
+      permission: 'view_all'
     }
   ];
+
+  // Filter report cards based on user permissions
+  const reportCards = allReportCards.filter(report => hasPermission(report.permission));
 
   if (isLoading) {
     return (

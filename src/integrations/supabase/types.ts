@@ -786,6 +786,10 @@ export type Database = {
           whatsapp_opt_in: boolean
         }[]
       }
+      hash_password: {
+        Args: { password: string }
+        Returns: string
+      }
       payment_apply_fifo: {
         Args: { p_id: string }
         Returns: undefined
@@ -805,6 +809,10 @@ export type Database = {
       update_customer_balance: {
         Args: { customer_id: string }
         Returns: undefined
+      }
+      verify_password: {
+        Args: { provided_password: string; stored_hash: string }
+        Returns: boolean
       }
     }
     Enums: {

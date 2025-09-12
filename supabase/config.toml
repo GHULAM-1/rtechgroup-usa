@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.generate-export]
 verify_jwt = true
+
+[functions.auth-login]
+verify_jwt = false
+
+[functions.auth-change-password]
+verify_jwt = false
+
+[functions.auth-manage-users]
+verify_jwt = false

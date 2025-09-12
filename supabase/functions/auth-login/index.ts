@@ -51,7 +51,7 @@ serve(async (req) => {
       );
     }
 
-    // Look up user by username
+    // Look up user by username (using service role to bypass RLS)
     const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -59,7 +59,10 @@ serve(async (req) => {
       .eq('status', 'active')
       .single();
 
+    console.log('User lookup result:', { user: user ? { id: user.id, username: user.username, role: user.role } : null, error: userError });
+
     if (userError || !user) {
+      console.log('User not found or error:', userError);
       // Log failed attempt
       await supabase
         .from('login_attempts')
@@ -75,18 +78,17 @@ serve(async (req) => {
       );
     }
 
-    // Verify password using SQL query with crypt function directly
-    const { data: passwordResult, error: passwordError } = await supabase
-      .from('users')
-      .select('id')
-      .ilike('username', username)
-      .eq('status', 'active')
-      .eq('password_hash', `crypt('${password.replace(/'/g, "''")}', password_hash)`)
-      .single();
+    // Verify password using the RPC function
+    const { data: passwordCheck, error: passwordError } = await supabase
+      .rpc('verify_password', {
+        stored_hash: user.password_hash,
+        provided_password: password
+      });
 
-    console.log('Password verification result:', passwordResult, passwordError);
+    console.log('Password verification result:', { passwordCheck, passwordError });
 
-    if (passwordError || !passwordResult) {
+    if (passwordError || !passwordCheck) {
+      console.log('Password verification failed:', passwordError);
       // Log failed attempt
       await supabase
         .from('login_attempts')
@@ -126,6 +128,8 @@ serve(async (req) => {
     };
 
     const sessionToken = btoa(JSON.stringify(sessionData));
+
+    console.log('Login successful for user:', user.username);
 
     const response = new Response(
       JSON.stringify({

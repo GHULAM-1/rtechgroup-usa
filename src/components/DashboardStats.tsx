@@ -1,14 +1,16 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Car, Users, AlertTriangle, DollarSign } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { TrendingDown, TrendingUp, Users, Car, DollarSign, AlertTriangle } from "lucide-react";
+import { format, addDays, isAfter, isBefore, isToday } from "date-fns";
 
 interface StatCardProps {
   title: string;
   value: string;
   change?: string;
   trend?: "up" | "down";
-  icon: React.ElementType;
-  variant?: "default" | "success" | "warning" | "destructive";
+  icon: React.ComponentType<any>;
+  variant?: "default" | "success" | "warning" | "danger";
 }
 
 const StatCard = ({ title, value, change, trend, icon: Icon, variant = "default" }: StatCardProps) => {
@@ -16,7 +18,17 @@ const StatCard = ({ title, value, change, trend, icon: Icon, variant = "default"
     default: "bg-card shadow-card card-hover rounded-lg",
     success: "bg-gradient-success text-success-foreground shadow-hover card-hover rounded-lg",
     warning: "bg-gradient-warning text-warning-foreground shadow-hover card-hover rounded-lg", 
-    destructive: "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground shadow-hover card-hover rounded-lg"
+    danger: "bg-gradient-to-br from-destructive to-destructive/80 text-destructive-foreground shadow-hover card-hover rounded-lg"
+  };
+
+  const getTrendIcon = () => {
+    if (!trend) return null;
+    return trend === "up" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />;
+  };
+
+  const getTrendColor = () => {
+    if (!trend) return "text-muted-foreground";
+    return trend === "up" ? "text-green-600" : "text-red-600";
   };
 
   return (
@@ -28,14 +40,10 @@ const StatCard = ({ title, value, change, trend, icon: Icon, variant = "default"
       <CardContent>
         <div className="text-3xl font-bold">{value}</div>
         {change && (
-          <div className="flex items-center text-metadata opacity-80 mt-1">
-            {trend === "up" ? (
-              <TrendingUp className="h-3 w-3 mr-1" />
-            ) : (
-              <TrendingDown className="h-3 w-3 mr-1" />
-            )}
+          <p className={`text-xs ${getTrendColor()} flex items-center gap-1 mt-1`}>
+            {getTrendIcon()}
             {change}
-          </div>
+          </p>
         )}
       </CardContent>
     </Card>
@@ -43,36 +51,82 @@ const StatCard = ({ title, value, change, trend, icon: Icon, variant = "default"
 };
 
 export const DashboardStats = () => {
+  const { data: vehicleCount } = useQuery({
+    queryKey: ["vehicle-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("vehicles")
+        .select("*", { count: "exact", head: true });
+      return count || 0;
+    },
+  });
+
+  const { data: activeRentals } = useQuery({
+    queryKey: ["active-rentals"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("rentals")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "Active");
+      return count || 0;
+    },
+  });
+
+  const { data: monthlyRevenue } = useQuery({
+    queryKey: ["monthly-revenue"],
+    queryFn: async () => {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      
+      const { data } = await supabase
+        .from("pnl_entries")
+        .select("amount")
+        .eq("side", "Revenue")
+        .gte("entry_date", format(startOfMonth, "yyyy-MM-dd"));
+      
+      const total = data?.reduce((sum, entry) => sum + Number(entry.amount), 0) || 0;
+      return total;
+    },
+  });
+
+  const { data: overduePayments } = useQuery({
+    queryKey: ["overdue-payments"],
+    queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
+      
+      const { count } = await supabase
+        .from("ledger_entries")
+        .select("*", { count: "exact", head: true })
+        .eq("type", "Charge")
+        .gt("remaining_amount", 0)
+        .lt("due_date", today);
+      
+      return count || 0;
+    },
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <StatCard
         title="Total Fleet"
-        value="24"
-        change="+2 this month"
-        trend="up"
+        value={vehicleCount?.toString() || "0"}
         icon={Car}
       />
       <StatCard
         title="Active Rentals"
-        value="18"
-        change="+3 this week"
-        trend="up"
+        value={activeRentals?.toString() || "0"}
         icon={Users}
         variant="success"
       />
       <StatCard
         title="Monthly Revenue"
-        value="£18,450"
-        change="+12% vs last month"
-        trend="up"
+        value={`£${monthlyRevenue?.toLocaleString() || "0"}`}
         icon={DollarSign}
         variant="success"
       />
       <StatCard
         title="Overdue Payments"
-        value="3"
-        change="2 critical"
-        trend="down"
+        value={overduePayments?.toString() || "0"}
         icon={AlertTriangle}
         variant="warning"
       />

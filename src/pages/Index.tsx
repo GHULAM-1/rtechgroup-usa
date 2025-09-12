@@ -1,7 +1,8 @@
 import { Layout } from "@/components/Layout";
 import { DashboardStats } from "@/components/DashboardStats";
 import { FleetOverview } from "@/components/FleetOverview";
-import { RecentActivity } from "@/components/RecentActivity";
+import { CustomerManagement } from "@/components/CustomerManagement";
+import { PaymentManagement } from "@/components/PaymentManagement";
 
 const Index = () => {
   return (
@@ -20,9 +21,12 @@ const Index = () => {
 
         <DashboardStats />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <FleetOverview />
-          <RecentActivity />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CustomerManagement />
+            <PaymentManagement />
+          </div>
         </div>
       </div>
     </Layout>

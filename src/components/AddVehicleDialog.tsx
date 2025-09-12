@@ -1,84 +1,95 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Plus, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
-interface VehicleFormData {
-  reg_number: string;
-  make: string;
-  model: string;
-  colour: string;
-  acquisition_type: "purchase" | "finance" | "lease";
-  acquisition_price: string;
-  acquisition_date: string;
-  dealer_source: string;
+const vehicleSchema = z.object({
+  reg: z.string().min(1, "Registration number is required"),
+  make: z.string().min(1, "Make is required"),
+  model: z.string().min(1, "Model is required"),
+  colour: z.string().min(1, "Colour is required"),
+  purchase_price: z.number().min(0, "Price must be positive"),
+  acquisition_date: z.date(),
+  acquisition_type: z.enum(['Purchase', 'Finance', 'Lease', 'Other']),
+});
+
+type VehicleFormData = z.infer<typeof vehicleSchema>;
+
+interface AddVehicleDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const AddVehicleDialog = () => {
-  const [open, setOpen] = useState(false);
+export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) => {
+  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [formData, setFormData] = useState<VehicleFormData>({
-    reg_number: "",
-    make: "",
-    model: "",
-    colour: "",
-    acquisition_type: "purchase",
-    acquisition_price: "",
-    acquisition_date: "",
-    dealer_source: ""
+  const form = useForm<VehicleFormData>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: {
+      reg: "",
+      make: "",
+      model: "",
+      colour: "",
+      purchase_price: 0,
+      acquisition_date: new Date(),
+      acquisition_type: "Purchase",
+    },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleOpenChange = (newOpen: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    } else {
+      setIsOpen(newOpen);
+    }
+  };
+
+  const currentOpen = open !== undefined ? open : isOpen;
+
+  const onSubmit = async (data: VehicleFormData) => {
     setLoading(true);
 
     try {
       const { error } = await supabase
         .from("vehicles")
         .insert({
-          reg_number: formData.reg_number,
-          make: formData.make,
-          model: formData.model,
-          colour: formData.colour,
-          acquisition_type: formData.acquisition_type,
-          acquisition_price: parseFloat(formData.acquisition_price),
-          acquisition_date: formData.acquisition_date,
-          dealer_source: formData.dealer_source || null,
-          status: "available"
+          reg: data.reg,
+          make: data.make,
+          model: data.model,
+          colour: data.colour,
+          acquisition_type: data.acquisition_type,
+          purchase_price: data.purchase_price,
+          acquisition_date: data.acquisition_date.toISOString().split('T')[0],
+          status: "Available"
         });
 
       if (error) throw error;
 
       toast({
         title: "Vehicle Added",
-        description: `${formData.make} ${formData.model} (${formData.reg_number}) has been added to your fleet.`,
+        description: `${data.make} ${data.model} (${data.reg}) has been added to your fleet.`,
       });
 
-      // Reset form and close dialog
-      setFormData({
-        reg_number: "",
-        make: "",
-        model: "",
-        colour: "",
-        acquisition_type: "purchase",
-        acquisition_price: "",
-        acquisition_date: "",
-        dealer_source: ""
-      });
-      setOpen(false);
+      form.reset();
+      handleOpenChange(false);
       
       // Refresh the vehicles list
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicle-count"] });
     } catch (error) {
       toast({
         title: "Error",
@@ -91,7 +102,7 @@ export const AddVehicleDialog = () => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={currentOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-all duration-200 rounded-lg focus:ring-2 focus:ring-primary">
           <Plus className="mr-2 h-4 w-4" />
@@ -105,123 +116,141 @@ export const AddVehicleDialog = () => {
             Add New Vehicle
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="reg_number">Registration Number</Label>
-              <Input
-                id="reg_number"
-                value={formData.reg_number}
-                onChange={(e) => setFormData(prev => ({ ...prev, reg_number: e.target.value }))}
-                placeholder="AB12 CDE"
-                className="input-focus"
-                required
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="reg"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Registration Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. AB12 CDE" {...field} className="input-focus" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="acquisition_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Acquisition Date</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="date" 
+                        {...field}
+                        value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                        onChange={(e) => field.onChange(new Date(e.target.value))}
+                        className="input-focus"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div>
-              <Label htmlFor="acquisition_date">Acquisition Date</Label>
-              <Input
-                id="acquisition_date"
-                type="date"
-                value={formData.acquisition_date}
-                onChange={(e) => setFormData(prev => ({ ...prev, acquisition_date: e.target.value }))}
-                className="input-focus"
-                required
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="make">Make</Label>
-              <Input
-                id="make"
-                value={formData.make}
-                onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                placeholder="Audi"
-                className="input-focus"
-                required
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="make"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Make</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Ford" {...field} className="input-focus" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Transit" {...field} className="input-focus" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div>
-              <Label htmlFor="model">Model</Label>
-              <Input
-                id="model"
-                value={formData.model}
-                onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                placeholder="A4"
-                className="input-focus"
-                required
-              />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="colour">Colour</Label>
-              <Input
-                id="colour"
-                value={formData.colour}
-                onChange={(e) => setFormData(prev => ({ ...prev, colour: e.target.value }))}
-                placeholder="Black"
-                className="input-focus"
-                required
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="colour"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Colour</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. White" {...field} className="input-focus" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="purchase_price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Price (£)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0.00" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        className="input-focus"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </div>
-            <div>
-              <Label htmlFor="acquisition_type">Acquisition Type</Label>
-              <Select
-                value={formData.acquisition_type}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, acquisition_type: value as any }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="purchase">Purchase</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="lease">Lease</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="acquisition_price">Acquisition Price (£)</Label>
-              <Input
-                id="acquisition_price"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.acquisition_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, acquisition_price: e.target.value }))}
-                placeholder="25000.00"
-                className="input-focus"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="dealer_source">Dealer Source (Optional)</Label>
-              <Input
-                id="dealer_source"
-                value={formData.dealer_source}
-                onChange={(e) => setFormData(prev => ({ ...prev, dealer_source: e.target.value }))}
-                placeholder="Premium Motors Ltd"
-                className="input-focus"
-              />
-            </div>
-          </div>
+            <FormField
+              control={form.control}
+              name="acquisition_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Acquisition Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="input-focus">
+                        <SelectValue placeholder="Select acquisition type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Purchase">Purchase</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Lease">Lease</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary">
-              {loading ? "Adding..." : "Add Vehicle"}
-            </Button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading} className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary">
+                {loading ? "Adding..." : "Add Vehicle"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

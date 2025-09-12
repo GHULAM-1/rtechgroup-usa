@@ -129,6 +129,30 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          attempted_at: string | null
+          id: string
+          ip_address: string | null
+          success: boolean
+          username: string
+        }
+        Insert: {
+          attempted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          username: string
+        }
+        Update: {
+          attempted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          username?: string
+        }
+        Relationships: []
+      }
       payment_applications: {
         Row: {
           amount_applied: number
@@ -512,6 +536,39 @@ export type Database = {
             referencedColumns: ["vehicle_id"]
           },
         ]
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_login: string | null
+          password_hash: string
+          require_password_change: boolean
+          role: string
+          status: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_login?: string | null
+          password_hash: string
+          require_password_change?: boolean
+          role?: string
+          status?: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_login?: string | null
+          password_hash?: string
+          require_password_change?: boolean
+          role?: string
+          status?: string
+          username?: string
+        }
+        Relationships: []
       }
       vehicles: {
         Row: {

@@ -16,88 +16,91 @@ export type Database = {
     Tables: {
       customers: {
         Row: {
-          balance: number | null
           created_at: string | null
-          email: string
+          email: string | null
           id: string
           name: string
-          phone: string
-          status: Database["public"]["Enums"]["customer_status"] | null
-          type: Database["public"]["Enums"]["customer_type"]
+          phone: string | null
+          status: string | null
+          type: string
+          whatsapp_opt_in: boolean | null
         }
         Insert: {
-          balance?: number | null
           created_at?: string | null
-          email: string
+          email?: string | null
           id?: string
           name: string
-          phone: string
-          status?: Database["public"]["Enums"]["customer_status"] | null
-          type: Database["public"]["Enums"]["customer_type"]
+          phone?: string | null
+          status?: string | null
+          type: string
+          whatsapp_opt_in?: boolean | null
         }
         Update: {
-          balance?: number | null
           created_at?: string | null
-          email?: string
+          email?: string | null
           id?: string
           name?: string
-          phone?: string
-          status?: Database["public"]["Enums"]["customer_status"] | null
-          type?: Database["public"]["Enums"]["customer_type"]
+          phone?: string | null
+          status?: string | null
+          type?: string
+          whatsapp_opt_in?: boolean | null
         }
         Relationships: []
       }
-      ledger: {
+      ledger_entries: {
         Row: {
           amount: number
-          created_at: string | null
+          category: string
           customer_id: string | null
-          description: string
-          entry_type: Database["public"]["Enums"]["entry_type"]
+          due_date: string | null
+          entry_date: string
           id: string
+          remaining_amount: number
           rental_id: string | null
-          status: Database["public"]["Enums"]["ledger_status"] | null
+          type: string
           vehicle_id: string | null
         }
         Insert: {
           amount: number
-          created_at?: string | null
+          category: string
           customer_id?: string | null
-          description: string
-          entry_type: Database["public"]["Enums"]["entry_type"]
+          due_date?: string | null
+          entry_date: string
           id?: string
+          remaining_amount?: number
           rental_id?: string | null
-          status?: Database["public"]["Enums"]["ledger_status"] | null
+          type: string
           vehicle_id?: string | null
         }
         Update: {
           amount?: number
-          created_at?: string | null
+          category?: string
           customer_id?: string | null
-          description?: string
-          entry_type?: Database["public"]["Enums"]["entry_type"]
+          due_date?: string | null
+          entry_date?: string
           id?: string
+          remaining_amount?: number
           rental_id?: string | null
-          status?: Database["public"]["Enums"]["ledger_status"] | null
+          type?: string
           vehicle_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "ledger_customer_id_fkey"
+            foreignKeyName: "ledger_entries_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ledger_rental_id_fkey"
+            foreignKeyName: "ledger_entries_rental_id_fkey"
             columns: ["rental_id"]
             isOneToOne: false
             referencedRelation: "rentals"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "ledger_vehicle_id_fkey"
+            foreignKeyName: "ledger_entries_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
@@ -105,37 +108,38 @@ export type Database = {
           },
         ]
       }
-      p_l: {
+      payment_applications: {
         Row: {
+          amount_applied: number
+          charge_entry_id: string | null
           id: string
-          net_profit: number | null
-          total_costs: number | null
-          total_revenue: number | null
-          updated_at: string | null
-          vehicle_id: string
+          payment_id: string | null
         }
         Insert: {
+          amount_applied: number
+          charge_entry_id?: string | null
           id?: string
-          net_profit?: number | null
-          total_costs?: number | null
-          total_revenue?: number | null
-          updated_at?: string | null
-          vehicle_id: string
+          payment_id?: string | null
         }
         Update: {
+          amount_applied?: number
+          charge_entry_id?: string | null
           id?: string
-          net_profit?: number | null
-          total_costs?: number | null
-          total_revenue?: number | null
-          updated_at?: string | null
-          vehicle_id?: string
+          payment_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "p_l_vehicle_id_fkey"
-            columns: ["vehicle_id"]
-            isOneToOne: true
-            referencedRelation: "vehicles"
+            foreignKeyName: "payment_applications_charge_entry_id_fkey"
+            columns: ["charge_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ledger_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_applications_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
@@ -143,39 +147,33 @@ export type Database = {
       payments: {
         Row: {
           amount: number
-          created_at: string | null
           customer_id: string
-          due_date: string
           id: string
-          paid_date: string | null
-          rental_id: string
-          status: Database["public"]["Enums"]["payment_status"]
-          type: Database["public"]["Enums"]["payment_type"]
-          vehicle_id: string
+          method: string | null
+          payment_date: string
+          payment_type: string
+          rental_id: string | null
+          vehicle_id: string | null
         }
         Insert: {
           amount: number
-          created_at?: string | null
           customer_id: string
-          due_date: string
           id?: string
-          paid_date?: string | null
-          rental_id: string
-          status: Database["public"]["Enums"]["payment_status"]
-          type: Database["public"]["Enums"]["payment_type"]
-          vehicle_id: string
+          method?: string | null
+          payment_date: string
+          payment_type: string
+          rental_id?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           amount?: number
-          created_at?: string | null
           customer_id?: string
-          due_date?: string
           id?: string
-          paid_date?: string | null
-          rental_id?: string
-          status?: Database["public"]["Enums"]["payment_status"]
-          type?: Database["public"]["Enums"]["payment_type"]
-          vehicle_id?: string
+          method?: string | null
+          payment_date?: string
+          payment_type?: string
+          rental_id?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -201,42 +199,77 @@ export type Database = {
           },
         ]
       }
+      pnl_entries: {
+        Row: {
+          amount: number
+          category: string | null
+          entry_date: string
+          id: string
+          side: string
+          source_ref: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          entry_date: string
+          id?: string
+          side: string
+          source_ref?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          entry_date?: string
+          id?: string
+          side?: string
+          source_ref?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pnl_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rentals: {
         Row: {
           created_at: string | null
-          customer_id: string
-          duration_months: number
-          end_date: string
+          customer_id: string | null
+          end_date: string | null
           id: string
-          initial_payment: number
-          monthly_payment: number
+          monthly_amount: number
+          schedule: string | null
           start_date: string
-          status: Database["public"]["Enums"]["rental_status"] | null
-          vehicle_id: string
+          status: string | null
+          vehicle_id: string | null
         }
         Insert: {
           created_at?: string | null
-          customer_id: string
-          duration_months: number
-          end_date: string
+          customer_id?: string | null
+          end_date?: string | null
           id?: string
-          initial_payment: number
-          monthly_payment: number
+          monthly_amount: number
+          schedule?: string | null
           start_date: string
-          status?: Database["public"]["Enums"]["rental_status"] | null
-          vehicle_id: string
+          status?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           created_at?: string | null
-          customer_id?: string
-          duration_months?: number
-          end_date?: string
+          customer_id?: string | null
+          end_date?: string | null
           id?: string
-          initial_payment?: number
-          monthly_payment?: number
+          monthly_amount?: number
+          schedule?: string | null
           start_date?: string
-          status?: Database["public"]["Enums"]["rental_status"] | null
-          vehicle_id?: string
+          status?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -257,43 +290,40 @@ export type Database = {
       }
       vehicles: {
         Row: {
-          acquisition_date: string
-          acquisition_price: number
-          acquisition_type: Database["public"]["Enums"]["acquisition_type"]
-          colour: string
+          acquisition_date: string | null
+          acquisition_type: string | null
+          colour: string | null
           created_at: string | null
-          dealer_source: string | null
           id: string
-          make: string
-          model: string
-          reg_number: string
-          status: Database["public"]["Enums"]["vehicle_status"] | null
+          make: string | null
+          model: string | null
+          purchase_price: number | null
+          reg: string
+          status: string | null
         }
         Insert: {
-          acquisition_date: string
-          acquisition_price: number
-          acquisition_type: Database["public"]["Enums"]["acquisition_type"]
-          colour: string
+          acquisition_date?: string | null
+          acquisition_type?: string | null
+          colour?: string | null
           created_at?: string | null
-          dealer_source?: string | null
           id?: string
-          make: string
-          model: string
-          reg_number: string
-          status?: Database["public"]["Enums"]["vehicle_status"] | null
+          make?: string | null
+          model?: string | null
+          purchase_price?: number | null
+          reg: string
+          status?: string | null
         }
         Update: {
-          acquisition_date?: string
-          acquisition_price?: number
-          acquisition_type?: Database["public"]["Enums"]["acquisition_type"]
-          colour?: string
+          acquisition_date?: string | null
+          acquisition_type?: string | null
+          colour?: string | null
           created_at?: string | null
-          dealer_source?: string | null
           id?: string
-          make?: string
-          model?: string
-          reg_number?: string
-          status?: Database["public"]["Enums"]["vehicle_status"] | null
+          make?: string | null
+          model?: string | null
+          purchase_price?: number | null
+          reg?: string
+          status?: string | null
         }
         Relationships: []
       }
@@ -310,9 +340,25 @@ export type Database = {
         Args: { rental_id: string }
         Returns: undefined
       }
+      generate_rental_charges: {
+        Args: { r_id: string }
+        Returns: undefined
+      }
+      payment_apply_fifo: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      pnl_post_acquisition: {
+        Args: { v_id: string }
+        Returns: undefined
+      }
       recalculate_vehicle_pl: {
         Args: { p_vehicle_id: string }
         Returns: undefined
+      }
+      rental_create_charge: {
+        Args: { amt: number; due: string; r_id: string }
+        Returns: string
       }
       update_customer_balance: {
         Args: { customer_id: string }

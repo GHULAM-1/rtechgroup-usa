@@ -311,7 +311,7 @@ export type Database = {
         Returns: undefined
       }
       recalculate_vehicle_pl: {
-        Args: { vehicle_id: string }
+        Args: { p_vehicle_id: string }
         Returns: undefined
       }
       update_customer_balance: {

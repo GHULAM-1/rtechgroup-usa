@@ -93,7 +93,7 @@ export const AddVehicleDialog = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-smooth">
+        <Button className="bg-gradient-primary text-primary-foreground hover:opacity-90 transition-all duration-200 rounded-lg focus:ring-2 focus:ring-primary">
           <Plus className="mr-2 h-4 w-4" />
           Add Vehicle
         </Button>
@@ -114,6 +114,7 @@ export const AddVehicleDialog = () => {
                 value={formData.reg_number}
                 onChange={(e) => setFormData(prev => ({ ...prev, reg_number: e.target.value }))}
                 placeholder="AB12 CDE"
+                className="input-focus"
                 required
               />
             </div>
@@ -124,6 +125,7 @@ export const AddVehicleDialog = () => {
                 type="date"
                 value={formData.acquisition_date}
                 onChange={(e) => setFormData(prev => ({ ...prev, acquisition_date: e.target.value }))}
+                className="input-focus"
                 required
               />
             </div>
@@ -137,6 +139,7 @@ export const AddVehicleDialog = () => {
                 value={formData.make}
                 onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
                 placeholder="Audi"
+                className="input-focus"
                 required
               />
             </div>
@@ -147,6 +150,7 @@ export const AddVehicleDialog = () => {
                 value={formData.model}
                 onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
                 placeholder="A4"
+                className="input-focus"
                 required
               />
             </div>
@@ -160,6 +164,7 @@ export const AddVehicleDialog = () => {
                 value={formData.colour}
                 onChange={(e) => setFormData(prev => ({ ...prev, colour: e.target.value }))}
                 placeholder="Black"
+                className="input-focus"
                 required
               />
             </div>
@@ -192,6 +197,7 @@ export const AddVehicleDialog = () => {
                 value={formData.acquisition_price}
                 onChange={(e) => setFormData(prev => ({ ...prev, acquisition_price: e.target.value }))}
                 placeholder="25000.00"
+                className="input-focus"
                 required
               />
             </div>
@@ -202,6 +208,7 @@ export const AddVehicleDialog = () => {
                 value={formData.dealer_source}
                 onChange={(e) => setFormData(prev => ({ ...prev, dealer_source: e.target.value }))}
                 placeholder="Premium Motors Ltd"
+                className="input-focus"
               />
             </div>
           </div>
@@ -210,7 +217,7 @@ export const AddVehicleDialog = () => {
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="bg-gradient-primary">
+            <Button type="submit" disabled={loading} className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary">
               {loading ? "Adding..." : "Add Vehicle"}
             </Button>
           </div>

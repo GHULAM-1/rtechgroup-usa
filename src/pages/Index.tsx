@@ -6,14 +6,14 @@ import { RecentActivity } from "@/components/RecentActivity";
 const Index = () => {
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Fleet Dashboard</h1>
-            <p className="text-muted-foreground">Monitor your fleet performance and financial metrics</p>
+            <h1 className="text-5xl font-bold text-foreground">Fleet Dashboard</h1>
+            <p className="text-muted-foreground mt-2">Monitor your fleet performance and financial metrics</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-muted-foreground">Today</p>
+            <p className="text-metadata text-muted-foreground">Today</p>
             <p className="text-lg font-semibold">{new Date().toLocaleDateString()}</p>
           </div>
         </div>

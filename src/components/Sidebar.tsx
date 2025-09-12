@@ -25,8 +25,8 @@ export const Sidebar = () => {
               key={item.name}
               variant="ghost"
               className={cn(
-                "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                "h-10 px-3 font-medium transition-smooth"
+                "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg",
+                "h-10 px-3 font-medium transition-all duration-200"
               )}
             >
               <Icon className="mr-3 h-4 w-4" />
@@ -37,7 +37,7 @@ export const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-sidebar-border">
-        <Button className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 transition-smooth">
+        <Button className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 transition-all duration-200 rounded-lg focus:ring-2 focus:ring-primary">
           <PlusCircle className="mr-2 h-4 w-4" />
           Quick Add
         </Button>

@@ -7,12 +7,15 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1.5rem",  /* 24px padding as per RTECHGROUP */
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -60,7 +63,6 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        // Fleet Management Semantic Colors
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
@@ -81,16 +83,23 @@ export default {
       boxShadow: {
         sm: "var(--shadow-sm)",
         card: "var(--shadow-card)",
-        vehicle: "var(--shadow-vehicle)",
+        hover: "var(--shadow-hover)",
       },
-      transitionProperty: {
-        smooth: "var(--transition-smooth)",
-        fast: "var(--transition-fast)",
+      spacing: {
+        '14': '3.5rem',
+        '56': '14rem',  /* 56px header height */
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
+        md: "calc(var(--radius) - 2px)", 
         sm: "calc(var(--radius) - 4px)",
+      },
+      transitionProperty: {
+        'all': 'var(--transition-all)',
+        'smooth': 'var(--transition-smooth)',
+      },
+      scale: {
+        '102': '1.02',  /* Hover scale for cards */
       },
       keyframes: {
         "accordion-down": {

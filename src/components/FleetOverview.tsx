@@ -18,9 +18,9 @@ interface Vehicle {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const variants = {
-    available: "bg-success-light text-success border-success",
-    rented: "bg-primary-light text-primary border-primary",
-    sold: "bg-muted text-muted-foreground border-border"
+    available: "badge-status bg-success-light text-success border-success",
+    rented: "badge-status bg-primary-light text-primary border-primary",
+    sold: "badge-status bg-muted text-muted-foreground border-border"
   };
   
   return (
@@ -32,7 +32,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
   return (
-    <Card className="group hover:shadow-vehicle transition-smooth cursor-pointer">
+    <Card className="group card-hover transition-all duration-200 cursor-pointer rounded-lg">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-gradient-primary rounded-lg">
@@ -40,10 +40,10 @@ const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
           </div>
           <div>
             <CardTitle className="text-sm font-semibold">{vehicle.reg_number}</CardTitle>
-            <p className="text-xs text-muted-foreground">{vehicle.make} {vehicle.model}</p>
+            <p className="text-metadata text-muted-foreground">{vehicle.make} {vehicle.model}</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-smooth">
+        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-all duration-200 rounded-lg">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </CardHeader>
@@ -51,7 +51,7 @@ const VehicleCard = ({ vehicle }: { vehicle: Vehicle }) => {
         <div className="flex items-center justify-between">
           <StatusBadge status={vehicle.status} />
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Acquisition</p>
+            <p className="text-metadata text-muted-foreground">Acquisition</p>
             <p className="text-sm font-semibold">£{vehicle.acquisition_price.toLocaleString()}</p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export const FleetOverview = () => {
   });
 
   return (
-    <Card className="shadow-card">
+    <Card className="shadow-card rounded-lg">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">

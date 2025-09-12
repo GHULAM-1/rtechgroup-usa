@@ -9,7 +9,8 @@ import {
   Menu,
   X,
   TestTube,
-  Bell
+  Bell,
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Rentals", href: "/rentals", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Reminders", href: "/reminders", icon: Bell },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Tests", href: "/test", icon: TestTube },
 ];
 

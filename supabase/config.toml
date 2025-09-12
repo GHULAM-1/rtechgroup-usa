@@ -2,3 +2,6 @@ project_id = "wrogevjpvhvputrjhvvg"
 
 [functions.process-reminders]
 verify_jwt = false
+
+[functions.generate-export]
+verify_jwt = true

@@ -93,6 +93,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ledger_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
             foreignKeyName: "ledger_entries_rental_id_fkey"
             columns: ["rental_id"]
             isOneToOne: false
@@ -100,11 +107,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "ledger_entries_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "view_rentals_export"
+            referencedColumns: ["rental_id"]
+          },
+          {
             foreignKeyName: "ledger_entries_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
           },
         ]
       }
@@ -141,6 +162,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "payments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_applications_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "view_payments_export"
+            referencedColumns: ["payment_id"]
           },
         ]
       }
@@ -184,6 +212,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
             foreignKeyName: "payments_rental_id_fkey"
             columns: ["rental_id"]
             isOneToOne: false
@@ -191,11 +226,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "view_rentals_export"
+            referencedColumns: ["rental_id"]
+          },
+          {
             foreignKeyName: "payments_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
           },
         ]
       }
@@ -234,6 +283,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pnl_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
           },
         ]
       }
@@ -296,6 +352,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reminder_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
             foreignKeyName: "reminder_events_rental_id_fkey"
             columns: ["rental_id"]
             isOneToOne: false
@@ -303,11 +366,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reminder_events_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "view_rentals_export"
+            referencedColumns: ["rental_id"]
+          },
+          {
             foreignKeyName: "reminder_events_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
           },
         ]
       }
@@ -414,11 +491,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "rentals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
             foreignKeyName: "rentals_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rentals_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
           },
         ]
       }
@@ -463,7 +554,134 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      view_aging_receivables: {
+        Row: {
+          bucket_0_30: number | null
+          bucket_31_60: number | null
+          bucket_61_90: number | null
+          bucket_90_plus: number | null
+          customer_id: string | null
+          customer_name: string | null
+          total_due: number | null
+        }
+        Relationships: []
+      }
+      view_payments_export: {
+        Row: {
+          allocations_json: Json | null
+          amount: number | null
+          applied_amount: number | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          method: string | null
+          payment_date: string | null
+          payment_id: string | null
+          payment_type: string | null
+          rental_id: string | null
+          unapplied_amount: number | null
+          vehicle_id: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_reg: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "view_rentals_export"
+            referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "payments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
+      view_pl_by_vehicle: {
+        Row: {
+          cost_acquisition: number | null
+          cost_finance: number | null
+          cost_fines: number | null
+          cost_other: number | null
+          cost_service: number | null
+          make_model: string | null
+          net_profit: number | null
+          revenue_fees: number | null
+          revenue_other: number | null
+          revenue_rental: number | null
+          total_costs: number | null
+          total_revenue: number | null
+          vehicle_id: string | null
+          vehicle_reg: string | null
+        }
+        Relationships: []
+      }
+      view_pl_consolidated: {
+        Row: {
+          cost_acquisition: number | null
+          cost_finance: number | null
+          cost_fines: number | null
+          cost_other: number | null
+          cost_service: number | null
+          net_profit: number | null
+          revenue_fees: number | null
+          revenue_other: number | null
+          revenue_rental: number | null
+          total_costs: number | null
+          total_revenue: number | null
+          view_type: string | null
+        }
+        Relationships: []
+      }
+      view_rentals_export: {
+        Row: {
+          balance: number | null
+          customer_name: string | null
+          end_date: string | null
+          initial_fee_amount: number | null
+          monthly_amount: number | null
+          rental_id: string | null
+          schedule: string | null
+          start_date: string | null
+          status: string | null
+          vehicle_reg: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       apply_payment: {
@@ -477,6 +695,19 @@ export type Database = {
       generate_rental_charges: {
         Args: { r_id: string }
         Returns: undefined
+      }
+      get_customer_statement: {
+        Args: { p_customer_id: string; p_from_date: string; p_to_date: string }
+        Returns: {
+          credit: number
+          debit: number
+          description: string
+          rental_id: string
+          running_balance: number
+          transaction_date: string
+          type: string
+          vehicle_reg: string
+        }[]
       }
       get_pending_charges_for_reminders: {
         Args: Record<PropertyKey, never>

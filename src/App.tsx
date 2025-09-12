@@ -15,6 +15,7 @@ import PaymentsList from "@/pages/PaymentsList";
 import CreateRental from "@/pages/CreateRental";
 import RemindersPage from "@/pages/RemindersPage";
 import ReminderSettings from "@/pages/ReminderSettings";
+import Reports from "@/pages/Reports";
 import { AcceptanceTestDashboard } from "@/components/AcceptanceTestDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
           <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
           <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />
+          <Route path="/reports" element={<Layout><Reports /></Layout>} />
           <Route path="/test" element={<Layout><AcceptanceTestDashboard /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

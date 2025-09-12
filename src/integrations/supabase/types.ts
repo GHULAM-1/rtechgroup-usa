@@ -237,6 +237,66 @@ export type Database = {
           },
         ]
       }
+      reminder_logs: {
+        Row: {
+          amount: number
+          channel: string
+          charge_id: string
+          created_at: string
+          customer_id: string
+          due_date: string
+          id: string
+          reminder_type: string
+          rental_id: string
+          sent_at: string
+        }
+        Insert: {
+          amount: number
+          channel: string
+          charge_id: string
+          created_at?: string
+          customer_id: string
+          due_date: string
+          id?: string
+          reminder_type: string
+          rental_id: string
+          sent_at?: string
+        }
+        Update: {
+          amount?: number
+          channel?: string
+          charge_id?: string
+          created_at?: string
+          customer_id?: string
+          due_date?: string
+          id?: string
+          reminder_type?: string
+          rental_id?: string
+          sent_at?: string
+        }
+        Relationships: []
+      }
+      reminder_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rentals: {
         Row: {
           created_at: string | null
@@ -343,6 +403,26 @@ export type Database = {
       generate_rental_charges: {
         Args: { r_id: string }
         Returns: undefined
+      }
+      get_pending_charges_for_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          amount: number
+          charge_id: string
+          customer_balance: number
+          customer_email: string
+          customer_id: string
+          customer_name: string
+          customer_phone: string
+          days_overdue: number
+          days_until_due: number
+          due_date: string
+          remaining_amount: number
+          rental_id: string
+          vehicle_id: string
+          vehicle_reg: string
+          whatsapp_opt_in: boolean
+        }[]
       }
       payment_apply_fifo: {
         Args: { p_id: string }

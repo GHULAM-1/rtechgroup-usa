@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Car, MoreHorizontal, Calendar, PoundSterling } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { AddVehicleDialog } from "./AddVehicleDialog";
 
 interface Vehicle {
   id: string;
@@ -82,9 +83,7 @@ export const FleetOverview = () => {
             <Car className="h-5 w-5 text-primary" />
             Fleet Overview
           </CardTitle>
-          <Button variant="outline" size="sm">
-            View All
-          </Button>
+          <AddVehicleDialog />
         </div>
       </CardHeader>
       <CardContent>
@@ -104,7 +103,7 @@ export const FleetOverview = () => {
           <div className="text-center py-8">
             <Car className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No vehicles in fleet yet</p>
-            <Button className="mt-4 bg-gradient-primary">Add First Vehicle</Button>
+            <AddVehicleDialog />
           </div>
         )}
       </CardContent>

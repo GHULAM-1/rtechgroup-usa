@@ -1,47 +1,109 @@
-import { Car, Users, CreditCard, BarChart3, Home, PlusCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import { 
+  Car, 
+  Users, 
+  FileText, 
+  CreditCard, 
+  LayoutDashboard,
+  Menu,
+  X,
+  TestTube 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Home },
-  { name: "Fleet", href: "/fleet", icon: Car },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Vehicles", href: "/vehicles", icon: Car },
   { name: "Customers", href: "/customers", icon: Users },
+  { name: "Rentals", href: "/rentals", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
-  { name: "P&L Reports", href: "/reports", icon: BarChart3 },
+  { name: "Tests", href: "/test", icon: TestTube },
 ];
 
 export const Sidebar = () => {
-  return (
-    <div className="flex flex-col w-64 bg-sidebar border-r border-sidebar-border">
-      <div className="flex items-center justify-center h-16 px-4 border-b border-sidebar-border">
-        <h1 className="text-xl font-bold text-sidebar-primary">FleetFlow</h1>
-      </div>
-      
-      <nav className="flex-1 px-4 py-6 space-y-2">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Button
-              key={item.name}
-              variant="ghost"
-              className={cn(
-                "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground rounded-lg",
-                "h-10 px-3 font-medium transition-all duration-200"
-              )}
-            >
-              <Icon className="mr-3 h-4 w-4" />
-              {item.name}
-            </Button>
-          );
-        })}
-      </nav>
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const location = useLocation();
 
-      <div className="p-4 border-t border-sidebar-border">
-        <Button className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90 transition-all duration-200 rounded-lg focus:ring-2 focus:ring-primary">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Quick Add
+  const isActive = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  return (
+    <>
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+          className="bg-background"
+        >
+          {isMobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
         </Button>
       </div>
-    </div>
+
+      {/* Sidebar */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Logo/Brand */}
+          <div className="flex h-16 items-center justify-center border-b px-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+                <Car className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-semibold">Fleet Manager</span>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 p-4">
+            {navigation.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <NavLink
+                  key={item.name}
+                  to={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+                    active
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.name}
+                </NavLink>
+              );
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className="border-t p-4">
+            <div className="text-xs text-muted-foreground">
+              RTECHGROUP UK Fleet Management
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+    </>
   );
 };

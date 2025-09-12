@@ -1,0 +1,331 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { ArrowLeft, FileText, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+
+const rentalSchema = z.object({
+  customer_id: z.string().min(1, "Customer is required"),
+  vehicle_id: z.string().min(1, "Vehicle is required"),
+  start_date: z.date(),
+  end_date: z.date(),
+  monthly_amount: z.number().min(0.01, "Monthly amount must be greater than 0"),
+  initial_fee: z.number().min(0, "Initial fee cannot be negative").optional(),
+});
+
+type RentalFormData = z.infer<typeof rentalSchema>;
+
+const CreateRental = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+
+  const form = useForm<RentalFormData>({
+    resolver: zodResolver(rentalSchema),
+    defaultValues: {
+      customer_id: "",
+      vehicle_id: "",
+      start_date: new Date(),
+      end_date: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
+      monthly_amount: 0,
+      initial_fee: 0,
+    },
+  });
+
+  // Get customers and available vehicles
+  const { data: customers } = useQuery({
+    queryKey: ["customers-for-rental"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id, name")
+        .eq("status", "Active");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: vehicles } = useQuery({
+    queryKey: ["vehicles-for-rental"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("id, reg, make, model")
+        .eq("status", "Available");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const onSubmit = async (data: RentalFormData) => {
+    setLoading(true);
+    try {
+      // Create rental
+      const { data: rental, error: rentalError } = await supabase
+        .from("rentals")
+        .insert({
+          customer_id: data.customer_id,
+          vehicle_id: data.vehicle_id,
+          start_date: data.start_date.toISOString().split('T')[0],
+          end_date: data.end_date.toISOString().split('T')[0],
+          monthly_amount: data.monthly_amount,
+          status: "Active",
+        })
+        .select()
+        .single();
+
+      if (rentalError) throw rentalError;
+
+      // If there's an initial fee, record it as a payment and post to P&L
+      if (data.initial_fee && data.initial_fee > 0) {
+        // Record initial fee payment
+        const { data: payment, error: paymentError } = await supabase
+          .from("payments")
+          .insert({
+            customer_id: data.customer_id,
+            rental_id: rental.id,
+            vehicle_id: data.vehicle_id,
+            amount: data.initial_fee,
+            payment_date: new Date().toISOString().split('T')[0],
+            payment_type: "InitialFee",
+          })
+          .select()
+          .single();
+
+        if (paymentError) throw paymentError;
+
+        // Post initial fee to P&L as revenue
+        await supabase
+          .from("pnl_entries")
+          .insert({
+            vehicle_id: data.vehicle_id,
+            entry_date: new Date().toISOString().split('T')[0],
+            side: "Revenue",
+            category: "Fees",
+            amount: data.initial_fee,
+            source_ref: payment.id,
+          });
+      }
+
+      // Update vehicle status to Rented
+      await supabase
+        .from("vehicles")
+        .update({ status: "Rented" })
+        .eq("id", data.vehicle_id);
+
+      toast({
+        title: "Rental Created",
+        description: "Rental agreement has been created successfully with monthly charges scheduled.",
+      });
+
+      // Refresh queries and navigate
+      queryClient.invalidateQueries({ queryKey: ["rentals-list"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles-list"] });
+      navigate(`/rentals/${rental.id}`);
+    } catch (error) {
+      console.error("Error creating rental:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create rental agreement. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="outline" onClick={() => navigate("/rentals")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Rentals
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold">Create New Rental</h1>
+          <p className="text-muted-foreground">Set up a new rental agreement</p>
+        </div>
+      </div>
+
+      {/* Form */}
+      <Card className="max-w-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Rental Agreement Details
+          </CardTitle>
+          <CardDescription>
+            Fill in the details to create a new rental agreement. Monthly charges will be automatically generated.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Customer and Vehicle Selection */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="customer_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Customer</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select customer" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {customers?.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="vehicle_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Vehicle</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select vehicle" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {vehicles?.map((vehicle) => (
+                            <SelectItem key={vehicle.id} value={vehicle.id}>
+                              {vehicle.reg} ({vehicle.make} {vehicle.model})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="start_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Date</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="end_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Date</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                          onChange={(e) => field.onChange(new Date(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Financial Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="monthly_amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monthly Amount (£)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="initial_fee"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Initial Fee (£) - Optional</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Submit */}
+              <div className="flex justify-end gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => navigate("/rentals")}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading} className="bg-gradient-primary">
+                  <Save className="h-4 w-4 mr-2" />
+                  {loading ? "Creating..." : "Create Rental"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default CreateRental;

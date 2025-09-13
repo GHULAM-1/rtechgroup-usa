@@ -31,16 +31,10 @@ const BalancePill = ({ balance, status }: { balance: number; status: string }) =
     return 'destructive';
   };
 
-  const getBgColor = () => {
-    if (status === 'In Credit') return 'bg-blue-100 text-blue-700';
-    if (status === 'Settled') return 'bg-green-100 text-green-700';
-    return 'bg-red-100 text-red-700';
-  };
-
   return (
-    <div className={`px-2 py-1 rounded-full text-xs font-medium ${getBgColor()}`}>
+    <Badge variant={getVariant() as any} className="badge-status">
       {status} {balance !== 0 && `(£${Math.abs(balance).toLocaleString()})`}
-    </div>
+    </Badge>
   );
 };
 
@@ -65,28 +59,35 @@ const CustomersList = () => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
+      // Get all ledger entries for balance calculation
       const { data, error } = await supabase
         .from("ledger_entries")
         .select("customer_id, amount, remaining_amount, type, due_date")
-        .eq("type", "Charge");
+        .lte("due_date", today);
       
       if (error) throw error;
       
       const balanceMap: Record<string, CustomerBalance> = {};
       
       data?.forEach((entry) => {
-        if (entry.due_date && entry.due_date <= today && entry.remaining_amount > 0) {
-          if (!balanceMap[entry.customer_id]) {
-            balanceMap[entry.customer_id] = {
-              customer_id: entry.customer_id,
-              balance: 0,
-              status: 'Settled',
-            };
-          }
+        if (!balanceMap[entry.customer_id]) {
+          balanceMap[entry.customer_id] = {
+            customer_id: entry.customer_id,
+            balance: 0,
+            status: 'Settled',
+          };
+        }
+        
+        // Add due/overdue charges, subtract available credit (payments)
+        if (entry.type === 'Charge' && entry.remaining_amount > 0) {
           balanceMap[entry.customer_id].balance += Number(entry.remaining_amount);
+        } else if (entry.type === 'Payment' && entry.remaining_amount === 0) {
+          // Available credit from fully applied payments
+          balanceMap[entry.customer_id].balance -= Number(entry.amount);
         }
       });
       
+      // Determine status based on final balance
       Object.values(balanceMap).forEach((balance) => {
         if (balance.balance > 0) {
           balance.status = 'In Debt';

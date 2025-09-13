@@ -190,9 +190,16 @@ export const AddPaymentDialog = ({
         queryClient.invalidateQueries({ queryKey: ["rental-ledger", finalRentalId] });
         queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", finalRentalId] });
         queryClient.invalidateQueries({ queryKey: ["rental", finalRentalId] });
+        queryClient.invalidateQueries({ queryKey: ["rental-balance", finalRentalId] });
       }
-      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
+      if (finalCustomerId) {
+        queryClient.invalidateQueries({ queryKey: ["customer-balance", finalCustomerId] });
+        queryClient.invalidateQueries({ queryKey: ["customer-payments", finalCustomerId] });
+      }
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payments-list"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicle-pl"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles-pl"] });
     } catch (error) {
       console.error("Error adding payment:", error);
       toast({

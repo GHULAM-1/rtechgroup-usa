@@ -35,11 +35,10 @@ interface Rental {
 interface Payment {
   id: string;
   amount: number;
-  payment_date: string;
-  payment_type: string;
-  method?: string;
-  remaining?: number;
+  entry_date: string;
+  category: string;
   vehicles: { reg: string };
+  payments: { method?: string };
 }
 
 interface Fine {
@@ -118,36 +117,18 @@ const CustomerDetail = () => {
     queryKey: ["customer-payments", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("payments")
+        .from("ledger_entries")
         .select(`
           *,
-          vehicles(reg)
+          vehicles(reg),
+          payments(method)
         `)
         .eq("customer_id", id)
-        .order("payment_date", { ascending: false });
+        .eq("type", "Payment")
+        .order("entry_date", { ascending: false });
       
       if (error) throw error;
-
-      // Get payment applications for each payment to calculate applied/remaining amounts
-      const paymentsWithStatus = await Promise.all(
-        (data || []).map(async (payment) => {
-          const { data: applications } = await supabase
-            .from("payment_applications")
-            .select("amount_applied")
-            .eq("payment_id", payment.id);
-          
-          const applied = applications?.reduce((sum, app) => sum + Number(app.amount_applied), 0) || 0;
-          const remaining = Number(payment.amount) - applied;
-          
-          return {
-            ...payment,
-            applied,
-            remaining
-          };
-        })
-      );
-      
-      return paymentsWithStatus as (Payment & { applied: number; remaining: number })[];
+      return data as Payment[];
     },
     enabled: !!id,
   });
@@ -421,7 +402,7 @@ const CustomerDetail = () => {
               {payments && payments.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
-                    <TableHeader>
+                     <TableHeader>
                         <TableRow>
                          <TableHead>Date</TableHead>
                          <TableHead>Vehicle</TableHead>
@@ -431,21 +412,21 @@ const CustomerDetail = () => {
                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment) => (
-                         <TableRow key={payment.id}>
-                           <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                           <TableCell>{payment.vehicles?.reg}</TableCell>
-                           <TableCell>
-                              <Badge variant={payment.payment_type === 'Rental' ? 'default' : payment.payment_type === 'InitialFee' ? 'secondary' : 'outline'}>
-                                {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                              </Badge>
-                           </TableCell>
-                           <TableCell>{payment.method || 'Cash'}</TableCell>
-                            <TableCell className="text-right font-medium">
-                              £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                       {payments.map((payment) => (
+                          <TableRow key={payment.id}>
+                            <TableCell>{new Date(payment.entry_date).toLocaleDateString()}</TableCell>
+                            <TableCell>{payment.vehicles?.reg}</TableCell>
+                            <TableCell>
+                               <Badge variant={payment.category === 'Rental' ? 'default' : payment.category === 'Initial Fees' ? 'secondary' : 'outline'}>
+                                 {payment.category === 'Initial Fees' ? 'Initial Fee' : payment.category}
+                               </Badge>
                             </TableCell>
-                         </TableRow>
-                       ))}
+                            <TableCell>{payment.payments?.method || 'Cash'}</TableCell>
+                             <TableCell className="text-right font-medium">
+                               £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                             </TableCell>
+                          </TableRow>
+                        ))}
                     </TableBody>
                   </Table>
                 </div>

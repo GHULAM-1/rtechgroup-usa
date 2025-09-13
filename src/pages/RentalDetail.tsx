@@ -94,17 +94,18 @@ const RentalDetail = () => {
   // Use the new rental balance hook
   const { data: rentalBalance } = useRentalBalance(id, rental?.customers?.id);
 
-  // Get total payments (cash received) for this rental directly from payments table
+  // Get total payments (cash received) from ledger entries
   const { data: totalPayments } = useQuery({
     queryKey: ["rental-total-payments", id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("payments")
+        .from("ledger_entries")
         .select("amount")
-        .eq("rental_id", id);
+        .eq("rental_id", id)
+        .eq("type", "Payment");
       
       if (error) throw error;
-      return data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+      return Math.abs(data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0);
     },
     enabled: !!id,
   });
@@ -117,14 +118,10 @@ const RentalDetail = () => {
     return <div>Rental not found</div>;
   }
 
-  // Calculate running balance
+  // Calculate running balance (charges positive, payments negative)
   let runningBalance = 0;
   const entriesWithBalance = ledgerEntries?.map(entry => {
-    if (entry.type === 'Charge') {
-      runningBalance += Number(entry.amount);
-    } else if (entry.type === 'Payment') {
-      runningBalance -= Number(entry.amount);
-    }
+    runningBalance += Number(entry.amount); // Charges are positive, payments are negative
     return { ...entry, runningBalance };
   }) || [];
 
@@ -315,10 +312,8 @@ const RentalDetail = () => {
                      <TableHead>Type</TableHead>
                      <TableHead>Category</TableHead>
                      <TableHead>Due Date</TableHead>
-                     <TableHead className="text-right">Amount</TableHead>
-                     <TableHead className="text-right">Remaining</TableHead>
-                     <TableHead className="text-right">Allocations</TableHead>
-                     <TableHead className="text-right">Running Balance</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Running Balance</TableHead>
                    </TableRow>
                  </TableHeader>
                 <TableBody>
@@ -334,22 +329,12 @@ const RentalDetail = () => {
                       <TableCell>
                         {entry.due_date ? new Date(entry.due_date).toLocaleDateString() : '-'}
                       </TableCell>
-                      <TableCell className={`text-right ${entry.type === 'Charge' ? 'text-red-600' : 'text-green-600'}`}>
-                        {entry.type === 'Charge' ? '+' : '-'}£{Number(entry.amount).toLocaleString()}
-                      </TableCell>
-                       <TableCell className="text-right">
-                         £{Number(entry.remaining_amount).toLocaleString()}
+                       <TableCell className={`text-right ${entry.type === 'Charge' ? 'text-red-600' : 'text-green-600'}`}>
+                         {entry.type === 'Payment' ? '+' : '-'}£{Math.abs(Number(entry.amount)).toLocaleString()}
                        </TableCell>
-                       <TableCell className="text-right text-sm">
-                         {paymentApplications?.filter(app => app.charge_entry_id === entry.id).map(app => (
-                           <div key={app.id} className="text-blue-600">
-                             £{Number(app.amount_applied).toLocaleString()} from payment
-                           </div>
-                         )) || '-'}
-                       </TableCell>
-                       <TableCell className={`text-right font-medium ${entry.runningBalance > 0 ? 'text-red-600' : entry.runningBalance < 0 ? 'text-green-600' : 'text-gray-600'}`}>
-                         £{Math.abs(entry.runningBalance).toLocaleString()}
-                       </TableCell>
+                        <TableCell className={`text-right font-medium ${entry.runningBalance > 0 ? 'text-red-600' : entry.runningBalance < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                          £{Math.abs(entry.runningBalance).toLocaleString()}
+                        </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

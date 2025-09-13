@@ -7,29 +7,20 @@ export const useCustomerBalance = (customerId: string | undefined) => {
     queryFn: async () => {
       if (!customerId) return 0;
       
-      // Get outstanding charges for this customer
-      const { data: charges, error: chargesError } = await supabase
+      // Get all ledger entries for this customer
+      const { data: entries, error } = await supabase
         .from("ledger_entries")
-        .select("remaining_amount")
-        .eq("customer_id", customerId)
-        .eq("type", "Charge")
-        .eq("category", "Rental");
+        .select("type, amount")
+        .eq("customer_id", customerId);
       
-      if (chargesError) throw chargesError;
+      if (error) throw error;
       
-      // Get unapplied credits (payments not yet applied to future charges)
-      const { data: credits, error: creditError } = await supabase
-        .from("payments")
-        .select("remaining_amount")
-        .eq("customer_id", customerId)
-        .in("status", ["Credit", "Partial"]);
+      // Calculate total: charges are positive, payments are negative
+      const total = entries?.reduce((sum, entry) => {
+        return sum + Number(entry.amount);
+      }, 0) || 0;
       
-      if (creditError) throw creditError;
-      
-      const totalOutstanding = charges?.reduce((sum, c) => sum + Number(c.remaining_amount), 0) || 0;
-      const totalCredit = credits?.reduce((sum, c) => sum + Number(c.remaining_amount), 0) || 0;
-      
-      return totalOutstanding - totalCredit;
+      return total;
     },
     enabled: !!customerId,
   });
@@ -41,29 +32,20 @@ export const useRentalBalance = (rentalId: string | undefined, customerId: strin
     queryFn: async () => {
       if (!rentalId || !customerId) return 0;
       
-      // Get outstanding charges for this rental
-      const { data: charges, error: chargesError } = await supabase
+      // Get all ledger entries for this rental
+      const { data: entries, error } = await supabase
         .from("ledger_entries")
-        .select("remaining_amount")
-        .eq("rental_id", rentalId)
-        .eq("type", "Charge")
-        .eq("category", "Rental");
+        .select("type, amount")
+        .eq("rental_id", rentalId);
       
-      if (chargesError) throw chargesError;
+      if (error) throw error;
       
-      // Get customer's total unapplied credits (can be applied to any rental)
-      const { data: credits, error: creditError } = await supabase
-        .from("payments")
-        .select("remaining_amount")
-        .eq("customer_id", customerId)
-        .in("status", ["Credit", "Partial"]);
+      // Calculate total: charges are positive, payments are negative  
+      const total = entries?.reduce((sum, entry) => {
+        return sum + Number(entry.amount);
+      }, 0) || 0;
       
-      if (creditError) throw creditError;
-      
-      const totalOutstanding = charges?.reduce((sum, c) => sum + Number(c.remaining_amount), 0) || 0;
-      const totalCredit = credits?.reduce((sum, c) => sum + Number(c.remaining_amount), 0) || 0;
-      
-      return totalOutstanding - totalCredit;
+      return total;
     },
     enabled: !!rentalId && !!customerId,
   });

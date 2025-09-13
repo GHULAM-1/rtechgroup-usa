@@ -9,29 +9,30 @@ import { formatInTimeZone } from "date-fns-tz";
 import { useState } from "react";
 import { AddPaymentDialog } from "./AddPaymentDialog";
 
-interface Payment {
+interface PaymentEntry {
   id: string;
   customer_id: string;
   rental_id: string;
   vehicle_id: string;
   amount: number;
-  payment_date: string;
-  method: string;
-  payment_type: string;
-  status: string;
-  remaining_amount: number;
+  entry_date: string;
+  category: string;
+  reference?: string;
   customers: {
     name: string;
   };
   vehicles: {
     reg: string;
   };
+  payments: {
+    method?: string;
+  };
 }
 
-const PaymentTypeBadge = ({ type }: { type: string }) => {
+const PaymentTypeBadge = ({ category }: { category: string }) => {
   const getVariant = () => {
-    switch (type) {
-      case 'InitialFee':
+    switch (category) {
+      case 'Initial Fees':
         return 'secondary';
       case 'Rental':
         return 'default';
@@ -44,7 +45,7 @@ const PaymentTypeBadge = ({ type }: { type: string }) => {
 
   return (
     <Badge variant={getVariant() as any} className="badge-status">
-      {type === 'InitialFee' ? 'Initial Fee' : type}
+      {category === 'Initial Fees' ? 'Initial Fee' : category}
     </Badge>
   );
 };
@@ -56,16 +57,18 @@ export const PaymentManagement = () => {
     queryKey: ["payments"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("payments")
+        .from("ledger_entries")
         .select(`
           *,
           customers(name),
-          vehicles(reg)
+          vehicles(reg),
+          payments(method)
         `)
-        .order("payment_date", { ascending: false });
+        .eq("type", "Payment")
+        .order("entry_date", { ascending: false });
       
       if (error) throw error;
-      return data as Payment[];
+      return data as PaymentEntry[];
     },
   });
 
@@ -108,16 +111,16 @@ export const PaymentManagement = () => {
                 {payments.map((payment) => (
                   <TableRow key={payment.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
-                      {formatInTimeZone(new Date(payment.payment_date), 'Europe/London', "dd/MM/yyyy")}
+                      {formatInTimeZone(new Date(payment.entry_date), 'Europe/London', "dd/MM/yyyy")}
                     </TableCell>
                     <TableCell>{payment.customers?.name}</TableCell>
                     <TableCell>{payment.vehicles?.reg}</TableCell>
                     <TableCell>
-                      <PaymentTypeBadge type={payment.payment_type} />
+                      <PaymentTypeBadge category={payment.category} />
                     </TableCell>
-                    <TableCell>{payment.method || 'Cash'}</TableCell>
+                    <TableCell>{payment.payments?.method || 'Cash'}</TableCell>
                     <TableCell className="text-right font-medium">
-                      £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                   </TableRow>
                 ))}

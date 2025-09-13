@@ -22,18 +22,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
-interface Payment {
+interface PaymentEntry {
   id: string;
   amount: number;
-  payment_date: string;
-  method: string | null;
-  payment_type: string;
-  status?: string;
-  remaining_amount?: number;
-  notes?: string;
+  entry_date: string;
+  category: string;
   customers: { name: string };
   vehicles: { reg: string } | null;
   rentals: { id: string } | null;
+  payments: { method?: string };
 }
 
 const paymentSchema = z.object({
@@ -111,32 +108,23 @@ const PaymentsList = () => {
     queryKey: ["payments-list", filter],
     queryFn: async () => {
       let query = supabase
-        .from("payments")
+        .from("ledger_entries")
         .select(`
           *,
           customers(name),
           vehicles(reg),
-          rentals(id)
+          rentals(id),
+          payments(method)
         `)
-        .order("payment_date", { ascending: false });
+        .eq("type", "Payment")
+        .order("entry_date", { ascending: false });
 
-      // Apply filters
-      if (filter === 'overdue') {
-        // This would need more complex logic to filter actual overdue payments
-      } else if (filter === 'due-today') {
-        const today = new Date().toISOString().split('T')[0];
-        query = query.eq("payment_date", today);
-      } else if (filter === 'upcoming') {
-        const today = new Date();
-        const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-        query = query
-          .gte("payment_date", today.toISOString().split('T')[0])
-          .lte("payment_date", nextWeek.toISOString().split('T')[0]);
-      }
+      // Apply filters - for now just return all
+      // In the future, we might filter by due date or other criteria
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as Payment[];
+      return data as PaymentEntry[];
     },
   });
 
@@ -473,21 +461,20 @@ const PaymentsList = () => {
             <div className="rounded-md border">
               <Table>
                  <TableHeader>
-                   <TableRow>
-                     <TableHead>Date</TableHead>
-                     <TableHead>Customer</TableHead>
-                     <TableHead>Vehicle</TableHead>
-                     <TableHead>Rental</TableHead>
-                     <TableHead>Type</TableHead>
-                     <TableHead>Method</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                   </TableRow>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Vehicle</TableHead>
+                    <TableHead>Rental</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
                  </TableHeader>
                 <TableBody>
-                  {payments.map((payment) => (
+                   {payments.map((payment) => (
                      <TableRow key={payment.id} className="hover:bg-muted/50">
-                       <TableCell>{formatInTimeZone(new Date(payment.payment_date), 'Europe/London', 'dd/MM/yyyy')}</TableCell>
+                       <TableCell>{formatInTimeZone(new Date(payment.entry_date), 'Europe/London', 'dd/MM/yyyy')}</TableCell>
                        <TableCell>{payment.customers?.name}</TableCell>
                        <TableCell>{payment.vehicles?.reg || '-'}</TableCell>
                        <TableCell>
@@ -503,24 +490,21 @@ const PaymentsList = () => {
                           <div className="flex gap-1">
                              <Badge 
                                variant={
-                                 payment.payment_type === 'Rental' ? 'default' :
-                                 payment.payment_type === 'InitialFee' ? 'secondary' :
-                                 payment.payment_type === 'Fine' ? 'destructive' : 'outline'
+                                 payment.category === 'Rental' ? 'default' :
+                                 payment.category === 'Initial Fees' ? 'secondary' :
+                                 payment.category === 'Fine' ? 'destructive' : 'outline'
                                }
                              >
-                               {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                               {payment.category === 'Initial Fees' ? 'Initial Fee' : payment.category}
                              </Badge>
                            </div>
                          </TableCell>
-                          <TableCell>{payment.method || 'Cash'}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {payment.notes || '-'}
-                        </TableCell>
+                          <TableCell>{payment.payments?.method || 'Cash'}</TableCell>
                         <TableCell className="text-right font-medium">
-                          £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>
                      </TableRow>
-                  ))}
+                   ))}
                 </TableBody>
               </Table>
             </div>

@@ -10,7 +10,7 @@ import { FileText, ArrowLeft, DollarSign, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddPaymentDialog } from "@/components/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
-import { useRentalBalance } from "@/hooks/useCustomerBalance";
+
 
 interface Rental {
   id: string;
@@ -91,8 +91,6 @@ const RentalDetail = () => {
     enabled: !!ledgerEntries?.length,
   });
 
-  // Use the new rental balance hook
-  const { data: rentalBalance } = useRentalBalance(id, rental?.customers?.id);
 
   // Get total payments (cash received) from ledger entries
   const { data: totalPayments } = useQuery({
@@ -130,18 +128,6 @@ const RentalDetail = () => {
   
   const outstandingBalance = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
 
-  // Helper to render balance chip
-  const renderBalanceChip = () => {
-    if (!rentalBalance && rentalBalance !== 0) return null;
-    
-    if (rentalBalance === 0) {
-      return <Badge variant="secondary" className="text-lg px-3 py-1">Settled</Badge>;
-    } else if (rentalBalance > 0) {
-      return <Badge variant="destructive" className="text-lg px-3 py-1">In Debt £{Math.abs(rentalBalance).toLocaleString()}</Badge>;
-    } else {
-      return <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">In Credit £{Math.abs(rentalBalance).toLocaleString()}</Badge>;
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -202,7 +188,7 @@ const RentalDetail = () => {
       </div>
 
       {/* Rental Summary */}
-      <div className="grid gap-6 md:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Total Charges</CardTitle>
@@ -247,14 +233,6 @@ const RentalDetail = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Balance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderBalanceChip()}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Rental Details */}

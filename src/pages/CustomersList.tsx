@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, Plus, Mail, Phone, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Users, Plus, Mail, Phone, Eye, Edit, Search } from "lucide-react";
+import { CustomerFormModal } from "@/components/CustomerFormModal";
 
 interface Customer {
   id: string;
@@ -40,6 +42,9 @@ const BalancePill = ({ balance, status }: { balance: number; status: string }) =
 
 const CustomersList = () => {
   const navigate = useNavigate();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers-list"],
@@ -102,6 +107,40 @@ const CustomersList = () => {
     },
   });
 
+  // Keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+        e.preventDefault();
+        handleAddCustomer();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleAddCustomer = () => {
+    setEditingCustomer(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditCustomer = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setIsModalOpen(true);
+  };
+
+  // Filter customers based on search term
+  const filteredCustomers = customers?.filter(customer => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      customer.name.toLowerCase().includes(search) ||
+      customer.email?.toLowerCase().includes(search) ||
+      customer.phone?.toLowerCase().includes(search)
+    );
+  });
+
   if (isLoading) {
     return <div>Loading customers...</div>;
   }
@@ -114,7 +153,7 @@ const CustomersList = () => {
           <h1 className="text-3xl font-bold">Customers</h1>
           <p className="text-muted-foreground">Manage customer accounts and view balance status</p>
         </div>
-        <Button className="bg-gradient-primary">
+        <Button className="bg-gradient-primary" onClick={handleAddCustomer}>
           <Plus className="h-4 w-4 mr-2" />
           Add Customer
         </Button>
@@ -132,7 +171,20 @@ const CustomersList = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {customers && customers.length > 0 ? (
+          {/* Search Bar */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search customers by name, email, or phone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          
+          {filteredCustomers && filteredCustomers.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -146,7 +198,7 @@ const CustomersList = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customers.map((customer) => {
+                  {filteredCustomers.map((customer) => {
                     const balance = balances?.[customer.id];
                     
                     return (
@@ -190,14 +242,24 @@ const CustomersList = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/customers/${customer.id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditCustomer(customer)}
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/customers/${customer.id}`)}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -210,7 +272,7 @@ const CustomersList = () => {
               <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No customers found</h3>
               <p className="text-muted-foreground mb-4">Add your first customer to get started</p>
-              <Button>
+              <Button onClick={handleAddCustomer}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Customer
               </Button>
@@ -218,6 +280,12 @@ const CustomersList = () => {
           )}
         </CardContent>
       </Card>
+
+      <CustomerFormModal 
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        customer={editingCustomer}
+      />
     </div>
   );
 };

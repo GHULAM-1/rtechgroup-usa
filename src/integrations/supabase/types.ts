@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_documents: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          document_name: string
+          document_type: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          insurance_provider: string | null
+          notes: string | null
+          policy_end_date: string | null
+          policy_number: string | null
+          policy_start_date: string | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          document_name: string
+          document_type: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          insurance_provider?: string | null
+          notes?: string | null
+          policy_end_date?: string | null
+          policy_number?: string | null
+          policy_start_date?: string | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          document_name?: string
+          document_type?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          insurance_provider?: string | null
+          notes?: string | null
+          policy_end_date?: string | null
+          policy_number?: string | null
+          policy_start_date?: string | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           created_at: string | null

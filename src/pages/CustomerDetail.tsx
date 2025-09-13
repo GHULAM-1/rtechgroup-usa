@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,8 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard } from "lucide-react";
+import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, AlertTriangle, FolderOpen, CalendarPlus, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
 
 interface Customer {
   id: string;
@@ -25,7 +27,7 @@ interface Rental {
   end_date: string;
   monthly_amount: number;
   status: string;
-  vehicles: { reg: string; make: string; model: string };
+  vehicles: { id: string; reg: string; make: string; model: string };
 }
 
 interface Payment {
@@ -36,9 +38,44 @@ interface Payment {
   vehicles: { reg: string };
 }
 
+interface Fine {
+  id: string;
+  reference_no: string;
+  issue_date: string;
+  due_date: string;
+  amount: number;
+  status: string;
+  type: string;
+  vehicles: { reg: string; make: string; model: string };
+}
+
+interface CustomerDocument {
+  id: string;
+  document_type: string;
+  document_name: string;
+  insurance_provider?: string;
+  policy_number?: string;
+  policy_start_date?: string;
+  policy_end_date?: string;
+  notes?: string;
+  uploaded_at: string;
+}
+
+interface VehicleHistory {
+  id: string;
+  reg: string;
+  make: string;
+  model: string;
+  colour: string;
+  start_date: string;
+  end_date?: string;
+  status: string;
+}
+
 const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -62,7 +99,7 @@ const CustomerDetail = () => {
         .from("rentals")
         .select(`
           *,
-          vehicles(reg, make, model)
+          vehicles(id, reg, make, model)
         `)
         .eq("customer_id", id)
         .order("created_at", { ascending: false });
@@ -91,6 +128,72 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
+  const { data: fines } = useQuery({
+    queryKey: ["customer-fines", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("fines")
+        .select(`
+          *,
+          vehicles(reg, make, model)
+        `)
+        .eq("customer_id", id)
+        .order("issue_date", { ascending: false });
+      
+      if (error) throw error;
+      return data as Fine[];
+    },
+    enabled: !!id,
+  });
+
+  const { data: documents } = useQuery({
+    queryKey: ["customer-documents", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customer_documents")
+        .select("*")
+        .eq("customer_id", id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data as CustomerDocument[];
+    },
+    enabled: !!id,
+  });
+
+  const { data: vehicleHistory } = useQuery({
+    queryKey: ["customer-vehicle-history", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rentals")
+        .select(`
+          vehicles(id, reg, make, model, colour),
+          start_date,
+          end_date,
+          status
+        `)
+        .eq("customer_id", id)
+        .order("start_date", { ascending: false });
+      
+      if (error) throw error;
+      
+      // Transform data to show vehicle history
+      const history = data?.map(rental => ({
+        id: rental.vehicles?.id || '',
+        reg: rental.vehicles?.reg || '',
+        make: rental.vehicles?.make || '',
+        model: rental.vehicles?.model || '',
+        colour: rental.vehicles?.colour || '',
+        start_date: rental.start_date,
+        end_date: rental.end_date,
+        status: rental.status,
+      })) || [];
+      
+      return history as VehicleHistory[];
+    },
+    enabled: !!id,
+  });
+
   const { data: balance } = useQuery({
     queryKey: ["customer-balance", id],
     queryFn: async () => {
@@ -98,21 +201,52 @@ const CustomerDetail = () => {
       
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("remaining_amount")
+        .select("amount, remaining_amount, type, due_date")
         .eq("customer_id", id)
-        .eq("type", "Charge")
-        .lte("due_date", today)
-        .gt("remaining_amount", 0);
+        .lte("due_date", today);
       
       if (error) throw error;
       
-      const totalDue = data?.reduce((sum, entry) => sum + Number(entry.remaining_amount), 0) || 0;
+      let totalDue = 0;
+      let availableCredit = 0;
+      let nextDueAmount = 0;
+      let nextDueDate = '';
       
+      // Calculate due/overdue charges and available credit
+      data?.forEach(entry => {
+        if (entry.type === 'Charge' && entry.remaining_amount > 0) {
+          totalDue += Number(entry.remaining_amount);
+        } else if (entry.type === 'Payment' && entry.remaining_amount === 0) {
+          availableCredit += Number(entry.amount);
+        }
+      });
+      
+      // Get next due payment
+      const { data: nextDue } = await supabase
+        .from("ledger_entries")
+        .select("amount, due_date")
+        .eq("customer_id", id)
+        .eq("type", "Charge")
+        .gt("remaining_amount", 0)
+        .gt("due_date", today)
+        .order("due_date", { ascending: true })
+        .limit(1);
+      
+      if (nextDue && nextDue.length > 0) {
+        nextDueAmount = Number(nextDue[0].amount);
+        nextDueDate = nextDue[0].due_date;
+      }
+      
+      const netBalance = totalDue - availableCredit;
       let status = 'Settled';
-      if (totalDue > 0) status = 'In Debt';
-      else if (totalDue < 0) status = 'In Credit';
+      if (netBalance > 0) status = 'In Debt';
+      else if (netBalance < 0) status = 'In Credit';
       
-      return { balance: totalDue, status };
+      return { 
+        balance: netBalance, 
+        status, 
+        nextDue: { amount: nextDueAmount, date: nextDueDate }
+      };
     },
     enabled: !!id,
   });
@@ -139,10 +273,24 @@ const CustomerDetail = () => {
             <p className="text-muted-foreground">{customer.type} Customer</p>
           </div>
         </div>
-        <Button>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Customer
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate(`/rentals/new?customer=${id}`)}>
+            <CalendarPlus className="h-4 w-4 mr-2" />
+            Add Rental
+          </Button>
+          <Button variant="outline" onClick={() => navigate(`/payments?customer=${id}`)}>
+            <DollarSign className="h-4 w-4 mr-2" />
+            Add Payment
+          </Button>
+          <Button variant="outline" onClick={() => navigate(`/fines/new?customer=${id}`)}>
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Upload Fine
+          </Button>
+          <Button>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Customer
+          </Button>
+        </div>
       </div>
 
       {/* Customer Info Cards */}
@@ -180,13 +328,20 @@ const CustomerDetail = () => {
           </CardHeader>
           <CardContent>
             {balance && (
-              <div className={`text-2xl font-bold ${
-                balance.status === 'In Debt' ? 'text-red-600' :
-                balance.status === 'In Credit' ? 'text-blue-600' : 'text-green-600'
-              }`}>
-                {balance.status}
-                {balance.balance !== 0 && (
-                  <div className="text-lg">£{Math.abs(balance.balance).toLocaleString()}</div>
+              <div className="space-y-2">
+                <div className={`text-2xl font-bold ${
+                  balance.status === 'In Debt' ? 'text-destructive' :
+                  balance.status === 'In Credit' ? 'text-blue-600' : 'text-green-600'
+                }`}>
+                  {balance.status}
+                  {balance.balance !== 0 && (
+                    <div className="text-lg">£{Math.abs(balance.balance).toLocaleString()}</div>
+                  )}
+                </div>
+                {balance.nextDue.amount > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Next due: £{balance.nextDue.amount.toLocaleString()} on {new Date(balance.nextDue.date).toLocaleDateString()}
+                  </div>
                 )}
               </div>
             )}
@@ -208,6 +363,12 @@ const CustomerDetail = () => {
               <span className="text-sm text-muted-foreground">Total Payments</span>
               <span className="font-medium">{payments?.length || 0}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Open Fines</span>
+              <span className="font-medium">
+                {fines?.filter(f => f.status === 'Open').length || 0}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -217,7 +378,9 @@ const CustomerDetail = () => {
         <TabsList>
           <TabsTrigger value="rentals">Rentals</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="fines">Fines</TabsTrigger>
+          <TabsTrigger value="vehicle-history">Vehicle History</TabsTrigger>
+          <TabsTrigger value="documents">Documents & IDs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="rentals">
@@ -250,7 +413,7 @@ const CustomerDetail = () => {
                             {rental.vehicles?.reg} ({rental.vehicles?.make} {rental.vehicles?.model})
                           </TableCell>
                           <TableCell>{new Date(rental.start_date).toLocaleDateString()}</TableCell>
-                          <TableCell>{new Date(rental.end_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{rental.end_date ? new Date(rental.end_date).toLocaleDateString() : 'Ongoing'}</TableCell>
                           <TableCell className="text-right">£{Number(rental.monthly_amount).toLocaleString()}</TableCell>
                           <TableCell>
                             <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'}>
@@ -322,20 +485,211 @@ const CustomerDetail = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="fines">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-primary" />
+                Fines
+              </CardTitle>
+              <CardDescription>All fines assigned to this customer</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {fines && fines.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Reference</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Issue Date</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fines.map((fine) => (
+                        <TableRow key={fine.id}>
+                          <TableCell className="font-medium">{fine.reference_no}</TableCell>
+                          <TableCell>
+                            {fine.vehicles?.reg} ({fine.vehicles?.make} {fine.vehicles?.model})
+                          </TableCell>
+                          <TableCell>{fine.type}</TableCell>
+                          <TableCell>{new Date(fine.issue_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(fine.due_date).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">£{Number(fine.amount).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge variant={fine.status === 'Paid' ? 'default' : 'destructive'}>
+                              {fine.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/fines/${fine.id}`)}
+                            >
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-center py-8 text-muted-foreground">No fines found</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="vehicle-history">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                Vehicle History
+              </CardTitle>
+              <CardDescription>All vehicles rented by this customer</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {vehicleHistory && vehicleHistory.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Registration</TableHead>
+                        <TableHead>Vehicle</TableHead>
+                        <TableHead>Colour</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {vehicleHistory.map((vehicle) => (
+                        <TableRow key={vehicle.id + vehicle.start_date}>
+                          <TableCell className="font-medium">{vehicle.reg}</TableCell>
+                          <TableCell>{vehicle.make} {vehicle.model}</TableCell>
+                          <TableCell>{vehicle.colour}</TableCell>
+                          <TableCell>{new Date(vehicle.start_date).toLocaleDateString()}</TableCell>
+                          <TableCell>{vehicle.end_date ? new Date(vehicle.end_date).toLocaleDateString() : 'Ongoing'}</TableCell>
+                          <TableCell>
+                            <Badge variant={vehicle.status === 'Active' ? 'default' : 'secondary'}>
+                              {vehicle.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/vehicles/${vehicle.id}`)}
+                            >
+                              View Vehicle
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <p className="text-center py-8 text-muted-foreground">No vehicle history found</p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="documents">
           <Card>
             <CardHeader>
-              <CardTitle>Documents</CardTitle>
-              <CardDescription>Customer documents and contracts</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderOpen className="h-5 w-5 text-primary" />
+                    Documents & IDs
+                  </CardTitle>
+                  <CardDescription>
+                    National Insurance, Driving Licence, Insurance certificates, Address proof, and other documents
+                  </CardDescription>
+                </div>
+                <Button onClick={() => setShowDocumentDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Document
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-center py-8 text-muted-foreground">
-                Document management feature coming soon
-              </p>
+              {documents && documents.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Document Type</TableHead>
+                        <TableHead>Name/Description</TableHead>
+                        <TableHead>Details</TableHead>
+                        <TableHead>Upload Date</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {documents.map((doc) => (
+                        <TableRow key={doc.id}>
+                          <TableCell>
+                            <Badge variant="outline">{doc.document_type}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{doc.document_name}</TableCell>
+                          <TableCell>
+                            {doc.document_type === 'Insurance Certificate' && (
+                              <div className="text-sm text-muted-foreground">
+                                {doc.insurance_provider && <div>Provider: {doc.insurance_provider}</div>}
+                                {doc.policy_number && <div>Policy: {doc.policy_number}</div>}
+                                {doc.policy_start_date && doc.policy_end_date && (
+                                  <div>
+                                    Valid: {new Date(doc.policy_start_date).toLocaleDateString()} - {new Date(doc.policy_end_date).toLocaleDateString()}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {doc.notes && <div className="text-sm text-muted-foreground">{doc.notes}</div>}
+                          </TableCell>
+                          <TableCell>{new Date(doc.uploaded_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm">
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No documents uploaded</h3>
+                  <p className="text-muted-foreground mb-4">Upload customer documents and IDs to get started</p>
+                  <Button onClick={() => setShowDocumentDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Document
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AddCustomerDocumentDialog
+        open={showDocumentDialog}
+        onOpenChange={setShowDocumentDialog}
+        customerId={id!}
+      />
     </div>
   );
 };

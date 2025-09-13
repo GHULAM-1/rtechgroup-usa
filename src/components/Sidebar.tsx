@@ -13,7 +13,8 @@ import {
   BarChart3,
   AlertCircle,
   Bookmark,
-  TrendingUp
+  TrendingUp,
+  Settings
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ const navigation = [
   { name: "P&L Dashboard", href: "/pl-dashboard", icon: TrendingUp },
   { name: "Reminders", href: "/reminders", icon: Bell },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Settings", href: "/settings", icon: Settings },
   { name: "Tests", href: "/test", icon: TestTube },
 ];
 

@@ -174,22 +174,38 @@ export const AddPaymentDialog = ({
         body: { paymentId: payment.id }
       });
 
-      // Check for HTTP errors
-      if (response.error) {
-        console.error('Edge function error:', response.error);
-        throw new Error(`Payment processing failed: ${response.error.message}`);
+      // Parse response data, handling both success and error cases
+      let responseData: any = {};
+      try {
+        responseData = response.data || {};
+      } catch (e) {
+        console.error('Failed to parse response data:', e);
       }
 
-      // Check for application errors with structured error handling
-      if (!response.data?.success) {
-        const errorMessage = response.data?.error || 'Payment processing failed';
-        const errorDetail = response.data?.detail || '';
-        console.error('Payment processing failed:', { error: errorMessage, detail: errorDetail });
+      // Log error details for debugging
+      if (responseData.detail) {
+        console.error('Payment processing detail:', responseData.detail);
+      }
+
+      // Check for HTTP errors or application errors
+      if (response.error || !responseData.success) {
+        const errorMessage = responseData.error || response.error?.message || 'Payment processing failed';
+        const errorDetail = responseData.detail || '';
+        
+        console.error('Payment processing failed:', { 
+          error: errorMessage, 
+          detail: errorDetail,
+          httpError: response.error 
+        });
         
         // Show detailed error message to user
+        const displayMessage = errorDetail ? 
+          `${errorMessage}: ${errorDetail}` : 
+          errorMessage;
+          
         toast({
           title: "Payment Processing Error",
-          description: errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage,
+          description: displayMessage,
           variant: "destructive",
         });
         return;

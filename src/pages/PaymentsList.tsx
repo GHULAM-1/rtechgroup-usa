@@ -448,14 +448,14 @@ const PaymentsList = () => {
                          <TableCell>{payment.method || 'Cash'}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <span>
-                                {(payment as any).status === 'Credit' 
-                                  ? "Held as Credit"
-                                  : (payment as any).status === 'Partial' 
-                                  ? `£${((payment as any).remaining_amount || 0).toFixed(2)} Credit`
-                                  : "Fully Applied"
-                                }
-                              </span>
+                               <span>
+                                 {(payment as any).status === 'Credit' 
+                                   ? "Unapplied Credit"
+                                   : (payment as any).status === 'Partial' 
+                                   ? `£${((payment as any).remaining_amount || 0).toFixed(2)} Credit`
+                                   : "Fully Applied"
+                                 }
+                               </span>
                             </div>
                           </TableCell>
                           <TableCell>

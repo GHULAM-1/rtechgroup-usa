@@ -83,11 +83,11 @@ const CustomersList = () => {
           };
         }
         
-        // Add due/overdue charges, subtract available credit (payments)
+        // Add due/overdue charges, subtract payments for unified balance calculation
         if (entry.type === 'Charge' && entry.remaining_amount > 0) {
           balanceMap[entry.customer_id].balance += Number(entry.remaining_amount);
         } else if (entry.type === 'Payment' && entry.remaining_amount === 0) {
-          // Available credit from fully applied payments
+          // Subtract payment amounts from balance (unified calculation: charges - payments)
           balanceMap[entry.customer_id].balance -= Number(entry.amount);
         }
       });

@@ -47,6 +47,112 @@ export type Database = {
         }
         Relationships: []
       }
+      fine_files: {
+        Row: {
+          file_name: string | null
+          file_url: string
+          fine_id: string | null
+          id: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          file_name?: string | null
+          file_url: string
+          fine_id?: string | null
+          id?: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          file_name?: string | null
+          file_url?: string
+          fine_id?: string | null
+          id?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fine_files_fine_id_fkey"
+            columns: ["fine_id"]
+            isOneToOne: false
+            referencedRelation: "fines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fines: {
+        Row: {
+          amount: number
+          created_at: string | null
+          customer_id: string | null
+          due_date: string
+          id: string
+          issue_date: string
+          liability: string | null
+          notes: string | null
+          reference_no: string | null
+          status: string | null
+          type: string
+          vehicle_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          customer_id?: string | null
+          due_date: string
+          id?: string
+          issue_date: string
+          liability?: string | null
+          notes?: string | null
+          reference_no?: string | null
+          status?: string | null
+          type: string
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          customer_id?: string | null
+          due_date?: string
+          id?: string
+          issue_date?: string
+          liability?: string | null
+          notes?: string | null
+          reference_no?: string | null
+          status?: string | null
+          type?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fines_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fines_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "fines_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fines_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
       ledger_entries: {
         Row: {
           amount: number
@@ -128,6 +234,30 @@ export type Database = {
             referencedColumns: ["vehicle_id"]
           },
         ]
+      }
+      login_attempts: {
+        Row: {
+          attempted_at: string | null
+          id: string
+          ip_address: string | null
+          success: boolean
+          username: string
+        }
+        Insert: {
+          attempted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          username: string
+        }
+        Update: {
+          attempted_at?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean
+          username?: string
+        }
+        Relationships: []
       }
       payment_applications: {
         Row: {
@@ -513,6 +643,39 @@ export type Database = {
           },
         ]
       }
+      users: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_login: string | null
+          password_hash: string
+          require_password_change: boolean
+          role: string
+          status: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_login?: string | null
+          password_hash: string
+          require_password_change?: boolean
+          role?: string
+          status?: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_login?: string | null
+          password_hash?: string
+          require_password_change?: boolean
+          role?: string
+          status?: string
+          username?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           acquisition_date: string | null
@@ -684,8 +847,29 @@ export type Database = {
       }
     }
     Functions: {
+      app_login: {
+        Args: { p_password: string; p_username: string }
+        Returns: {
+          id: string
+          require_password_change: boolean
+          role: string
+          username: string
+        }[]
+      }
       apply_payment: {
         Args: { payment_id: string }
+        Returns: undefined
+      }
+      fine_apply_payment_fifo: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      fine_create_charge: {
+        Args: { f_id: string }
+        Returns: string
+      }
+      fine_void_charge: {
+        Args: { f_id: string }
         Returns: undefined
       }
       generate_monthly_charges: {
@@ -729,6 +913,10 @@ export type Database = {
           whatsapp_opt_in: boolean
         }[]
       }
+      hash_password: {
+        Args: { password: string }
+        Returns: string
+      }
       payment_apply_fifo: {
         Args: { p_id: string }
         Returns: undefined
@@ -748,6 +936,10 @@ export type Database = {
       update_customer_balance: {
         Args: { customer_id: string }
         Returns: undefined
+      }
+      verify_password: {
+        Args: { provided_password: string; stored_hash: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -130,8 +130,23 @@ const CreateRental = () => {
           body: { paymentId: initialPayment.id }
         });
 
-        if (applyError) throw applyError;
-        if (!applyResult.success) throw new Error(applyResult.error || 'Initial payment processing failed');
+        if (applyError) {
+          // Handle new JSON error response format from edge function
+          let errorMessage = 'Initial payment processing failed';
+          try {
+            if (applyError.message) {
+              const errorData = JSON.parse(applyError.message);
+              errorMessage = errorData.error || errorData.detail || errorMessage;
+            }
+          } catch {
+            errorMessage = applyError.message || errorMessage;
+          }
+          throw new Error(errorMessage);
+        }
+        
+        if (!applyResult?.success) {
+          throw new Error(applyResult?.error || 'Initial payment processing failed');
+        }
       }
 
       // Update vehicle status to Rented

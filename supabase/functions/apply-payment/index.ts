@@ -51,31 +51,41 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
 
     console.log(`Payment ${paymentId}: ${category}, ${entryDate}, ${payment.amount}`);
 
-    // UPSERT Ledger entry (Payment, negative amount) - use ignoreDuplicates for idempotency
-    const { error: ledgerError } = await supabase
-      .from('ledger_entries')
-      .upsert([{
-        customer_id: payment.customer_id,
-        rental_id: payment.rental_id,
-        vehicle_id: payment.vehicle_id,
-        entry_date: entryDate,
-        type: 'Payment',
-        category: category,
-        amount: -Math.abs(payment.amount), // Ensure negative
-        due_date: entryDate,
-        remaining_amount: 0,
-        payment_id: payment.id
-      }], {
-        ignoreDuplicates: true
-      });
+    // Insert/Update Ledger entry - handle duplicates with try-catch
+    try {
+      const { error: ledgerError } = await supabase
+        .from('ledger_entries')
+        .insert([{
+          customer_id: payment.customer_id,
+          rental_id: payment.rental_id,
+          vehicle_id: payment.vehicle_id,
+          entry_date: entryDate,
+          type: 'Payment',
+          category: category,
+          amount: -Math.abs(payment.amount), // Ensure negative
+          due_date: entryDate,
+          remaining_amount: 0,
+          payment_id: payment.id
+        }]);
 
-    if (ledgerError) {
-      console.error('Ledger upsert error:', ledgerError);
-      return {
-        ok: false,
-        error: 'Failed to create ledger entry',
-        detail: ledgerError.message
-      };
+      if (ledgerError && !ledgerError.message.includes('duplicate key')) {
+        console.error('Ledger insert error:', ledgerError);
+        return {
+          ok: false,
+          error: 'Failed to create ledger entry',
+          detail: ledgerError.message
+        };
+      }
+    } catch (err) {
+      // Ignore duplicate key errors, log others
+      if (!err.message?.includes('duplicate key')) {
+        console.error('Ledger insert error:', err);
+        return {
+          ok: false,
+          error: 'Failed to create ledger entry',
+          detail: err.message
+        };
+      }
     }
 
     // The side column exists in pnl_entries (confirmed from schema)
@@ -97,19 +107,30 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
       pnlEntry.side = 'Revenue';
     }
 
-    const { error: pnlError } = await supabase
-      .from('pnl_entries')
-      .upsert([pnlEntry], {
-        ignoreDuplicates: true
-      });
+    // Insert/Update P&L entry - handle duplicates with try-catch
+    try {
+      const { error: pnlError } = await supabase
+        .from('pnl_entries')
+        .insert([pnlEntry]);
 
-    if (pnlError) {
-      console.error('P&L upsert error:', pnlError);
-      return {
-        ok: false,
-        error: 'Failed to create P&L entry',
-        detail: pnlError.message
-      };
+      if (pnlError && !pnlError.message.includes('duplicate key')) {
+        console.error('P&L insert error:', pnlError);
+        return {
+          ok: false,
+          error: 'Failed to create P&L entry',
+          detail: pnlError.message
+        };
+      }
+    } catch (err) {
+      // Ignore duplicate key errors, log others
+      if (!err.message?.includes('duplicate key')) {
+        console.error('P&L insert error:', err);
+        return {
+          ok: false,
+          error: 'Failed to create P&L entry',
+          detail: err.message
+        };
+      }
     }
 
     // Update payment status (no FIFO allocation yet)

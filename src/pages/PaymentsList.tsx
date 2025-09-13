@@ -382,29 +382,29 @@ const PaymentsList = () => {
                      />
                     </div>
 
-                    {/* Early Payment Controls */}
-                    <FormField
-                      control={form.control}
-                      name="is_early"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              Mark as early payment (hold as credit until charges become due)
-                            </FormLabel>
-                            <FormDescription>
-                              Credit is recorded now and will auto-apply as charges become due.
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
+                     {/* Early Payment Controls */}
+                     <FormField
+                       control={form.control}
+                       name="is_early"
+                       render={({ field }) => (
+                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                           <FormControl>
+                             <Checkbox
+                               checked={field.value}
+                               onCheckedChange={field.onChange}
+                             />
+                           </FormControl>
+                           <div className="space-y-1 leading-none">
+                             <FormLabel>
+                               Mark as early payment (hold as credit until next due)
+                             </FormLabel>
+                             <p className="text-xs text-muted-foreground">
+                               Early payments are held as credit and automatically applied to your next due charges.
+                             </p>
+                           </div>
+                         </FormItem>
+                       )}
+                     />
 
                    <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
@@ -484,30 +484,27 @@ const PaymentsList = () => {
                           </div>
                          </TableCell>
                          <TableCell>{payment.method || 'Cash'}</TableCell>
-                         <TableCell>
-                           {(() => {
-                             const remaining = (payment as any).remaining || 0;
-                             if (remaining === 0) {
-                               return "£0 (Fully Applied)";
-                             } else if (remaining === payment.amount) {
-                               return `£${remaining.toLocaleString()} (Unapplied)`;
-                             } else {
-                               return `£${remaining.toLocaleString()} (Partial)`;
-                             }
-                           })()}
-                         </TableCell>
-                         <TableCell>
-                           {(() => {
-                             const remaining = (payment as any).remaining || 0;
-                             if (remaining === 0) {
-                               return <Badge variant="default">Applied</Badge>;
-                             } else if (remaining === payment.amount) {
-                               return <Badge variant="secondary">Unapplied</Badge>;
-                             } else {
-                               return <Badge variant="outline">Part-applied</Badge>;
-                             }
-                           })()}
-                         </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span>
+                                {(payment as any).status === 'Credit' 
+                                  ? "Held as Credit"
+                                  : (payment as any).status === 'Partial' 
+                                  ? `£${((payment as any).remaining_amount || 0).toFixed(2)} Credit`
+                                  : "Fully Applied"
+                                }
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              (payment as any).status === 'Applied' ? 'default' :
+                              (payment as any).status === 'Credit' ? 'secondary' :
+                              (payment as any).status === 'Partial' ? 'outline' : 'default'
+                            }>
+                              {(payment as any).status || 'Applied'}
+                            </Badge>
+                          </TableCell>
                        <TableCell className="text-sm text-muted-foreground">
                          {payment.notes || '-'}
                        </TableCell>

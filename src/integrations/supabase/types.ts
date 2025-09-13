@@ -424,7 +424,9 @@ export type Database = {
           method: string | null
           payment_date: string
           payment_type: string
+          remaining_amount: number | null
           rental_id: string | null
+          status: string | null
           vehicle_id: string | null
         }
         Insert: {
@@ -436,7 +438,9 @@ export type Database = {
           method?: string | null
           payment_date?: string
           payment_type: string
+          remaining_amount?: number | null
           rental_id?: string | null
+          status?: string | null
           vehicle_id?: string | null
         }
         Update: {
@@ -448,7 +452,9 @@ export type Database = {
           method?: string | null
           payment_date?: string
           payment_type?: string
+          remaining_amount?: number | null
           rental_id?: string | null
+          status?: string | null
           vehicle_id?: string | null
         }
         Relationships: [
@@ -1366,6 +1372,10 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      payment_apply_fifo_v2: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       payment_auto_apply_due_credit: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -1377,6 +1387,14 @@ export type Database = {
       reapply_all_payments: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      reapply_all_payments_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          customers_affected: number
+          payments_processed: number
+          total_credit_applied: number
+        }[]
       }
       recalculate_vehicle_pl: {
         Args: { p_vehicle_id: string }

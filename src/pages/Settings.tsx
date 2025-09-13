@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 interface CompanyProfile {
@@ -30,6 +30,7 @@ interface ReminderSetting {
 const Settings = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('company');
+  const [isBackfilling, setIsBackfilling] = useState(false);
 
   // Company Profile Settings
   const { data: companyProfile, isLoading: loadingProfile } = useQuery({
@@ -160,6 +161,35 @@ const Settings = () => {
     updateReminderSettings.mutate(updatedSettings);
   };
 
+  const handleBackfillPayments = async () => {
+    setIsBackfilling(true);
+    try {
+      const { data, error } = await supabase.rpc("reapply_all_payments_v2");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Backfill Complete",
+        description: `Processed ${data[0]?.payments_processed || 0} payments, affected ${data[0]?.customers_affected || 0} customers, applied £${data[0]?.total_credit_applied?.toFixed(2) || '0.00'} in credit.`,
+      });
+      
+      // Invalidate all payment-related queries
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-credit"] });
+      
+    } catch (error) {
+      console.error("Backfill error:", error);
+      toast({
+        title: "Backfill Failed",
+        description: "Failed to reapply payments. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackfilling(false);
+    }
+  };
+
   if (loadingProfile || loadingReminders) {
     return <div>Loading settings...</div>;
   }
@@ -178,7 +208,7 @@ const Settings = () => {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Company Profile
@@ -186,6 +216,10 @@ const Settings = () => {
           <TabsTrigger value="reminders" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             Reminders
+          </TabsTrigger>
+          <TabsTrigger value="maintenance" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Maintenance
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -339,6 +373,56 @@ const Settings = () => {
           </Card>
         </TabsContent>
 
+        {/* Maintenance Tab */}
+        <TabsContent value="maintenance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-primary" />
+                Payment Maintenance
+              </CardTitle>
+              <CardDescription>
+                Tools to maintain payment data integrity and recompute balances.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-medium">Re-apply Credits & Recompute Balances</h4>
+                  <p className="text-sm text-muted-foreground">
+                    This will reprocess all payments using the latest auto-credit logic, 
+                    recompute customer balances, rental totals, and vehicle P&L revenue.
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleBackfillPayments} 
+                    disabled={isBackfilling}
+                    variant="outline"
+                  >
+                    {isBackfilling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Run Backfill
+                  </Button>
+                  <Badge variant="secondary" className="text-xs">
+                    Safe Operation
+                  </Badge>
+                </div>
+                
+                <div className="text-xs text-muted-foreground">
+                  <strong>What this does:</strong>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>Resets all payment applications and P&L revenue entries</li>
+                    <li>Reapplies all payments in chronological order using FIFO logic</li>
+                    <li>Updates payment status (Applied/Credit/Partial) based on allocation</li>
+                    <li>Recalculates customer balances and rental totals</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Integrations Tab */}
         <TabsContent value="integrations">
           <div className="space-y-6">
@@ -417,4 +501,5 @@ const Settings = () => {
   );
 };
 
+export { Settings };
 export default Settings;

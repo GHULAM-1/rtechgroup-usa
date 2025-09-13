@@ -28,18 +28,6 @@ const paymentSchema = z.object({
   method: z.string().min(1, "Payment method is required"),
   payment_type: z.enum(['Rental', 'Fine']).default('Rental'),
   is_early: z.boolean().default(false),
-  apply_from_date: z.date().optional(),
-}).refine((data) => {
-  if (data.is_early && !data.apply_from_date) {
-    return false;
-  }
-  if (data.is_early && data.apply_from_date && data.apply_from_date < data.payment_date) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Apply from date must be provided and cannot be before payment date",
-  path: ["apply_from_date"],
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -71,7 +59,6 @@ export const AddPaymentDialog = ({
       method: "Card",
       payment_type: "Rental",
       is_early: false,
-      apply_from_date: undefined,
     },
   });
 
@@ -93,7 +80,7 @@ export const AddPaymentDialog = ({
     },
   });
 
-  const isEarly = form.watch("is_early");
+  
 
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
@@ -149,7 +136,6 @@ export const AddPaymentDialog = ({
           method: data.method,
           payment_type: data.payment_type,
           is_early: data.is_early,
-          apply_from_date: data.apply_from_date ? formatInTimeZone(data.apply_from_date, 'Europe/London', 'yyyy-MM-dd') : null,
         })
         .select()
         .single();
@@ -276,59 +262,13 @@ export const AddPaymentDialog = ({
                     <FormLabel>
                       Mark as early payment (hold as credit until next due)
                     </FormLabel>
+                    <p className="text-xs text-muted-foreground">
+                      Early payments are held as credit and automatically applied to your next due charges.
+                    </p>
                   </div>
                 </FormItem>
               )}
             />
-
-            {isEarly && (
-              <FormField
-                control={form.control}
-                name="apply_from_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Apply From Date *</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              formatInTimeZone(field.value, 'Europe/London', "dd/MM/yyyy")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < form.getValues("payment_date")}
-                          fromYear={new Date().getFullYear()}
-                          toYear={new Date().getFullYear() + 2}
-                          captionLayout="dropdown-buttons"
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormDescription>
-                      Credit will auto-apply from this date to due charges.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <FormField
               control={form.control}

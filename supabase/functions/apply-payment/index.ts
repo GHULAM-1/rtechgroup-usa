@@ -94,25 +94,35 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
       console.log('Ledger entry created successfully:', ledgerEntry?.id);
     }
 
-    // Handle different payment types
-    if (category === 'Rental' && payment.rental_id) {
-      console.log(`Processing Rental payment - applying FIFO allocation to charges`);
+    // Handle FIFO allocation for Rental and Fine payments
+    if ((category === 'Rental' && payment.rental_id) || category === 'Fines') {
+      console.log(`Processing ${category} payment - applying FIFO allocation to charges`);
       
-      // FIFO allocation logic for rental payments
+      // FIFO allocation logic
       let remainingAmount = payment.amount;
       let totalAllocated = 0;
       
-      // Fetch outstanding charges for this rental in FIFO order (by due_date, then entry_date)
-      const { data: outstandingCharges, error: chargesError } = await supabase
+      // Build query for outstanding charges based on payment type
+      let chargesQuery = supabase
         .from('ledger_entries')
         .select('id, amount, remaining_amount, due_date, entry_date')
-        .eq('rental_id', payment.rental_id)
         .eq('type', 'Charge')
-        .eq('category', 'Rental')
+        .eq('category', category)
         .gt('remaining_amount', 0)
         .order('due_date', { ascending: true })
         .order('entry_date', { ascending: true })
         .order('id', { ascending: true });
+
+      // For rental payments, filter by rental_id
+      if (category === 'Rental') {
+        chargesQuery = chargesQuery.eq('rental_id', payment.rental_id);
+      } 
+      // For fine payments, filter by customer_id to apply across all customer fines
+      else if (category === 'Fines') {
+        chargesQuery = chargesQuery.eq('customer_id', payment.customer_id);
+      }
+
+      const { data: outstandingCharges, error: chargesError } = await chargesQuery;
       
       if (chargesError) {
         console.error('Error fetching outstanding charges:', chargesError);
@@ -123,7 +133,8 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
         };
       }
 
-      console.log(`Found ${outstandingCharges?.length || 0} outstanding charges for rental ${payment.rental_id}`);
+      const context = category === 'Rental' ? `rental ${payment.rental_id}` : `customer ${payment.customer_id}`;
+      console.log(`Found ${outstandingCharges?.length || 0} outstanding charges for ${context}`);
 
       // Apply payment to charges in FIFO order
       for (const charge of outstandingCharges || []) {
@@ -176,7 +187,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
             vehicle_id: payment.vehicle_id,
             entry_date: chargeDueDate,
             side: 'Revenue',
-            category: 'Rental',
+            category: category,
             amount: toApply,
             source_ref: `${paymentId}_${charge.id}`,
             customer_id: payment.customer_id
@@ -190,7 +201,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
         remainingAmount -= toApply;
       }
 
-      console.log(`Rental payment allocation complete: £${totalAllocated} allocated, £${remainingAmount} remaining`);
+      console.log(`${category} payment allocation complete: £${totalAllocated} allocated, £${remainingAmount} remaining`);
       
       // Update payment status based on allocation
       let paymentStatus = 'Applied';

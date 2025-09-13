@@ -117,6 +117,26 @@ export default function VehicleDetail() {
     enabled: !!id,
   });
 
+  // Fetch fines
+  const { data: fines } = useQuery({
+    queryKey: ["vehicle-fines", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("fines")
+        .select(`
+          *,
+          customers(name)
+        `)
+        .eq("vehicle_id", id)
+        .order("issue_date", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+  });
+
   // Calculate P&L summary
   const plSummary = plEntries?.reduce(
     (acc, entry) => {
@@ -189,11 +209,12 @@ export default function VehicleDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
           <TabsTrigger value="rentals">Rentals</TabsTrigger>
+          <TabsTrigger value="fines">Fines</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="pl">P&L</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
@@ -454,6 +475,71 @@ export default function VehicleDetail() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   No rentals found for this vehicle
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="fines" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fines</CardTitle>
+              <CardDescription>All fines associated with this vehicle</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {fines && fines.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Reference</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Issue Date</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fines.map((fine) => (
+                        <TableRow key={fine.id}>
+                          <TableCell className="font-medium">{fine.reference_no || fine.id.slice(0, 8)}</TableCell>
+                          <TableCell>{fine.customers?.name || 'No customer'}</TableCell>
+                          <TableCell>{fine.type}</TableCell>
+                          <TableCell>{format(new Date(fine.issue_date), "dd/MM/yyyy")}</TableCell>
+                          <TableCell className={new Date(fine.due_date) < new Date() && fine.status !== 'Paid' ? 'text-red-600 font-medium' : ''}>
+                            {format(new Date(fine.due_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>£{Number(fine.amount).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              fine.status === 'Paid' ? 'default' :
+                              fine.status === 'Open' ? 'destructive' :
+                              fine.status === 'Partially Paid' ? 'secondary' : 'outline'
+                            }>
+                              {fine.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/fines/${fine.id}`)}
+                            >
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No fines found for this vehicle
                 </div>
               )}
             </CardContent>

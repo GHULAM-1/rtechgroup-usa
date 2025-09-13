@@ -26,7 +26,7 @@ const paymentSchema = z.object({
     required_error: "Payment date is required",
   }),
   method: z.string().min(1, "Payment method is required"),
-  payment_type: z.enum(['Rental', 'InitialFee', 'Other']).default('Rental'),
+  payment_type: z.enum(['Rental', 'InitialFee', 'Fine', 'Other']).default('Rental'),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -409,11 +409,12 @@ export const AddPaymentDialog = ({
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Rental">Rental Payment</SelectItem>
-                      <SelectItem value="InitialFee">Initial Fee</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
-                    </SelectContent>
+                     <SelectContent>
+                       <SelectItem value="Rental">Rental Payment</SelectItem>
+                       <SelectItem value="InitialFee">Initial Fee</SelectItem>
+                       <SelectItem value="Fine">Fine Payment</SelectItem>
+                       <SelectItem value="Other">Other</SelectItem>
+                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>

@@ -18,6 +18,9 @@ import ReminderSettings from "@/pages/ReminderSettings";
 import Reports from "@/pages/Reports";
 import { AcceptanceTestDashboard } from "@/components/AcceptanceTestDashboard";
 import FinesPage from "@/pages/FinesPage";
+import FinesList from "@/pages/FinesList";
+import CreateFine from "@/pages/CreateFine";
+import FineDetail from "@/pages/FineDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,7 +44,10 @@ const App = () => (
           <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
           <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />
           <Route path="/reports" element={<Layout><Reports /></Layout>} />
-          <Route path="/fines" element={<Layout><FinesPage /></Layout>} />
+          <Route path="/fines-old" element={<Layout><FinesPage /></Layout>} />
+          <Route path="/fines" element={<Layout><FinesList /></Layout>} />
+          <Route path="/fines/new" element={<Layout><CreateFine /></Layout>} />
+          <Route path="/fines/:id" element={<Layout><FineDetail /></Layout>} />
           <Route path="/test" element={<Layout><AcceptanceTestDashboard /></Layout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

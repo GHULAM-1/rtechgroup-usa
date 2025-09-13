@@ -93,10 +93,134 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
       }
     }
 
-    // The side column exists in pnl_entries (confirmed from schema)
-    const hasSideColumn = true;
+    // Handle different payment types
+    if (category === 'Rental' && payment.rental_id) {
+      console.log(`Processing Rental payment - applying FIFO allocation to charges`);
+      
+      // FIFO allocation logic for rental payments
+      let remainingAmount = payment.amount;
+      let totalAllocated = 0;
+      
+      // Fetch outstanding charges for this rental in FIFO order (by due_date, then entry_date)
+      const { data: outstandingCharges, error: chargesError } = await supabase
+        .from('ledger_entries')
+        .select('id, amount, remaining_amount, due_date, entry_date')
+        .eq('rental_id', payment.rental_id)
+        .eq('type', 'Charge')
+        .eq('category', 'Rental')
+        .gt('remaining_amount', 0)
+        .order('due_date', { ascending: true })
+        .order('entry_date', { ascending: true })
+        .order('id', { ascending: true });
+      
+      if (chargesError) {
+        console.error('Error fetching outstanding charges:', chargesError);
+        return {
+          ok: false,
+          error: 'Failed to fetch outstanding charges',
+          detail: chargesError.message
+        };
+      }
 
-    // UPSERT P&L entry (Revenue, positive amount)
+      console.log(`Found ${outstandingCharges?.length || 0} outstanding charges for rental ${payment.rental_id}`);
+
+      // Apply payment to charges in FIFO order
+      for (const charge of outstandingCharges || []) {
+        if (remainingAmount <= 0) break;
+
+        const toApply = Math.min(remainingAmount, charge.remaining_amount);
+        const chargeDueDate = charge.due_date;
+
+        console.log(`Applying £${toApply} to charge ${charge.id} (due ${chargeDueDate})`);
+
+        // Create payment application record
+        const { error: applicationError } = await supabase
+          .from('payment_applications')
+          .insert({
+            payment_id: paymentId,
+            charge_entry_id: charge.id,
+            amount_applied: toApply
+          });
+
+        if (applicationError && !applicationError.message.includes('duplicate key')) {
+          console.error('Payment application error:', applicationError);
+          return {
+            ok: false,
+            error: 'Failed to create payment application',
+            detail: applicationError.message
+          };
+        }
+
+        // Update charge remaining amount
+        const { error: chargeUpdateError } = await supabase
+          .from('ledger_entries')
+          .update({
+            remaining_amount: charge.remaining_amount - toApply
+          })
+          .eq('id', charge.id);
+
+        if (chargeUpdateError) {
+          console.error('Charge update error:', chargeUpdateError);
+          return {
+            ok: false,
+            error: 'Failed to update charge',
+            detail: chargeUpdateError.message
+          };
+        }
+
+        // Create P&L revenue entry for the applied amount (booked on charge due date for FIFO)
+        const { error: pnlRevenueError } = await supabase
+          .from('pnl_entries')
+          .insert({
+            vehicle_id: payment.vehicle_id,
+            entry_date: chargeDueDate,
+            side: 'Revenue',
+            category: 'Rental',
+            amount: toApply,
+            source_ref: `${paymentId}_${charge.id}`,
+            customer_id: payment.customer_id
+          });
+
+        if (pnlRevenueError && !pnlRevenueError.message.includes('duplicate key')) {
+          console.error('P&L revenue entry error:', pnlRevenueError);
+        }
+
+        totalAllocated += toApply;
+        remainingAmount -= toApply;
+      }
+
+      console.log(`Rental payment allocation complete: £${totalAllocated} allocated, £${remainingAmount} remaining`);
+      
+      // Update payment status based on allocation
+      let paymentStatus = 'Applied';
+      if (remainingAmount > 0) {
+        paymentStatus = remainingAmount === payment.amount ? 'Credit' : 'Partial';
+      }
+
+      const { error: paymentUpdateError } = await supabase
+        .from('payments')
+        .update({ 
+          status: paymentStatus, 
+          remaining_amount: remainingAmount 
+        })
+        .eq('id', paymentId);
+
+      if (paymentUpdateError) {
+        console.error('Payment update error:', paymentUpdateError);
+      }
+
+      return {
+        ok: true,
+        paymentId: paymentId,
+        category: category,
+        entryDate: entryDate,
+        allocated: totalAllocated,
+        remaining: remainingAmount,
+        status: paymentStatus
+      };
+    }
+
+    // For non-rental payments (Initial Fees, etc.), create immediate P&L entry
     const pnlEntry: any = {
       vehicle_id: payment.vehicle_id,
       rental_id: payment.rental_id,
@@ -105,12 +229,9 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
       category: category,
       amount: Math.abs(payment.amount), // Ensure positive
       reference: payment.id,
-      payment_id: payment.id
+      payment_id: payment.id,
+      side: 'Revenue'
     };
-
-    if (hasSideColumn) {
-      pnlEntry.side = 'Revenue';
-    }
 
     // Insert/Update P&L entry - handle duplicates with try-catch
     try {

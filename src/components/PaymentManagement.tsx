@@ -15,9 +15,11 @@ interface PaymentEntry {
   rental_id: string;
   vehicle_id: string;
   amount: number;
-  entry_date: string;
-  category: string;
-  reference?: string;
+  payment_date: string;
+  payment_type: string;
+  method?: string;
+  status?: string;
+  remaining_amount?: number;
   customers: {
     name: string;
   };
@@ -26,10 +28,10 @@ interface PaymentEntry {
   };
 }
 
-const PaymentTypeBadge = ({ category }: { category: string }) => {
+const PaymentTypeBadge = ({ payment_type }: { payment_type: string }) => {
   const getVariant = () => {
-    switch (category) {
-      case 'Initial Fees':
+    switch (payment_type) {
+      case 'InitialFee':
         return 'secondary';
       case 'Rental':
         return 'default';
@@ -42,7 +44,28 @@ const PaymentTypeBadge = ({ category }: { category: string }) => {
 
   return (
     <Badge variant={getVariant() as any} className="badge-status">
-      {category === 'Initial Fees' ? 'Initial Fee' : category}
+      {payment_type === 'InitialFee' ? 'Initial Fee' : payment_type}
+    </Badge>
+  );
+};
+
+const PaymentStatusBadge = ({ status, remaining_amount }: { status?: string; remaining_amount?: number }) => {
+  const getStatusInfo = () => {
+    if (remaining_amount === 0 || status === 'Applied') {
+      return { variant: 'default', text: 'Applied' };
+    } else if (remaining_amount && remaining_amount > 0 && status === 'Partial') {
+      return { variant: 'secondary', text: 'Partial' };
+    } else if (remaining_amount && remaining_amount > 0 && status === 'Credit') {
+      return { variant: 'secondary', text: 'Credit' };
+    } else {
+      return { variant: 'outline', text: status || 'Unknown' };
+    }
+  };
+
+  const statusInfo = getStatusInfo();
+  return (
+    <Badge variant={statusInfo.variant as any} className="badge-status">
+      {statusInfo.text}
     </Badge>
   );
 };
@@ -54,17 +77,16 @@ export const PaymentManagement = () => {
     queryKey: ["payments"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("ledger_entries")
+        .from("payments")
         .select(`
           *,
           customers(name),
           vehicles(reg)
         `)
-        .eq("type", "Payment")
-        .order("entry_date", { ascending: false });
+        .order("payment_date", { ascending: false });
       
       if (error) throw error;
-      return data as PaymentEntry[];
+      return data;
     },
   });
 
@@ -100,23 +122,31 @@ export const PaymentManagement = () => {
                   <TableHead>Vehicle</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Method</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Remaining</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payments.map((payment) => (
                   <TableRow key={payment.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
-                      {formatInTimeZone(new Date(payment.entry_date), 'Europe/London', "dd/MM/yyyy")}
+                      {formatInTimeZone(new Date(payment.payment_date), 'Europe/London', "dd/MM/yyyy")}
                     </TableCell>
                     <TableCell>{payment.customers?.name}</TableCell>
                     <TableCell>{payment.vehicles?.reg}</TableCell>
                     <TableCell>
-                      <PaymentTypeBadge category={payment.category} />
+                      <PaymentTypeBadge payment_type={payment.payment_type} />
                     </TableCell>
-                    <TableCell>Cash</TableCell>
+                    <TableCell>{payment.method || 'N/A'}</TableCell>
+                    <TableCell>
+                      <PaymentStatusBadge status={payment.status} remaining_amount={payment.remaining_amount} />
+                    </TableCell>
                     <TableCell className="text-right font-medium">
-                      £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      £{Number(payment.remaining_amount || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                   </TableRow>
                 ))}

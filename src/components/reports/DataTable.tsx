@@ -77,6 +77,40 @@ export const DataTable: React.FC<DataTableProps> = ({ reportType, filters }) => 
           return data;
         }
 
+        case 'customer-statements': {
+          let query = supabase
+            .from('view_customer_statements')
+            .select('*')
+            .gte('entry_date', fromDate)
+            .lte('entry_date', toDate)
+            .range(offset, offset + ROWS_PER_PAGE - 1);
+
+          if (filters.customers.length > 0) {
+            query = query.in('customer_id', filters.customers);
+          }
+
+          const { data, error } = await query;
+          if (error) throw error;
+          return data;
+        }
+
+        case 'fines': {
+          let query = supabase
+            .from('view_fines_export')
+            .select('*')
+            .gte('issue_date', fromDate)
+            .lte('issue_date', toDate)
+            .range(offset, offset + ROWS_PER_PAGE - 1);
+
+          if (filters.customers.length > 0) {
+            // Filtering will need to be done by customer_name for this view
+          }
+
+          const { data, error } = await query;
+          if (error) throw error;
+          return data;
+        }
+
         case 'aging': {
           const { data, error } = await supabase
             .from('view_aging_receivables')
@@ -125,6 +159,30 @@ export const DataTable: React.FC<DataTableProps> = ({ reportType, filters }) => 
           { key: 'monthly_amount', label: 'Monthly Amount', type: 'currency' },
           { key: 'status', label: 'Status' },
           { key: 'balance', label: 'Balance', type: 'currency' }
+        ];
+      case 'customer-statements':
+        return [
+          { key: 'customer_name', label: 'Customer' },
+          { key: 'entry_date', label: 'Date', type: 'date' },
+          { key: 'type', label: 'Type' },
+          { key: 'category', label: 'Category' },
+          { key: 'vehicle_reg', label: 'Vehicle' },
+          { key: 'transaction_amount', label: 'Amount', type: 'currency' },
+          { key: 'running_balance', label: 'Balance', type: 'currency' }
+        ];
+      case 'fines':
+        return [
+          { key: 'reference_no', label: 'Reference' },
+          { key: 'type', label: 'Type' },
+          { key: 'customer_name', label: 'Customer' },
+          { key: 'vehicle_reg', label: 'Vehicle' },
+          { key: 'issue_date', label: 'Issue Date', type: 'date' },
+          { key: 'due_date', label: 'Due Date', type: 'date' },
+          { key: 'amount', label: 'Amount', type: 'currency' },
+          { key: 'remaining_amount', label: 'Remaining', type: 'currency' },
+          { key: 'liability', label: 'Liability' },
+          { key: 'status', label: 'Status' },
+          { key: 'appeal_status', label: 'Appeal Status' }
         ];
       case 'aging':
         return [

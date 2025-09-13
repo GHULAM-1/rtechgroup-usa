@@ -105,6 +105,46 @@ serve(async (req) => {
         break;
       }
 
+      case 'customer-statements': {
+        let query = supabaseClient
+          .from('view_customer_statements')
+          .select('*')
+          .gte('entry_date', filters.fromDate)
+          .lte('entry_date', filters.toDate);
+
+        if (filters.customers.length > 0) {
+          query = query.in('customer_id', filters.customers);
+        }
+
+        const { data: statementsData, error } = await query.order('customer_id, entry_date');
+        if (error) throw error;
+
+        data = statementsData || [];
+        headers = [
+          'Customer', 'Entry Date', 'Type', 'Category', 'Vehicle Reg', 
+          'Transaction Amount (£)', 'Running Balance (£)', 'Customer Email', 'Customer Phone'
+        ];
+        break;
+      }
+
+      case 'fines': {
+        let query = supabaseClient
+          .from('view_fines_export')
+          .select('*')
+          .gte('issue_date', filters.fromDate)
+          .lte('issue_date', filters.toDate);
+
+        const { data: finesData, error } = await query;
+        if (error) throw error;
+
+        data = finesData || [];
+        headers = [
+          'Reference No', 'Type', 'Customer', 'Vehicle Reg', 'Issue Date', 'Due Date',
+          'Amount (£)', 'Remaining (£)', 'Liability', 'Status', 'Appeal Status', 'Notes'
+        ];
+        break;
+      }
+
       case 'aging': {
         const { data: agingData, error } = await supabaseClient
           .from('view_aging_receivables')
@@ -200,6 +240,35 @@ serve(async (req) => {
               formatCsvValue(row.status),
               formatCurrency(row.initial_fee_amount),
               formatCurrency(row.balance)
+            );
+            break;
+          case 'customer-statements':
+            csvRow.push(
+              formatCsvValue(row.customer_name),
+              formatCsvValue(formatDate(row.entry_date)),
+              formatCsvValue(row.type),
+              formatCsvValue(row.category),
+              formatCsvValue(row.vehicle_reg),
+              formatCurrency(row.transaction_amount),
+              formatCurrency(row.running_balance),
+              formatCsvValue(row.customer_email),
+              formatCsvValue(row.customer_phone)
+            );
+            break;
+          case 'fines':
+            csvRow.push(
+              formatCsvValue(row.reference_no),
+              formatCsvValue(row.type),
+              formatCsvValue(row.customer_name),
+              formatCsvValue(row.vehicle_reg),
+              formatCsvValue(formatDate(row.issue_date)),
+              formatCsvValue(formatDate(row.due_date)),
+              formatCurrency(row.amount),
+              formatCurrency(row.remaining_amount),
+              formatCsvValue(row.liability),
+              formatCsvValue(row.status),
+              formatCsvValue(row.appeal_status),
+              formatCsvValue(row.notes)
             );
             break;
           case 'aging':

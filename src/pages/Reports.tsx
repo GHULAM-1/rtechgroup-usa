@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format, subDays } from 'date-fns';
-import { BarChart3, Download, FileText, TrendingUp, Users, Car, Calendar, CreditCard, Clock } from 'lucide-react';
+import { BarChart3, Download, FileText, TrendingUp, Users, Car, Calendar, CreditCard, Clock, AlertTriangle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,6 +66,13 @@ const Reports = () => {
         .from('view_aging_receivables')
         .select('*');
 
+      // Get fines data
+      const { data: fines } = await supabase
+        .from('view_fines_export')
+        .select('fine_id, amount, remaining_amount')
+        .gte('issue_date', fromDate)
+        .lte('issue_date', toDate);
+
       return {
         payments: {
           count: payments?.length || 0,
@@ -82,6 +89,10 @@ const Reports = () => {
           count: rentals?.length || 0,
           totalBalance: rentals?.reduce((sum, r) => sum + Number(r.balance), 0) || 0
         },
+        fines: {
+          count: fines?.length || 0,
+          totalOutstanding: fines?.reduce((sum, f) => sum + Number(f.remaining_amount), 0) || 0
+        },
         aging: {
           count: aging?.length || 0,
           totalDue: aging?.reduce((sum, a) => sum + Number(a.total_due), 0) || 0
@@ -94,7 +105,7 @@ const Reports = () => {
     {
       id: 'payments',
       title: 'Payments Export',
-      description: 'Applied/unapplied payment analysis',
+      description: 'Applied/unapplied payment analysis (CSV/XLSX)',
       icon: CreditCard,
       value: `£${reportStats?.payments.totalAmount?.toLocaleString() || '0'}`,
       subtitle: `${reportStats?.payments.count || 0} payments`,
@@ -103,7 +114,7 @@ const Reports = () => {
     {
       id: 'pl-report',
       title: 'P&L Report',
-      description: 'Vehicle & consolidated profit/loss',
+      description: 'Vehicle & consolidated profit/loss (CSV/XLSX)',
       icon: TrendingUp,
       value: `£${reportStats?.pl.net_profit?.toLocaleString() || '0'}`,
       subtitle: 'Net Profit',
@@ -112,7 +123,7 @@ const Reports = () => {
     {
       id: 'customer-statements',
       title: 'Customer Statements',
-      description: 'Individual customer transaction history',
+      description: 'Ledger-based with running balance (PDF/CSV/XLSX)',
       icon: FileText,
       value: `${reportStats?.aging.count || 0}`,
       subtitle: 'Customers with balances',
@@ -121,16 +132,25 @@ const Reports = () => {
     {
       id: 'rentals',
       title: 'Rentals Export',
-      description: 'Active rental agreements & balances',
+      description: 'Active rentals with computed balance (CSV/XLSX)',
       icon: Car,
       value: `${reportStats?.rentals.count || 0}`,
       subtitle: 'Active rentals',
       metadata: `Outstanding: £${reportStats?.rentals.totalBalance?.toLocaleString() || '0'}`
     },
     {
+      id: 'fines',
+      title: 'Fines Export',
+      description: 'Comprehensive fine data with status (CSV/XLSX)',
+      icon: AlertTriangle,
+      value: `${reportStats?.fines?.count || 0}`,
+      subtitle: 'Total fines',
+      metadata: `Outstanding: £${reportStats?.fines?.totalOutstanding?.toLocaleString() || '0'}`
+    },
+    {
       id: 'aging',
-      title: 'Aging Report',
-      description: 'Receivables by age buckets',
+      title: 'Aging Receivables',
+      description: 'Age buckets 0-30/31-60/61-90/90+ days (CSV/XLSX)',
       icon: Clock,
       value: `£${reportStats?.aging.totalDue?.toLocaleString() || '0'}`,
       subtitle: 'Total overdue',

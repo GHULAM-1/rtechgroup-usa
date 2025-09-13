@@ -107,8 +107,8 @@ const RemindersPage = () => {
     if (reminder.rental_id) {
       navigate(`/rentals/${reminder.rental_id}`);
     } else {
-      // Assume it's a fine if no rental_id
-      navigate(`/fines`);
+      // Check if it's a fine charge by looking at ledger entry
+      navigate(`/charges?filter=outstanding`);
     }
   };
 

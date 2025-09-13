@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell } from "lucide-react";
+import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock } from "lucide-react";
 
 interface DashboardWidget {
   title: string;

@@ -6,18 +6,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CreditCard, Plus, Car, Download, FileUp, Unlink, Link } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Search, Download, Car, FileText } from "lucide-react";
 import { AddPlateDialog } from "@/components/AddPlateDialog";
 import { AssignPlateDialog } from "@/components/AssignPlateDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface Plate {
   id: string;
   plate_number: string;
-  retention_doc_reference?: string;
-  assigned_vehicle_id?: string;
-  notes?: string;
-  document_url?: string;
-  document_name?: string;
+  retention_doc_reference: string;
+  assigned_vehicle_id: string;
+  notes: string;
+  document_url: string;
+  document_name: string;
   created_at: string;
   vehicles?: {
     id: string;
@@ -29,10 +31,13 @@ interface Plate {
 
 const PlatesList = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [assignPlateId, setAssignPlateId] = useState<string | null>(null);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [selectedPlate, setSelectedPlate] = useState<Plate | null>(null);
 
-  const { data: plates, isLoading } = useQuery({
+  const { data: plates, isLoading, refetch } = useQuery({
     queryKey: ["plates"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -48,6 +53,17 @@ const PlatesList = () => {
     },
   });
 
+  const filteredPlates = plates?.filter(plate =>
+    plate.plate_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plate.retention_doc_reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plate.vehicles?.reg?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const handleAssignPlate = (plate: Plate) => {
+    setSelectedPlate(plate);
+    setShowAssignDialog(true);
+  };
+
   const handleUnassignPlate = async (plateId: string) => {
     try {
       const { error } = await supabase
@@ -56,38 +72,57 @@ const PlatesList = () => {
         .eq("id", plateId);
 
       if (error) throw error;
-      
-      // Refresh the data
-      window.location.reload();
+
+      toast({
+        title: "Success",
+        description: "Plate unassigned successfully",
+      });
+
+      refetch();
     } catch (error) {
-      console.error("Error unassigning plate:", error);
+      toast({
+        title: "Error",
+        description: "Failed to unassign plate",
+        variant: "destructive",
+      });
     }
   };
 
   const handleExportCSV = () => {
-    if (!plates || plates.length === 0) return;
+    if (!plates || plates.length === 0) {
+      toast({
+        title: "No data",
+        description: "No plates to export",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const headers = ["Plate Number", "Retention Doc Reference", "Assigned Vehicle", "Notes", "Created Date"];
-    const csvData = [
-      headers.join(","),
-      ...plates.map(plate => [
-        `"${plate.plate_number}"`,
-        `"${plate.retention_doc_reference || ''}"`,
-        `"${plate.vehicles ? `${plate.vehicles.reg} (${plate.vehicles.make} ${plate.vehicles.model})` : 'Unassigned'}"`,
-        `"${plate.notes || ''}"`,
-        `"${new Date(plate.created_at).toLocaleDateString()}"`
-      ].join(","))
-    ].join("\n");
+    const csvHeaders = ["Plate Number", "Retention Doc Reference", "Assigned Vehicle", "Notes", "Created Date"];
+    const csvData = plates.map(plate => [
+      plate.plate_number,
+      plate.retention_doc_reference || "",
+      plate.vehicles ? `${plate.vehicles.reg} (${plate.vehicles.make} ${plate.vehicles.model})` : "Not Assigned",
+      plate.notes || "",
+      new Date(plate.created_at).toLocaleDateString()
+    ]);
 
-    const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+    const csvContent = [csvHeaders, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `plates-export-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
+    link.href = url;
+    link.download = `plates_export_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
-    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Success",
+      description: "Plates exported to CSV successfully",
+    });
   };
 
   if (isLoading) {
@@ -99,11 +134,11 @@ const PlatesList = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">License Plates</h1>
+          <h1 className="text-3xl font-bold">Plates Management</h1>
           <p className="text-muted-foreground">Manage license plates and vehicle assignments</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportCSV} disabled={!plates || plates.length === 0}>
+          <Button variant="outline" onClick={handleExportCSV}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
@@ -114,19 +149,37 @@ const PlatesList = () => {
         </div>
       </div>
 
+      {/* Search */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5 text-primary" />
+            Search Plates
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Input
+            placeholder="Search by plate number, retention doc, or assigned vehicle..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="max-w-md"
+          />
+        </CardContent>
+      </Card>
+
       {/* Plates Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            License Plate Database
+            <FileText className="h-5 w-5 text-primary" />
+            Plates Database
           </CardTitle>
           <CardDescription>
-            View all license plates with retention documents and vehicle assignments
+            All registered plates with assignment status and documentation
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {plates && plates.length > 0 ? (
+          {filteredPlates.length > 0 ? (
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -134,70 +187,65 @@ const PlatesList = () => {
                     <TableHead>Plate Number</TableHead>
                     <TableHead>Retention Doc Reference</TableHead>
                     <TableHead>Assigned Vehicle</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Notes</TableHead>
                     <TableHead>Document</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {plates.map((plate) => (
+                  {filteredPlates.map((plate) => (
                     <TableRow key={plate.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium font-mono text-lg">
-                        {plate.plate_number}
-                      </TableCell>
-                      <TableCell>
-                        {plate.retention_doc_reference ? (
-                          <Badge variant="outline">{plate.retention_doc_reference}</Badge>
-                        ) : (
-                          <span className="text-muted-foreground">No reference</span>
-                        )}
-                      </TableCell>
+                      <TableCell className="font-medium">{plate.plate_number}</TableCell>
+                      <TableCell>{plate.retention_doc_reference || "—"}</TableCell>
                       <TableCell>
                         {plate.vehicles ? (
-                          <div className="flex items-center gap-2">
-                            <Car className="h-4 w-4 text-primary" />
-                            <span>{plate.vehicles.reg}</span>
-                            <span className="text-muted-foreground">
-                              ({plate.vehicles.make} {plate.vehicles.model})
+                          <div className="flex items-center gap-1">
+                            <Car className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">
+                              {plate.vehicles.reg} ({plate.vehicles.make} {plate.vehicles.model})
                             </span>
                           </div>
                         ) : (
-                          <Badge variant="secondary">Unassigned</Badge>
+                          <span className="text-muted-foreground">Not Assigned</span>
                         )}
                       </TableCell>
                       <TableCell>
+                        <Badge variant={plate.assigned_vehicle_id ? "default" : "secondary"}>
+                          {plate.assigned_vehicle_id ? "Assigned" : "Available"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {plate.notes || 'No notes'}
+                          {plate.notes ? (plate.notes.length > 50 ? plate.notes.substring(0, 50) + "..." : plate.notes) : "—"}
                         </span>
                       </TableCell>
                       <TableCell>
                         {plate.document_url ? (
-                          <div className="flex items-center gap-2">
-                            <FileUp className="h-4 w-4 text-primary" />
-                            <span className="text-sm">{plate.document_name}</span>
-                          </div>
+                          <Button variant="outline" size="sm">
+                            <FileText className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
                         ) : (
-                          <span className="text-muted-foreground text-sm">No document</span>
+                          <span className="text-muted-foreground text-sm">None</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end">
+                        <div className="flex justify-end gap-2">
                           {plate.assigned_vehicle_id ? (
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleUnassignPlate(plate.id)}
                             >
-                              <Unlink className="h-4 w-4 mr-1" />
                               Unassign
                             </Button>
                           ) : (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setAssignPlateId(plate.id)}
+                              onClick={() => handleAssignPlate(plate)}
                             >
-                              <Link className="h-4 w-4 mr-1" />
                               Assign
                             </Button>
                           )}
@@ -210,13 +258,19 @@ const PlatesList = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No plates found</h3>
-              <p className="text-muted-foreground mb-4">Add your first license plate to get started</p>
-              <Button onClick={() => setShowAddDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Plate
-              </Button>
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">
+                {searchTerm ? "No plates match your search" : "No plates found"}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? "Try adjusting your search terms" : "Add your first plate to get started"}
+              </p>
+              {!searchTerm && (
+                <Button onClick={() => setShowAddDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Plate
+                </Button>
+              )}
             </div>
           )}
         </CardContent>
@@ -225,15 +279,18 @@ const PlatesList = () => {
       <AddPlateDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
+        onSuccess={() => refetch()}
       />
 
-      {assignPlateId && (
-        <AssignPlateDialog
-          open={!!assignPlateId}
-          onOpenChange={() => setAssignPlateId(null)}
-          plateId={assignPlateId}
-        />
-      )}
+      <AssignPlateDialog
+        open={showAssignDialog}
+        onOpenChange={setShowAssignDialog}
+        plate={selectedPlate}
+        onSuccess={() => {
+          refetch();
+          setSelectedPlate(null);
+        }}
+      />
     </div>
   );
 };

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -35,44 +35,37 @@ const assignSchema = z.object({
 
 type AssignFormData = z.infer<typeof assignSchema>;
 
+interface Plate {
+  id: string;
+  plate_number: string;
+  retention_doc_reference: string;
+  assigned_vehicle_id: string;
+  notes: string;
+}
+
+interface Vehicle {
+  id: string;
+  reg: string;
+  make: string;
+  model: string;
+  status: string;
+}
+
 interface AssignPlateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  plateId: string;
+  plate: Plate | null;
+  onSuccess: () => void;
 }
 
-export const AssignPlateDialog = ({ open, onOpenChange, plateId }: AssignPlateDialogProps) => {
+export const AssignPlateDialog = ({
+  open,
+  onOpenChange,
+  plate,
+  onSuccess,
+}: AssignPlateDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const { data: plate } = useQuery({
-    queryKey: ["plate", plateId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("plates")
-        .select("*")
-        .eq("id", plateId)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!plateId,
-  });
-
-  const { data: availableVehicles } = useQuery({
-    queryKey: ["available-vehicles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("id, reg, make, model")
-        .order("reg");
-      
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const form = useForm<AssignFormData>({
     resolver: zodResolver(assignSchema),
@@ -81,28 +74,57 @@ export const AssignPlateDialog = ({ open, onOpenChange, plateId }: AssignPlateDi
     },
   });
 
+  // Get available vehicles (not currently assigned to other plates)
+  const { data: vehicles } = useQuery({
+    queryKey: ["available-vehicles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("*")
+        .order("reg");
+      
+      if (error) throw error;
+      
+      // Get currently assigned vehicles
+      const { data: assignedPlates } = await supabase
+        .from("plates")
+        .select("assigned_vehicle_id")
+        .not("assigned_vehicle_id", "is", null);
+      
+      const assignedVehicleIds = assignedPlates?.map(p => p.assigned_vehicle_id) || [];
+      
+      // Filter out assigned vehicles (except the current plate's vehicle if it has one)
+      return (data as Vehicle[]).filter(vehicle => 
+        !assignedVehicleIds.includes(vehicle.id) || vehicle.id === plate?.assigned_vehicle_id
+      );
+    },
+    enabled: open,
+  });
+
   const onSubmit = async (data: AssignFormData) => {
+    if (!plate) return;
+    
     setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from("plates")
         .update({ assigned_vehicle_id: data.vehicle_id })
-        .eq("id", plateId);
+        .eq("id", plate.id);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "License plate assigned successfully",
+        description: "Plate assigned successfully",
       });
 
       form.reset();
       onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ["plates"] });
+      onSuccess();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to assign license plate",
+        description: "Failed to assign plate",
         variant: "destructive",
       });
     } finally {
@@ -110,13 +132,15 @@ export const AssignPlateDialog = ({ open, onOpenChange, plateId }: AssignPlateDi
     }
   };
 
+  if (!plate) return null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Assign License Plate</DialogTitle>
+          <DialogTitle>Assign Plate to Vehicle</DialogTitle>
           <DialogDescription>
-            Assign plate {plate?.plate_number} to a vehicle.
+            Assign plate "{plate.plate_number}" to a vehicle.
           </DialogDescription>
         </DialogHeader>
 
@@ -131,13 +155,13 @@ export const AssignPlateDialog = ({ open, onOpenChange, plateId }: AssignPlateDi
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Choose a vehicle to assign the plate to" />
+                        <SelectValue placeholder="Choose a vehicle" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {availableVehicles?.map((vehicle) => (
+                      {vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
-                          {vehicle.reg} - {vehicle.make} {vehicle.model}
+                          {vehicle.reg} - {vehicle.make} {vehicle.model} ({vehicle.status})
                         </SelectItem>
                       ))}
                     </SelectContent>

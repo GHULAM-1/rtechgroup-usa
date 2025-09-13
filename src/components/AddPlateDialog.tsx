@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -35,12 +34,16 @@ type PlateFormData = z.infer<typeof plateSchema>;
 interface AddPlateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }
 
-export const AddPlateDialog = ({ open, onOpenChange }: AddPlateDialogProps) => {
+export const AddPlateDialog = ({
+  open,
+  onOpenChange,
+  onSuccess,
+}: AddPlateDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const form = useForm<PlateFormData>({
     resolver: zodResolver(plateSchema),
@@ -64,28 +67,23 @@ export const AddPlateDialog = ({ open, onOpenChange }: AddPlateDialogProps) => {
 
       if (error) {
         if (error.code === '23505') { // Unique constraint violation
-          toast({
-            title: "Error",
-            description: "This plate number already exists",
-            variant: "destructive",
-          });
-          return;
+          throw new Error("Plate number already exists");
         }
         throw error;
       }
 
       toast({
         title: "Success",
-        description: "License plate added successfully",
+        description: "Plate added successfully",
       });
 
       form.reset();
       onOpenChange(false);
-      queryClient.invalidateQueries({ queryKey: ["plates"] });
-    } catch (error) {
+      onSuccess();
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to add license plate",
+        description: error.message || "Failed to add plate",
         variant: "destructive",
       });
     } finally {
@@ -97,9 +95,9 @@ export const AddPlateDialog = ({ open, onOpenChange }: AddPlateDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Add License Plate</DialogTitle>
+          <DialogTitle>Add New Plate</DialogTitle>
           <DialogDescription>
-            Add a new license plate to the database. You can assign it to a vehicle later.
+            Add a new license plate to the system.
           </DialogDescription>
         </DialogHeader>
 
@@ -110,13 +108,13 @@ export const AddPlateDialog = ({ open, onOpenChange }: AddPlateDialogProps) => {
               name="plate_number"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Plate Number</FormLabel>
+                  <FormLabel>Plate Number *</FormLabel>
                   <FormControl>
-                    <Input 
-                      {...field} 
-                      placeholder="e.g. ABC123, AB12 CDE"
-                      className="font-mono text-lg"
+                    <Input
+                      {...field}
+                      placeholder="e.g., ABC123"
                       onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                      className="uppercase"
                     />
                   </FormControl>
                   <FormMessage />
@@ -131,7 +129,7 @@ export const AddPlateDialog = ({ open, onOpenChange }: AddPlateDialogProps) => {
                 <FormItem>
                   <FormLabel>Retention Document Reference</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter document reference" />
+                    <Input {...field} placeholder="Enter retention document reference" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -13,6 +13,7 @@ import RentalsList from "@/pages/RentalsList";
 import RentalDetail from "@/pages/RentalDetail";
 import PaymentsList from "@/pages/PaymentsList";
 import ChargesList from "@/pages/ChargesList";
+import PlatesList from "@/pages/PlatesList";
 import CreateRental from "@/pages/CreateRental";
 import RemindersPage from "@/pages/RemindersPage";
 import ReminderSettings from "@/pages/ReminderSettings";
@@ -23,7 +24,6 @@ import FinesList from "@/pages/FinesList";
 import CreateFine from "@/pages/CreateFine";
 import FineDetail from "@/pages/FineDetail";
 import RemindersPageNew from "@/pages/RemindersPageNew";
-import PlatesList from "@/pages/PlatesList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

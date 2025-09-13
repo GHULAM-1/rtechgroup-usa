@@ -50,6 +50,11 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
     const entryDate = payment.payment_date || payment.paid_at || payment.created_at || new Date().toISOString().split('T')[0];
 
     console.log(`Payment ${paymentId}: ${category}, ${entryDate}, ${payment.amount}`);
+    
+    // Special logging for Initial Fee processing
+    if (category === 'Initial Fees') {
+      console.log(`Processing Initial Fee payment - will create immediate revenue entry, no allocation to charges`);
+    }
 
     // Insert/Update Ledger entry - handle duplicates with try-catch
     try {

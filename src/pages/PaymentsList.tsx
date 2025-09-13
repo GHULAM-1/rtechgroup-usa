@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CreditCard, Plus, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,6 +32,8 @@ interface Payment {
   payment_type: string;
   status?: string;
   notes?: string;
+  is_early: boolean;
+  apply_from_date: string | null;
   customers: { name: string };
   vehicles: { reg: string } | null;
   rentals: { id: string } | null;
@@ -44,6 +47,16 @@ const paymentSchema = z.object({
   payment_type: z.enum(['Rental', 'InitialFee', 'Fine', 'Other']),
   method: z.string().optional(),
   payment_date: z.date(),
+  is_early: z.boolean().default(false),
+  apply_from_date: z.date().optional(),
+}).refine((data) => {
+  if (data.is_early && data.apply_from_date) {
+    return data.apply_from_date >= data.payment_date;
+  }
+  return true;
+}, {
+  message: "Apply From Date must be on or after Payment Date",
+  path: ["apply_from_date"],
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -67,6 +80,8 @@ const PaymentsList = () => {
       payment_type: "Rental",
       method: "",
       payment_date: toZonedTime(new Date(), 'Europe/London'),
+      is_early: false,
+      apply_from_date: undefined,
     },
   });
 
@@ -107,7 +122,13 @@ const PaymentsList = () => {
       let query = supabase
         .from("payments")
         .select(`
-          *,
+          id,
+          amount,
+          payment_date,
+          method,
+          payment_type,
+          is_early,
+          apply_from_date,
           customers(name),
           vehicles(reg),
           rentals(id)
@@ -148,6 +169,8 @@ const PaymentsList = () => {
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method || null,
           payment_type: data.payment_type,
+          is_early: data.is_early,
+          apply_from_date: data.apply_from_date ? formatInTimeZone(data.apply_from_date, 'Europe/London', 'yyyy-MM-dd') : null,
         })
         .select()
         .single();
@@ -164,7 +187,17 @@ const PaymentsList = () => {
         description: `Payment of £${data.amount} has been recorded successfully.`,
       });
 
-      form.reset();
+      form.reset({
+        customer_id: "",
+        rental_id: "",
+        vehicle_id: "",
+        amount: 0,
+        payment_type: "Rental",
+        method: "",
+        payment_date: toZonedTime(new Date(), 'Europe/London'),
+        is_early: false,
+        apply_from_date: undefined,
+      });
       setShowAddDialog(false);
       queryClient.invalidateQueries({ queryKey: ["payments-list"] });
     } catch (error) {
@@ -365,9 +398,81 @@ const PaymentsList = () => {
                          </FormItem>
                        )}
                      />
-                   </div>
+                    </div>
 
-                  <div className="flex justify-end gap-2 pt-4">
+                    {/* Early Payment Controls */}
+                    <FormField
+                      control={form.control}
+                      name="is_early"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                              Mark as early payment (hold as credit until next due)
+                            </FormLabel>
+                          </div>
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("is_early") && (
+                      <FormField
+                        control={form.control}
+                        name="apply_from_date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Apply From Date</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                      "w-full pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      formatInTimeZone(field.value, 'Europe/London', "dd/MM/yyyy")
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) => {
+                                    const paymentDate = form.watch("payment_date");
+                                    const twoYearsFromNow = new Date();
+                                    twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+                                    return date < paymentDate || date > twoYearsFromNow;
+                                  }}
+                                  initialFocus
+                                  className={cn("p-3 pointer-events-auto")}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormDescription>
+                              Credit will auto-apply from this date to due charges.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                   <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                       Cancel
                     </Button>
@@ -405,6 +510,7 @@ const PaymentsList = () => {
                      <TableHead>Rental</TableHead>
                      <TableHead>Type</TableHead>
                      <TableHead>Method</TableHead>
+                     <TableHead>Apply From</TableHead>
                      <TableHead>Status</TableHead>
                      <TableHead>Notes</TableHead>
                      <TableHead className="text-right">Amount</TableHead>
@@ -425,23 +531,35 @@ const PaymentsList = () => {
                            '-'
                          )}
                        </TableCell>
-                       <TableCell>
-                         <Badge 
-                           variant={
-                             payment.payment_type === 'Rental' ? 'default' :
-                             payment.payment_type === 'InitialFee' ? 'secondary' :
-                             payment.payment_type === 'Fine' ? 'destructive' : 'outline'
-                           }
-                         >
-                           {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                         </Badge>
-                       </TableCell>
-                       <TableCell>{payment.method || 'Cash'}</TableCell>
-                       <TableCell>
-                         <Badge variant="default" className="text-xs">
-                           Applied
-                         </Badge>
-                       </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Badge 
+                              variant={
+                                payment.payment_type === 'Rental' ? 'default' :
+                                payment.payment_type === 'InitialFee' ? 'secondary' :
+                                payment.payment_type === 'Fine' ? 'destructive' : 'outline'
+                              }
+                            >
+                              {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                            </Badge>
+                            {payment.is_early && (
+                              <Badge variant="outline" className="text-xs">
+                                Early
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{payment.method || 'Cash'}</TableCell>
+                        <TableCell>
+                          {payment.apply_from_date ? (
+                            formatInTimeZone(new Date(payment.apply_from_date), 'Europe/London', 'dd/MM/yyyy')
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default" className="text-xs">
+                            Applied
+                          </Badge>
+                        </TableCell>
                        <TableCell className="text-sm text-muted-foreground">
                          {payment.notes || '-'}
                        </TableCell>

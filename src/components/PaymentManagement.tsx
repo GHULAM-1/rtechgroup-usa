@@ -49,17 +49,6 @@ const PaymentTypeBadge = ({ type }: { type: string }) => {
   );
 };
 
-const PaymentStatusBadge = ({ status, remaining }: { status: string; remaining: number }) => {
-  if (status === 'Applied') {
-    return <Badge variant="default" className="text-xs bg-green-600 hover:bg-green-700">Applied</Badge>;
-  } else if (status === 'Credit') {
-    return <Badge variant="outline" className="text-xs">Credit (£{remaining.toLocaleString()})</Badge>;
-  } else if (status === 'Partial') {
-    return <Badge variant="secondary" className="text-xs">Partial (£{remaining.toLocaleString()})</Badge>;
-  }
-  return <Badge variant="outline" className="text-xs">{status}</Badge>;
-};
-
 export const PaymentManagement = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
 
@@ -113,7 +102,6 @@ export const PaymentManagement = () => {
                   <TableHead>Type</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -129,13 +117,7 @@ export const PaymentManagement = () => {
                     </TableCell>
                     <TableCell>{payment.method || 'Cash'}</TableCell>
                     <TableCell className="text-right font-medium">
-                      £{Number(payment.amount).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <PaymentStatusBadge 
-                        status={payment.status} 
-                        remaining={Number(payment.remaining_amount) || 0} 
-                      />
+                      £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                   </TableRow>
                 ))}

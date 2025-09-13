@@ -11,7 +11,6 @@ import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, Al
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
-import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 interface Customer {
@@ -428,7 +427,7 @@ const CustomerDetail = () => {
                          <TableHead>Vehicle</TableHead>
                          <TableHead>Type</TableHead>
                          <TableHead>Method</TableHead>
-                         <TableHead className="text-right">Amount & Status</TableHead>
+                         <TableHead className="text-right">Amount</TableHead>
                        </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -442,21 +441,9 @@ const CustomerDetail = () => {
                               </Badge>
                            </TableCell>
                            <TableCell>{payment.method || 'Cash'}</TableCell>
-                           <TableCell>
-                             <div className="text-right">
-                               <div className="font-medium">
-                                 £{Number(payment.amount).toLocaleString()}
-                               </div>
-                               <div className="text-xs text-muted-foreground">
-                                 Applied: £{(payment.applied || 0).toLocaleString()} | 
-                                 Remaining: £{(payment.remaining || 0).toLocaleString()}
-                               </div>
-                               <PaymentStatusBadge 
-                                 applied={payment.applied || 0} 
-                                 amount={Number(payment.amount)}
-                               />
-                             </div>
-                           </TableCell>
+                            <TableCell className="text-right font-medium">
+                              £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </TableCell>
                          </TableRow>
                        ))}
                     </TableBody>

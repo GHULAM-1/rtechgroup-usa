@@ -472,10 +472,8 @@ const PaymentsList = () => {
                      <TableHead>Rental</TableHead>
                      <TableHead>Type</TableHead>
                      <TableHead>Method</TableHead>
-                     <TableHead>Remaining</TableHead>
-                     <TableHead>Status</TableHead>
-                     <TableHead>Notes</TableHead>
-                     <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                    </TableRow>
                  </TableHeader>
                 <TableBody>
@@ -506,31 +504,13 @@ const PaymentsList = () => {
                              </Badge>
                            </div>
                          </TableCell>
-                         <TableCell>{payment.method || 'Cash'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                               <span>
-                                 {(payment as any).remaining_amount && (payment as any).remaining_amount > 0
-                                   ? `£${((payment as any).remaining_amount || 0).toFixed(2)} Remaining`
-                                   : "Fully Applied"
-                                 }
-                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              (payment as any).status === 'Applied' ? 'default' :
-                              (payment as any).status === 'Partially Applied' ? 'outline' : 'default'
-                            }>
-                              {(payment as any).status || 'Applied'}
-                            </Badge>
-                          </TableCell>
-                       <TableCell className="text-sm text-muted-foreground">
-                         {payment.notes || '-'}
-                       </TableCell>
-                       <TableCell className="text-right font-medium">
-                         £{Number(payment.amount).toLocaleString()}
-                       </TableCell>
+                          <TableCell>{payment.method || 'Cash'}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {payment.notes || '-'}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </TableCell>
                      </TableRow>
                   ))}
                 </TableBody>

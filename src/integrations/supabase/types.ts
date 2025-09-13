@@ -1281,6 +1281,14 @@ export type Database = {
         Args: { payment_id: string }
         Returns: undefined
       }
+      attach_payments_to_rentals: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      backfill_rental_charges_full: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       fine_void_charge: {
         Args: { f_id: string }
         Returns: undefined
@@ -1298,6 +1306,10 @@ export type Database = {
         Returns: undefined
       }
       get_customer_credit: {
+        Args: { customer_id_param: string }
+        Returns: number
+      }
+      get_customer_net_position: {
         Args: { customer_id_param: string }
         Returns: number
       }
@@ -1357,6 +1369,10 @@ export type Database = {
       }
       pnl_post_acquisition: {
         Args: { v_id: string }
+        Returns: undefined
+      }
+      reapply_all_payments: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       recalculate_vehicle_pl: {

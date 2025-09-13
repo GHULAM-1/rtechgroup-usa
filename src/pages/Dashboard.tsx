@@ -36,47 +36,57 @@ const Dashboard = () => {
 
   // Dashboard metrics queries
   const { data: overduePayments } = useQuery({
-    queryKey: ["overdue-count"],
+    queryKey: ["overdue-payments"],
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
+      const { data } = await supabase
         .from("ledger_entries")
-        .select("*", { count: "exact", head: true })
+        .select("remaining_amount")
         .eq("type", "Charge")
         .gt("remaining_amount", 0)
         .lt("due_date", today);
-      return count || 0;
+      
+      const count = data?.length || 0;
+      const sum = data?.reduce((acc, item) => acc + Number(item.remaining_amount), 0) || 0;
+      return { count, sum };
     },
   });
 
   const { data: dueToday } = useQuery({
-    queryKey: ["due-today-count"],
+    queryKey: ["due-today"],
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
-      const { count } = await supabase
+      const { data } = await supabase
         .from("ledger_entries")
-        .select("*", { count: "exact", head: true })
+        .select("remaining_amount")
         .eq("type", "Charge")
         .gt("remaining_amount", 0)
         .eq("due_date", today);
-      return count || 0;
+      
+      const count = data?.length || 0;
+      const sum = data?.reduce((acc, item) => acc + Number(item.remaining_amount), 0) || 0;
+      return { count, sum };
     },
   });
 
   const { data: upcoming } = useQuery({
-    queryKey: ["upcoming-count"],
+    queryKey: ["upcoming-payments"],
     queryFn: async () => {
       const today = new Date();
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
       const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
       
-      const { count } = await supabase
+      const { data } = await supabase
         .from("ledger_entries")
-        .select("*", { count: "exact", head: true })
+        .select("remaining_amount")
         .eq("type", "Charge")
         .gt("remaining_amount", 0)
-        .gt("due_date", today.toISOString().split('T')[0])
+        .gte("due_date", tomorrow.toISOString().split('T')[0])
         .lte("due_date", nextWeek.toISOString().split('T')[0]);
-      return count || 0;
+      
+      const count = data?.length || 0;
+      const sum = data?.reduce((acc, item) => acc + Number(item.remaining_amount), 0) || 0;
+      return { count, sum };
     },
   });
 
@@ -88,6 +98,25 @@ const Dashboard = () => {
         .select("*", { count: "exact", head: true })
         .eq("status", "Active");
       return count || 0;
+    },
+  });
+
+  const { data: openFines } = useQuery({
+    queryKey: ["open-fines"],
+    queryFn: async () => {
+      // Get fines with liability='Customer' and join with ledger to get remaining amounts
+      const { data } = await supabase
+        .from("view_fines_export")
+        .select("remaining_amount, due_date")
+        .eq("liability", "Customer")
+        .gt("remaining_amount", 0);
+      
+      const today = new Date().toISOString().split('T')[0];
+      const totalCount = data?.length || 0;
+      const overdueCount = data?.filter(fine => fine.due_date < today).length || 0;
+      const totalAmount = data?.reduce((acc, fine) => acc + Number(fine.remaining_amount), 0) || 0;
+      
+      return { totalCount, overdueCount, totalAmount };
     },
   });
 
@@ -119,27 +148,29 @@ const Dashboard = () => {
   const widgets: DashboardWidget[] = [
     {
       title: "Overdue Payments",
-      value: overduePayments?.toString() || "0",
-      description: "Payments past due date",
+      value: `${overduePayments?.count || 0}`,
+      description: `£${(overduePayments?.sum || 0).toLocaleString()} past due`,
       icon: AlertTriangle,
       color: "text-red-500",
-      href: "/payments?filter=overdue"
+      href: "/charges?filter=overdue"
     },
     {
       title: "Due Today",
-      value: dueToday?.toString() || "0", 
-      description: dueReminders && dueReminders > 0 ? `Payments due today (${dueReminders} reminders)` : "Payments due today",
+      value: `${dueToday?.count || 0}`, 
+      description: dueReminders && dueReminders > 0 
+        ? `£${(dueToday?.sum || 0).toLocaleString()} due (${dueReminders} reminders)` 
+        : `£${(dueToday?.sum || 0).toLocaleString()} due today`,
       icon: Calendar,
       color: "text-yellow-500",
-      href: "/payments?filter=due-today"
+      href: "/charges?filter=due-today"
     },
     {
       title: "Upcoming (7 days)",
-      value: upcoming?.toString() || "0",
-      description: "Payments due within 7 days",
+      value: `${upcoming?.count || 0}`,
+      description: `£${(upcoming?.sum || 0).toLocaleString()} due within 7 days`,
       icon: DollarSign,
       color: "text-blue-500",
-      href: "/payments?filter=upcoming"
+      href: "/charges?filter=upcoming"
     },
     {
       title: "Active Rentals",
@@ -148,6 +179,14 @@ const Dashboard = () => {
       icon: FileText,
       color: "text-green-500",
       href: "/rentals?filter=active"
+    },
+    {
+      title: "Open Fines",
+      value: `${openFines?.totalCount || 0}`,
+      description: `£${(openFines?.totalAmount || 0).toLocaleString()} outstanding (${openFines?.overdueCount || 0} overdue)`,
+      icon: AlertTriangle,
+      color: "text-orange-500",
+      href: "/fines?filter=open"
     }
   ];
 
@@ -168,7 +207,7 @@ const Dashboard = () => {
       </div>
 
       {/* Dashboard Widgets */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">{/* Updated from lg:grid-cols-4 to lg:grid-cols-5 for 5 widgets */}
         {widgets.map((widget) => (
           <DashboardCard
             key={widget.title}

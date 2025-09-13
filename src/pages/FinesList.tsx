@@ -41,7 +41,10 @@ const FinesList = () => {
         .order("issue_date", { ascending: false });
 
       // Apply filters
-      if (filter === 'overdue') {
+      if (filter === 'open') {
+        query = query.eq('liability', 'Customer')
+                     .in('status', ['Open', 'Partially Paid']);
+      } else if (filter === 'overdue') {
         query = query.lt('due_date', new Date().toISOString().split('T')[0])
                      .in('status', ['Open', 'Partially Paid']);
       } else if (filter === 'due-today') {

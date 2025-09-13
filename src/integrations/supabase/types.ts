@@ -860,14 +860,6 @@ export type Database = {
         Args: { payment_id: string }
         Returns: undefined
       }
-      fine_apply_payment_fifo: {
-        Args: { p_id: string }
-        Returns: undefined
-      }
-      fine_create_charge: {
-        Args: { f_id: string }
-        Returns: string
-      }
       fine_void_charge: {
         Args: { f_id: string }
         Returns: undefined

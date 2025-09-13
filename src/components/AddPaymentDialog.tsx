@@ -139,12 +139,8 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
 
       if (error) throw error;
 
-      // Apply payment using the appropriate FIFO function
-      if (values.payment_type === "Fine") {
-        await supabase.rpc("payment_apply_fifo", { p_id: payment.id });
-      } else {
-        await supabase.rpc("payment_apply_fifo", { p_id: payment.id });
-      }
+      // Apply payment using the canonical payment_apply_fifo function
+      await supabase.rpc("payment_apply_fifo", { p_id: payment.id });
 
       return payment;
     },

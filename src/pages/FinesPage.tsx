@@ -6,10 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, AlertCircle, Car, Clock } from "lucide-react";
+import { Plus, AlertCircle, Car, Clock, MoreHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { AddFineDialog } from "@/components/AddFineDialog";
 import { FineStatusBadge } from "@/components/FineStatusBadge";
+import { FineAppealDialog } from "@/components/FineAppealDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Fine {
   id: string;
@@ -36,6 +43,8 @@ interface Fine {
 
 export default function FinesPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showAppealDialog, setShowAppealDialog] = useState(false);
+  const [selectedFineId, setSelectedFineId] = useState<string | null>(null);
 
   const { data: fines, isLoading } = useQuery({
     queryKey: ["fines"],
@@ -132,6 +141,23 @@ export default function FinesPage() {
             <Badge variant="secondary">Business Liability</Badge>
           )}
         </div>
+      </TableCell>
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => {
+              setSelectedFineId(fine.id);
+              setShowAppealDialog(true);
+            }}>
+              Update Status
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </TableCell>
     </TableRow>
   );
@@ -232,6 +258,7 @@ export default function FinesPage() {
                         <TableHead>Dates</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -263,6 +290,7 @@ export default function FinesPage() {
                       <TableHead>Dates</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -283,6 +311,7 @@ export default function FinesPage() {
                       <TableHead>Dates</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -303,6 +332,7 @@ export default function FinesPage() {
                       <TableHead>Dates</TableHead>
                       <TableHead className="text-right">Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -316,6 +346,11 @@ export default function FinesPage() {
       </Card>
 
       <AddFineDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <FineAppealDialog 
+        open={showAppealDialog} 
+        onOpenChange={setShowAppealDialog}
+        fineId={selectedFineId}
+      />
     </div>
   );
 }

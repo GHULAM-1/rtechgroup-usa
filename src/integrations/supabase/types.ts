@@ -298,6 +298,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "fk_ledger_entries_payment_id"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ledger_entries_payment_id"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "v_payment_remaining"
+            referencedColumns: ["payment_id"]
+          },
+          {
+            foreignKeyName: "fk_ledger_entries_payment_id"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "view_payments_export"
+            referencedColumns: ["payment_id"]
+          },
+          {
             foreignKeyName: "ledger_entries_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false

@@ -1,31 +1,47 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+// Customer balance calculation with proper credit status
 export const useCustomerBalance = (customerId: string | undefined) => {
   return useQuery({
     queryKey: ["customer-balance", customerId],
     queryFn: async () => {
-      if (!customerId) return 0;
+      if (!customerId) return null;
       
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Only count unpaid rental charges that are due/overdue
-      const { data: entries, error } = await supabase
-        .from("ledger_entries")
-        .select("remaining_amount")
-        .eq("customer_id", customerId)
-        .eq("type", "Charge")
-        .eq("category", "Rental")
-        .lte("due_date", today)
-        .gt("remaining_amount", 0);
+      // Use the new balance function that properly handles credits
+      const { data, error } = await supabase
+        .rpc('get_customer_balance_with_status', { 
+          customer_id_param: customerId 
+        })
+        .single();
       
       if (error) throw error;
+      return data.balance;
+    },
+    enabled: !!customerId,
+  });
+};
+
+// Enhanced customer balance with status information
+export const useCustomerBalanceWithStatus = (customerId: string | undefined) => {
+  return useQuery({
+    queryKey: ["customer-balance-status", customerId],
+    queryFn: async () => {
+      if (!customerId) return null;
       
-      const total = entries?.reduce((sum, entry) => {
-        return sum + Number(entry.remaining_amount);
-      }, 0) || 0;
+      const { data, error } = await supabase
+        .rpc('get_customer_balance_with_status', { 
+          customer_id_param: customerId 
+        })
+        .single();
       
-      return total;
+      if (error) throw error;
+      return {
+        balance: data.balance,
+        status: data.status,
+        totalCharges: data.total_charges,
+        totalPayments: data.total_payments
+      };
     },
     enabled: !!customerId,
   });
@@ -33,75 +49,60 @@ export const useCustomerBalance = (customerId: string | undefined) => {
 
 export const useRentalBalance = (rentalId: string | undefined, customerId: string | undefined) => {
   return useQuery({
-    queryKey: ["rental-balance", rentalId],
+    queryKey: ["rental-balance", rentalId, customerId],
     queryFn: async () => {
       if (!rentalId || !customerId) return 0;
       
-      // Single source of truth: ledger_entries only
-      // Total Charges and Total Payments for this rental
-      const { data: entries, error } = await supabase
+      const { data, error } = await supabase
         .from("ledger_entries")
-        .select("type, amount, due_date")
+        .select("amount")
         .eq("rental_id", rentalId);
       
       if (error) throw error;
       
-      const total = entries?.reduce((sum, entry) => {
-        return sum + Number(entry.amount);
-      }, 0) || 0;
-      
+      const total = data.reduce((sum, entry) => sum + entry.amount, 0);
       return total;
     },
     enabled: !!rentalId && !!customerId,
   });
 };
 
-// Get rental charges and payments separately for detailed view
+// Rental charges and payments breakdown
 export const useRentalChargesAndPayments = (rentalId: string | undefined) => {
   return useQuery({
     queryKey: ["rental-charges-payments", rentalId],
     queryFn: async () => {
       if (!rentalId) return { charges: 0, payments: 0, outstanding: 0 };
       
-      const { data: entries, error } = await supabase
+      const { data, error } = await supabase
         .from("ledger_entries")
-        .select("type, amount, due_date")
+        .select("type, amount, remaining_amount")
         .eq("rental_id", rentalId);
       
       if (error) throw error;
       
-      const today = new Date().toISOString().split('T')[0];
+      const charges = data
+        .filter(entry => entry.type === 'Charge')
+        .reduce((sum, entry) => sum + entry.amount, 0);
       
-      let totalCharges = 0;
-      let totalPayments = 0;
+      const payments = Math.abs(data
+        .filter(entry => entry.type === 'Payment')
+        .reduce((sum, entry) => sum + entry.amount, 0));
       
-      entries?.forEach(entry => {
-        if (entry.type === 'Charge') {
-          totalCharges += Number(entry.amount);
-        } else if (entry.type === 'Payment') {
-          totalPayments += Math.abs(Number(entry.amount)); // Show as positive in UI
-        }
-      });
+      const outstanding = data
+        .filter(entry => entry.type === 'Charge')
+        .reduce((sum, entry) => sum + entry.remaining_amount, 0);
       
-      return {
-        charges: totalCharges,
-        payments: totalPayments,
-        outstanding: totalCharges - totalPayments
-      };
+      return { charges, payments, outstanding };
     },
     enabled: !!rentalId,
   });
 };
 
-// Helper to get balance status text (single source of truth)
+// Helper function to determine balance status
 export const getBalanceStatus = (balance: number | undefined) => {
-  if (balance === undefined || balance === null) return null;
-  
-  if (balance === 0) {
-    return { text: "Settled", type: "settled" as const };
-  } else if (balance > 0) {
-    return { text: `In Debt £${balance.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`, type: "debt" as const };
-  } else {
-    return { text: `In Credit £${Math.abs(balance).toLocaleString('en-GB', { minimumFractionDigits: 2 })}`, type: "credit" as const };
-  }
+  if (balance === undefined) return { text: 'Unknown', type: 'secondary' };
+  if (balance === 0) return { text: 'Settled', type: 'secondary' };
+  if (balance > 0) return { text: `In Debt £${balance.toFixed(2)}`, type: 'destructive' };
+  return { text: `In Credit £${Math.abs(balance).toFixed(2)}`, type: 'success' };
 };

@@ -11,7 +11,7 @@ import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, Al
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
-import { useCustomerBalance } from "@/hooks/useCustomerBalance";
+import { useCustomerBalanceWithStatus } from "@/hooks/useCustomerBalance";
 
 interface Customer {
   id: string;
@@ -211,8 +211,8 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
-  // Use the new customer balance hook
-  const { data: customerBalance } = useCustomerBalance(id);
+  // Use the enhanced customer balance hook with status
+  const { data: customerBalanceData } = useCustomerBalanceWithStatus(id);
 
   if (isLoading) {
     return <div>Loading customer details...</div>;
@@ -291,17 +291,25 @@ const CustomerDetail = () => {
           </CardHeader>
           <CardContent>
             <div>
-              {(customerBalance ?? 0) === 0 ? (
-                <Badge variant="secondary" className="text-lg px-3 py-1">
-                  Settled
-                </Badge>
-              ) : (customerBalance ?? 0) > 0 ? (
-                <Badge variant="destructive" className="text-lg px-3 py-1">
-                  In Debt £{Math.abs(customerBalance || 0).toFixed(2)}
+              {customerBalanceData ? (
+                <Badge 
+                  variant={
+                    customerBalanceData.status === 'Settled' ? 'secondary' :
+                    customerBalanceData.status === 'In Credit' ? 'default' : 'destructive'
+                  }
+                  className={
+                    customerBalanceData.status === 'In Credit' 
+                      ? "text-lg px-3 py-1 bg-green-600 hover:bg-green-700"
+                      : "text-lg px-3 py-1"
+                  }
+                >
+                  {customerBalanceData.status === 'Settled' && 'Settled'}
+                  {customerBalanceData.status === 'In Credit' && `In Credit £${Math.abs(customerBalanceData.balance).toFixed(2)}`}
+                  {customerBalanceData.status === 'In Debt' && `In Debt £${Math.abs(customerBalanceData.balance).toFixed(2)}`}
                 </Badge>
               ) : (
-                <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
-                  In Credit £{Math.abs(customerBalance || 0).toFixed(2)}
+                <Badge variant="secondary" className="text-lg px-3 py-1">
+                  Loading...
                 </Badge>
               )}
             </div>

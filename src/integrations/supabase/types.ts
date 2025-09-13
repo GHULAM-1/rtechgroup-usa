@@ -1468,6 +1468,15 @@ export type Database = {
         Args: { r_id: string }
         Returns: undefined
       }
+      get_customer_balance_with_status: {
+        Args: { customer_id_param: string }
+        Returns: {
+          balance: number
+          status: string
+          total_charges: number
+          total_payments: number
+        }[]
+      }
       get_customer_credit: {
         Args: { customer_id_param: string }
         Returns: number

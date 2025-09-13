@@ -24,9 +24,6 @@ interface PaymentEntry {
   vehicles: {
     reg: string;
   };
-  payments: {
-    method?: string;
-  };
 }
 
 const PaymentTypeBadge = ({ category }: { category: string }) => {
@@ -61,8 +58,7 @@ export const PaymentManagement = () => {
         .select(`
           *,
           customers(name),
-          vehicles(reg),
-          payments(method)
+          vehicles(reg)
         `)
         .eq("type", "Payment")
         .order("entry_date", { ascending: false });
@@ -118,7 +114,7 @@ export const PaymentManagement = () => {
                     <TableCell>
                       <PaymentTypeBadge category={payment.category} />
                     </TableCell>
-                    <TableCell>{payment.payments?.method || 'Cash'}</TableCell>
+                    <TableCell>Cash</TableCell>
                     <TableCell className="text-right font-medium">
                       £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>

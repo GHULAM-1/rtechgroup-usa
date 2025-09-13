@@ -30,7 +30,6 @@ interface PaymentEntry {
   customers: { name: string };
   vehicles: { reg: string } | null;
   rentals: { id: string } | null;
-  payments: { method?: string };
 }
 
 const paymentSchema = z.object({
@@ -113,8 +112,7 @@ const PaymentsList = () => {
           *,
           customers(name),
           vehicles(reg),
-          rentals(id),
-          payments(method)
+          rentals(id)
         `)
         .eq("type", "Payment")
         .order("entry_date", { ascending: false });
@@ -499,7 +497,7 @@ const PaymentsList = () => {
                              </Badge>
                            </div>
                          </TableCell>
-                          <TableCell>{payment.payments?.method || 'Cash'}</TableCell>
+                          <TableCell>Cash</TableCell>
                         <TableCell className="text-right font-medium">
                           £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </TableCell>

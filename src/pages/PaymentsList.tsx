@@ -180,7 +180,7 @@ const PaymentsList = () => {
       });
 
       if (applyError) throw applyError;
-      if (!applyResult.success) throw new Error(applyResult.error || 'Payment processing failed');
+      if (!applyResult.ok) throw new Error(applyResult.error || 'Payment processing failed');
 
       toast({
         title: "Payment Recorded",

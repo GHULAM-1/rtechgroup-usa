@@ -195,10 +195,8 @@ export const AddPaymentDialog = ({
       // Check for HTTP errors or application errors
       if (!res.ok || responseData?.ok === false) {
         const msg = responseData?.error || responseData?.detail || `Payment failed (status ${res.status})`;
-        console.error('Payment error:', responseData);
-        
         toast({
-          title: "Payment Processing Error",
+          title: "Payment Processing Error", 
           description: msg,
           variant: "destructive",
         });
@@ -213,7 +211,13 @@ export const AddPaymentDialog = ({
       form.reset();
       onOpenChange(false);
       
-      // Refresh queries
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['rentals'] });
+      queryClient.invalidateQueries({ queryKey: ['pnl'] });
+      
+      // Additional specific queries  
       if (finalRentalId) {
         queryClient.invalidateQueries({ queryKey: ["rental-ledger", finalRentalId] });
         queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", finalRentalId] });
@@ -222,15 +226,7 @@ export const AddPaymentDialog = ({
       }
       if (finalCustomerId) {
         queryClient.invalidateQueries({ queryKey: ["customer-balance", finalCustomerId] });
-        queryClient.invalidateQueries({ queryKey: ["customer-payments", finalCustomerId] });
       }
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["payments-list"] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      queryClient.invalidateQueries({ queryKey: ["rentals"] });
-      queryClient.invalidateQueries({ queryKey: ["pnl"] });
-      queryClient.invalidateQueries({ queryKey: ["vehicle-pl"] });
-      queryClient.invalidateQueries({ queryKey: ["vehicles-pl"] });
     } catch (error) {
       console.error("Error adding payment:", error);
       toast({

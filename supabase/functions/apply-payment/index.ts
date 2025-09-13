@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface PaymentProcessingResult {
-  ok: boolean;
+  ok?: boolean;
   paymentId?: string;
   category?: string;
   allocated?: number;

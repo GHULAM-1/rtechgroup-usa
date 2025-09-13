@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 interface PaymentProcessingResult {
-  success: boolean;
-  paymentId: string;
+  ok: boolean;
+  paymentId?: string;
   category?: string;
   allocated?: number;
   remaining?: number;
@@ -30,11 +30,10 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase configuration');
       return new Response(JSON.stringify({ 
-        success: false, 
         error: 'Missing Supabase configuration',
         detail: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set'
       }), {
-        status: 500,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -46,7 +45,6 @@ serve(async (req) => {
     if (!paymentId) {
       console.error('Payment ID is required');
       return new Response(JSON.stringify({ 
-        success: false, 
         error: 'Payment ID is required',
         detail: 'paymentId field is missing from request body'
       }), {
@@ -67,11 +65,10 @@ serve(async (req) => {
     if (paymentError || !payment) {
       console.error('Payment not found:', paymentError);
       return new Response(JSON.stringify({ 
-        success: false, 
         error: 'Payment not found',
         detail: `Payment ${paymentId} not found: ${paymentError?.message || 'No payment record'}`
       }), {
-        status: 404,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -106,11 +103,10 @@ serve(async (req) => {
     if (processError) {
       console.error('Payment processing RPC error:', processError);
       return new Response(JSON.stringify({ 
-        success: false, 
         error: 'Payment processing failed',
         detail: `RPC call failed: ${processError.message}`
       }), {
-        status: 500,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -118,11 +114,10 @@ serve(async (req) => {
     if (!processResult) {
       console.error('Payment processing returned null result');
       return new Response(JSON.stringify({ 
-        success: false, 
         error: 'Payment processing failed',
         detail: 'Processing function returned null result'
       }), {
-        status: 500,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -133,7 +128,6 @@ serve(async (req) => {
     if (!processResult.success) {
       console.error('Payment processing failed:', processResult.error);
       return new Response(JSON.stringify({ 
-        success: false, 
         error: processResult.error || 'Payment processing failed',
         detail: processResult.detail || 'Unknown database error'
       }), {
@@ -143,31 +137,26 @@ serve(async (req) => {
     }
 
     // Return success result
-    const result: PaymentProcessingResult = {
-      success: true,
+    return new Response(JSON.stringify({
+      ok: true,
       paymentId: processResult.paymentId,
       category: processResult.category,
       allocated: processResult.allocated,
       remaining: processResult.remaining,
       status: processResult.status
-    };
-
-    return new Response(JSON.stringify(result), {
+    }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Payment processing error:', error);
     
-    const result: PaymentProcessingResult = {
-      success: false,
-      paymentId: '',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      detail: String(error)
-    };
-
-    return new Response(JSON.stringify(result), {
-      status: 500,
+    return new Response(JSON.stringify({
+      error: 'Payment processing failed',
+      detail: error instanceof Error ? error.message : String(error)
+    }), {
+      status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

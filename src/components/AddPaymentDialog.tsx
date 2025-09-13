@@ -193,7 +193,7 @@ export const AddPaymentDialog = ({
       }
 
       // Check for HTTP errors or application errors
-      if (!res.ok || responseData?.success === false) {
+      if (!res.ok || responseData?.ok === false) {
         const msg = responseData?.error || responseData?.detail || `Payment failed (status ${res.status})`;
         console.error('Payment error:', responseData);
         
@@ -206,8 +206,8 @@ export const AddPaymentDialog = ({
       }
 
       toast({
-        title: "Payment Added",
-        description: `Payment of £${data.amount} has been recorded and applied.`,
+        title: "Success",
+        description: "Payment recorded",
       });
 
       form.reset();
@@ -226,6 +226,9 @@ export const AddPaymentDialog = ({
       }
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({ queryKey: ["payments-list"] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["pnl"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle-pl"] });
       queryClient.invalidateQueries({ queryKey: ["vehicles-pl"] });
     } catch (error) {

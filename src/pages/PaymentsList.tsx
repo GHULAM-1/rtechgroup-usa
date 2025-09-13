@@ -179,8 +179,14 @@ const PaymentsList = () => {
         body: { paymentId: payment.id }
       });
 
-      if (applyError) throw applyError;
-      if (!applyResult.ok) throw new Error(applyResult.error || 'Payment processing failed');
+      if (applyError) {
+        console.error('Apply payment error:', applyError);
+        throw new Error('Failed to process payment');
+      }
+      
+      if (!applyResult.ok) {
+        throw new Error(applyResult.error || applyResult.detail || 'Payment processing failed');
+      }
 
       toast({
         title: "Payment Recorded",

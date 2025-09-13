@@ -10,11 +10,146 @@ interface PaymentProcessingResult {
   ok?: boolean;
   paymentId?: string;
   category?: string;
-  allocated?: number;
-  remaining?: number;
-  status?: string;
+  entryDate?: string;
   error?: string;
   detail?: string;
+}
+
+async function applyPayment(supabase: any, paymentId: string): Promise<PaymentProcessingResult> {
+  try {
+    console.log('Processing payment:', paymentId);
+
+    // Load payment details
+    const { data: payment, error: paymentError } = await supabase
+      .from('payments')
+      .select('*')
+      .eq('id', paymentId)
+      .single();
+
+    if (paymentError || !payment) {
+      return {
+        ok: false,
+        error: 'Payment not found',
+        detail: paymentError?.message || 'Payment does not exist'
+      };
+    }
+
+    // Map category (case-insensitive)
+    let category = 'Other';
+    const paymentType = (payment.payment_type || '').toLowerCase();
+    
+    if (['initial fee', 'initial fees', 'initialfee'].includes(paymentType)) {
+      category = 'Initial Fees';
+    } else if (paymentType === 'rental') {
+      category = 'Rental';
+    } else if (paymentType === 'fine') {
+      category = 'Fines';
+    }
+
+    // Determine entry date
+    const entryDate = payment.payment_date || payment.paid_at || payment.created_at || new Date().toISOString().split('T')[0];
+
+    console.log(`Payment ${paymentId}: ${category}, ${entryDate}, ${payment.amount}`);
+
+    // UPSERT Ledger entry (Payment, negative amount)
+    const { error: ledgerError } = await supabase
+      .from('ledger_entries')
+      .upsert([{
+        customer_id: payment.customer_id,
+        rental_id: payment.rental_id,
+        vehicle_id: payment.vehicle_id,
+        entry_date: entryDate,
+        type: 'Payment',
+        category: category,
+        amount: -Math.abs(payment.amount), // Ensure negative
+        due_date: entryDate,
+        remaining_amount: 0,
+        payment_id: payment.id
+      }], {
+        onConflict: 'payment_id',
+        ignoreDuplicates: true
+      });
+
+    if (ledgerError) {
+      console.error('Ledger upsert error:', ledgerError);
+      return {
+        ok: false,
+        error: 'Failed to create ledger entry',
+        detail: ledgerError.message
+      };
+    }
+
+    // Check if side column exists in pnl_entries
+    const { data: columnCheck } = await supabase
+      .rpc('exec', {
+        sql: `SELECT column_name FROM information_schema.columns 
+              WHERE table_name = 'pnl_entries' AND column_name = 'side'`
+      });
+
+    const hasSideColumn = columnCheck && columnCheck.length > 0;
+
+    // UPSERT P&L entry (Revenue, positive amount)
+    const pnlEntry: any = {
+      vehicle_id: payment.vehicle_id,
+      rental_id: payment.rental_id,
+      customer_id: payment.customer_id,
+      entry_date: entryDate,
+      category: category,
+      amount: Math.abs(payment.amount), // Ensure positive
+      reference: payment.id,
+      payment_id: payment.id
+    };
+
+    if (hasSideColumn) {
+      pnlEntry.side = 'Revenue';
+    }
+
+    const { error: pnlError } = await supabase
+      .from('pnl_entries')
+      .upsert([pnlEntry], {
+        onConflict: 'reference',
+        ignoreDuplicates: true
+      });
+
+    if (pnlError) {
+      console.error('P&L upsert error:', pnlError);
+      return {
+        ok: false,
+        error: 'Failed to create P&L entry',
+        detail: pnlError.message
+      };
+    }
+
+    // Update payment status (no FIFO allocation yet)
+    const { error: updateError } = await supabase
+      .from('payments')
+      .update({ 
+        status: 'Applied', 
+        remaining_amount: 0 
+      })
+      .eq('id', paymentId);
+
+    if (updateError) {
+      console.error('Payment update error:', updateError);
+    }
+
+    console.log('Payment processed successfully');
+
+    return {
+      ok: true,
+      paymentId: paymentId,
+      category: category,
+      entryDate: entryDate
+    };
+
+  } catch (error) {
+    console.error('Payment processing error:', error);
+    return {
+      ok: false,
+      error: 'Payment processing failed',
+      detail: error.message || 'Unknown error occurred'
+    };
+  }
 }
 
 serve(async (req) => {
@@ -30,7 +165,8 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase configuration');
       return new Response(JSON.stringify({ 
-        error: 'Missing Supabase configuration' 
+        error: 'Missing Supabase configuration',
+        detail: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -38,82 +174,57 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { paymentId } = await req.json();
+    
+    // Parse request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JSON in request body',
+        detail: error.message
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    const { paymentId } = body;
     
     if (!paymentId) {
       return new Response(JSON.stringify({ 
-        error: 'Payment ID is required' 
+        error: 'Payment ID is required',
+        detail: 'paymentId field must be provided in request body'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Processing payment:', paymentId);
+    // Apply payment using centralized service
+    const result = await applyPayment(supabase, paymentId);
 
-    // Simple approach: Just create payment ledger entry and mark as applied
-    const { data: payment } = await supabase
-      .from('payments')
-      .select('*')
-      .eq('id', paymentId)
-      .single();
-
-    if (!payment) {
-      return new Response(JSON.stringify({ 
-        error: 'Payment not found' 
-      }), {
+    if (!result.ok) {
+      return new Response(JSON.stringify(result), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Create payment ledger entry
-    await supabase
-      .from('ledger_entries')
-      .upsert({
-        customer_id: payment.customer_id,
-        rental_id: payment.rental_id,
-        vehicle_id: payment.vehicle_id,
-        entry_date: payment.payment_date,
-        type: 'Payment',
-        category: 'Rental',
-        amount: -payment.amount,
-        remaining_amount: 0,
-        payment_id: payment.id
-      }, {
-        onConflict: 'payment_id',
-        ignoreDuplicates: true
-      });
-
-    // Mark payment as applied
-    await supabase
-      .from('payments')
-      .update({ 
-        status: 'Applied', 
-        remaining_amount: 0 
-      })
-      .eq('id', paymentId);
-
-    console.log('Payment processed successfully');
-
-    return new Response(JSON.stringify({
-      ok: true,
-      paymentId: paymentId,
-      status: 'Applied'
-    }), {
-      status: 200,
+    return new Response(JSON.stringify(result), {
+      status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Payment processing error:', error);
+    console.error('Server error:', error);
     
     return new Response(JSON.stringify({
-      ok: true,  // Return success even if there are minor errors
-      paymentId: paymentId || 'unknown',
-      status: 'Applied'
+      ok: false,
+      error: 'Internal server error',
+      detail: error.message || 'Unknown server error'
     }), {
-      status: 200,
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

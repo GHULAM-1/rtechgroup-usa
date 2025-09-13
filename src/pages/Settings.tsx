@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { PaymentsAcceptanceTest } from '@/components/PaymentsAcceptanceTest';
 
 interface CompanyProfile {
   company_name: string;
@@ -208,7 +209,7 @@ const Settings = () => {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Company Profile
@@ -220,6 +221,10 @@ const Settings = () => {
           <TabsTrigger value="maintenance" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             Maintenance
+          </TabsTrigger>
+          <TabsTrigger value="testing" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Testing
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
@@ -421,6 +426,11 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Testing Tab */}
+        <TabsContent value="testing">
+          <PaymentsAcceptanceTest />
         </TabsContent>
 
         {/* Integrations Tab */}

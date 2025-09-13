@@ -88,44 +88,33 @@ export const CustomerManagement = () => {
   const { data: balances } = useQuery({
     queryKey: ["customer-balances"],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
+      if (!customers?.length) return {};
       
-      const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("customer_id, amount, remaining_amount, type, due_date")
-        .eq("type", "Charge")
-        .gt("remaining_amount", 0)
-        .lte("due_date", today);
-      
-      if (error) throw error;
-      
-      // Calculate balances by customer
       const balanceMap: Record<string, CustomerBalance> = {};
       
-      data?.forEach((entry) => {
-        if (!balanceMap[entry.customer_id]) {
-          balanceMap[entry.customer_id] = {
-            customer_id: entry.customer_id,
-            balance: 0,
-            status: 'Settled',
-          };
+      // Get balance status for each customer using the corrected database function
+      for (const customer of customers) {
+        const { data, error } = await supabase
+          .rpc('get_customer_balance_with_status', { 
+            customer_id_param: customer.id 
+          })
+          .single();
+        
+        if (error) {
+          console.error('Error fetching balance for customer:', customer.id, error);
+          continue;
         }
-        balanceMap[entry.customer_id].balance += Number(entry.remaining_amount);
-      });
-      
-      // Determine status
-      Object.values(balanceMap).forEach((balance) => {
-        if (balance.balance > 0) {
-          balance.status = 'In Debt';
-        } else if (balance.balance < 0) {
-          balance.status = 'In Credit';
-        } else {
-          balance.status = 'Settled';
-        }
-      });
+        
+        balanceMap[customer.id] = {
+          customer_id: customer.id,
+          balance: data.balance,
+          status: data.status as 'In Credit' | 'Settled' | 'In Debt',
+        };
+      }
       
       return balanceMap;
     },
+    enabled: !!customers?.length,
   });
 
   if (isLoading) {

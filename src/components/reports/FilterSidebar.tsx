@@ -58,7 +58,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const paymentTypes = [
     'Rental',
-    'Initial Fee', 
+    'InitialFee', 
     'Fine',
     'Service',
     'Other'

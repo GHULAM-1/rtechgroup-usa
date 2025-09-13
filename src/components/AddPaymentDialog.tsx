@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { PAYMENT_TYPES } from "@/lib/constants";
 
 const paymentSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),

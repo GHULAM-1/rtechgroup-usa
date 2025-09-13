@@ -32,11 +32,11 @@ const PaymentTypeBadge = ({ type }: { type: string }) => {
   const getVariant = () => {
     switch (type) {
       case 'InitialFee':
-        return 'default';
-      case 'Rental':
         return 'secondary';
-      case 'Other':
-        return 'outline';
+      case 'Rental':
+        return 'default';
+      case 'Fine':
+        return 'destructive';
       default:
         return 'outline';
     }

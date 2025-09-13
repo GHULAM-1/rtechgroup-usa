@@ -437,9 +437,9 @@ const CustomerDetail = () => {
                            <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
                            <TableCell>{payment.vehicles?.reg}</TableCell>
                            <TableCell>
-                             <Badge variant={payment.payment_type === 'Rental' ? 'default' : 'secondary'}>
-                               {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                             </Badge>
+                              <Badge variant={payment.payment_type === 'Rental' ? 'default' : payment.payment_type === 'InitialFee' ? 'secondary' : 'outline'}>
+                                {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                              </Badge>
                            </TableCell>
                            <TableCell>{payment.method || 'Cash'}</TableCell>
                            <TableCell>

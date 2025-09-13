@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 const fineSchema = z.object({
   type: z.enum(["PCN", "Speeding", "Other"]),
   vehicle_id: z.string().min(1, "Vehicle is required"),
-  customer_id: z.string().optional(),
+  customer_id: z.string().min(1, "Customer is required"),
   reference_no: z.string().optional(),
   issue_date: z.date(),
   due_date: z.date(),
@@ -78,13 +78,13 @@ const CreateFine = () => {
 
   const createFineMutation = useMutation({
     mutationFn: async (data: FineFormData) => {
-      // Create fine record
+      // Create fine record - the trigger will handle ledger entries automatically
       const { data: fine, error: fineError } = await supabase
         .from("fines")
         .insert({
           type: data.type,
           vehicle_id: data.vehicle_id,
-          customer_id: data.customer_id === "none" ? null : data.customer_id || null,
+          customer_id: data.customer_id,
           reference_no: data.reference_no || null,
           issue_date: data.issue_date.toISOString().split('T')[0],
           due_date: data.due_date.toISOString().split('T')[0],
@@ -97,35 +97,6 @@ const CreateFine = () => {
         .single();
 
       if (fineError) throw fineError;
-
-      // Business Logic based on liability
-      if (data.liability === 'Customer' && data.customer_id && data.customer_id !== "none") {
-        // Create ledger charge entry for customer liability
-        await supabase
-          .from("ledger_entries")
-          .insert({
-            customer_id: data.customer_id,
-            vehicle_id: data.vehicle_id,
-            entry_date: data.issue_date.toISOString().split('T')[0],
-            type: "Charge",
-            category: "Fine",
-            amount: data.amount,
-            due_date: data.due_date.toISOString().split('T')[0],
-            remaining_amount: data.amount
-          });
-      } else if (data.liability === 'Business') {
-        // Create P&L cost entry for business liability
-        await supabase
-          .from("pnl_entries")
-          .insert({
-            vehicle_id: data.vehicle_id,
-            entry_date: data.issue_date.toISOString().split('T')[0],
-            side: "Cost",
-            category: "Fines",
-            amount: data.amount,
-            source_ref: fine.id
-          });
-      }
 
       // Upload evidence files if any
       if (evidenceFiles.length > 0) {
@@ -278,7 +249,7 @@ const CreateFine = () => {
                   name="customer_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Customer (Optional)</FormLabel>
+                      <FormLabel>Customer *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>
@@ -286,7 +257,6 @@ const CreateFine = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="none">No specific customer</SelectItem>
                           {customers?.map((customer) => (
                             <SelectItem key={customer.id} value={customer.id}>
                               {customer.name}

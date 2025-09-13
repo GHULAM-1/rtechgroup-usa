@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
 const fineFormSchema = z.object({
   type: z.enum(["PCN", "Speeding", "Other"]),
   vehicle_id: z.string().min(1, "Vehicle is required"),
-  customer_id: z.string().optional(),
+  customer_id: z.string().min(1, "Customer is required"),
   reference_no: z.string().optional(),
   issue_date: z.date({
     required_error: "Issue date is required",
@@ -106,12 +106,13 @@ export const AddFineDialog = ({ open, onOpenChange }: AddFineDialogProps) => {
 
   const createFineMutation = useMutation({
     mutationFn: async (values: FineFormValues) => {
+      // Create fine record - the trigger will handle ledger entries automatically
       const { data: fine, error } = await supabase
         .from("fines")
         .insert({
           type: values.type,
           vehicle_id: values.vehicle_id,
-          customer_id: values.customer_id === "none" ? null : values.customer_id || null,
+          customer_id: values.customer_id,
           reference_no: values.reference_no || null,
           issue_date: format(values.issue_date, "yyyy-MM-dd"),
           due_date: format(values.due_date, "yyyy-MM-dd"),
@@ -269,7 +270,7 @@ export const AddFineDialog = ({ open, onOpenChange }: AddFineDialogProps) => {
               name="customer_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer (Optional)</FormLabel>
+                  <FormLabel>Customer *</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -277,7 +278,6 @@ export const AddFineDialog = ({ open, onOpenChange }: AddFineDialogProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">No customer assigned</SelectItem>
                       {customers?.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}

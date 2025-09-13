@@ -14,8 +14,10 @@ interface Vehicle {
   reg: string;
   make: string;
   model: string;
+  colour: string;
   status: string;
   purchase_price: number;
+  acquisition_date: string;
 }
 
 interface VehiclePL {
@@ -66,7 +68,7 @@ const VehiclesList = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vehicles")
-        .select("*")
+        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -151,6 +153,7 @@ const VehiclesList = () => {
                   <TableRow>
                     <TableHead>Registration</TableHead>
                     <TableHead>Make/Model</TableHead>
+                    <TableHead>Colour</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Acquisition Cost</TableHead>
                     <TableHead className="text-right">Net P&L</TableHead>
@@ -166,6 +169,7 @@ const VehiclesList = () => {
                       <TableRow key={vehicle.id} className="hover:bg-muted/50">
                         <TableCell className="font-medium">{vehicle.reg}</TableCell>
                         <TableCell>{vehicle.make} {vehicle.model}</TableCell>
+                        <TableCell>{vehicle.colour}</TableCell>
                         <TableCell>
                           <StatusBadge status={vehicle.status} />
                         </TableCell>

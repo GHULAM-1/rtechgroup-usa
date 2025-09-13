@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Car, ArrowLeft, Edit, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown } from "lucide-react";
+import { format } from "date-fns";
 
 interface Vehicle {
   id: string;
@@ -20,19 +20,11 @@ interface Vehicle {
   purchase_price: number;
   acquisition_date: string;
   acquisition_type: string;
-}
-
-interface LedgerEntry {
-  id: string;
-  entry_date: string;
-  due_date: string | null;
-  amount: number;
-  remaining_amount: number;
-  type: string;
-  category: string;
+  created_at: string;
 }
 
 interface PLEntry {
+  id: string;
   entry_date: string;
   side: string;
   category: string;
@@ -40,14 +32,42 @@ interface PLEntry {
   source_ref: string;
 }
 
-const VehicleDetail = () => {
+interface Rental {
+  id: string;
+  customer_id: string;
+  start_date: string;
+  end_date: string;
+  monthly_amount: number;
+  status: string;
+  customers: {
+    name: string;
+  };
+}
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const variants = {
+    Available: 'default',
+    Rented: 'secondary',
+    Maintenance: 'destructive',
+    Sold: 'outline'
+  };
+
+  return (
+    <Badge variant={variants[status as keyof typeof variants] as any} className="badge-status">
+      {status}
+    </Badge>
+  );
+};
+
+export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
 
-  const { data: vehicle, isLoading } = useQuery({
+  // Fetch vehicle details
+  const { data: vehicle, isLoading: vehicleLoading } = useQuery({
     queryKey: ["vehicle", id],
     queryFn: async () => {
+      if (!id) throw new Error("Vehicle ID required");
       const { data, error } = await supabase
         .from("vehicles")
         .select("*")
@@ -60,24 +80,11 @@ const VehicleDetail = () => {
     enabled: !!id,
   });
 
-  const { data: ledgerEntries } = useQuery({
-    queryKey: ["vehicle-ledger", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("*")
-        .eq("vehicle_id", id)
-        .order("entry_date", { ascending: false });
-      
-      if (error) throw error;
-      return data as LedgerEntry[];
-    },
-    enabled: !!id,
-  });
-
+  // Fetch P&L entries
   const { data: plEntries } = useQuery({
     queryKey: ["vehicle-pl", id],
     queryFn: async () => {
+      if (!id) return [];
       const { data, error } = await supabase
         .from("pnl_entries")
         .select("*")
@@ -90,7 +97,70 @@ const VehicleDetail = () => {
     enabled: !!id,
   });
 
-  if (isLoading) {
+  // Fetch rentals
+  const { data: rentals } = useQuery({
+    queryKey: ["vehicle-rentals", id],
+    queryFn: async () => {
+      if (!id) return [];
+      const { data, error } = await supabase
+        .from("rentals")
+        .select(`
+          *,
+          customers(name)
+        `)
+        .eq("vehicle_id", id)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data as Rental[];
+    },
+    enabled: !!id,
+  });
+
+  // Calculate P&L summary
+  const plSummary = plEntries?.reduce(
+    (acc, entry) => {
+      const amount = Number(entry.amount);
+      if (entry.side === 'Revenue') {
+        acc.totalRevenue += amount;
+        if (entry.category === 'Rental') acc.rentalRevenue += amount;
+        if (entry.category === 'Fees') acc.feesRevenue += amount;
+      } else if (entry.side === 'Cost') {
+        acc.totalCosts += amount;
+        if (entry.category === 'Acquisition') acc.acquisitionCosts += amount;
+        if (entry.category === 'Finance') acc.financeCosts += amount;
+        if (entry.category === 'Service') acc.serviceCosts += amount;
+        if (entry.category === 'Fines') acc.finesCosts += amount;
+        if (entry.category === 'Other') acc.otherCosts += amount;
+      }
+      return acc;
+    },
+    {
+      totalRevenue: 0,
+      rentalRevenue: 0,
+      feesRevenue: 0,
+      totalCosts: 0,
+      acquisitionCosts: 0,
+      financeCosts: 0,
+      serviceCosts: 0,
+      finesCosts: 0,
+      otherCosts: 0,
+    }
+  ) || {
+    totalRevenue: 0,
+    rentalRevenue: 0,
+    feesRevenue: 0,
+    totalCosts: 0,
+    acquisitionCosts: 0,
+    financeCosts: 0,
+    serviceCosts: 0,
+    finesCosts: 0,
+    otherCosts: 0,
+  };
+
+  const netProfit = plSummary.totalRevenue - plSummary.totalCosts;
+
+  if (vehicleLoading) {
     return <div>Loading vehicle details...</div>;
   }
 
@@ -98,212 +168,362 @@ const VehicleDetail = () => {
     return <div>Vehicle not found</div>;
   }
 
-  const totalRevenue = plEntries?.filter(entry => entry.side === 'Revenue').reduce((sum, entry) => sum + Number(entry.amount), 0) || 0;
-  const totalCosts = plEntries?.filter(entry => entry.side === 'Cost').reduce((sum, entry) => sum + Number(entry.amount), 0) || 0;
-  const netProfit = totalRevenue - totalCosts;
-
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate("/vehicles")}>
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/vehicles")}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Vehicles
           </Button>
           <div>
             <h1 className="text-3xl font-bold">{vehicle.reg}</h1>
-            <p className="text-muted-foreground">{vehicle.make} {vehicle.model} - {vehicle.colour}</p>
+            <p className="text-muted-foreground">
+              {vehicle.make} {vehicle.model} • {vehicle.colour}
+            </p>
           </div>
         </div>
-        <Button>
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Vehicle
-        </Button>
+        <StatusBadge status={vehicle.status} />
       </div>
 
-      {/* Vehicle Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5 text-primary" />
-            Vehicle Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Status</p>
-              <Badge>{vehicle.status}</Badge>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Acquisition Type</p>
-              <p className="font-medium">{vehicle.acquisition_type}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Acquisition Date</p>
-              <p className="font-medium">{new Date(vehicle.acquisition_date).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Purchase Price</p>
-              <p className="font-medium">£{Number(vehicle.purchase_price).toLocaleString()}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="ledger">Ledger</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger value="rentals">Rentals</TabsTrigger>
+          <TabsTrigger value="services">Services</TabsTrigger>
           <TabsTrigger value="pl">P&L</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <div className="grid gap-6 md:grid-cols-3">
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Vehicle Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  Total Revenue
+                <CardTitle className="flex items-center gap-2">
+                  <Car className="h-5 w-5" />
+                  Vehicle Details
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  £{totalRevenue.toLocaleString()}
+              <CardContent className="space-y-2">
+                <div><strong>Registration:</strong> {vehicle.reg}</div>
+                <div><strong>Make:</strong> {vehicle.make}</div>
+                <div><strong>Model:</strong> {vehicle.model}</div>
+                <div><strong>Colour:</strong> {vehicle.colour}</div>
+                <div><strong>Status:</strong> <StatusBadge status={vehicle.status} /></div>
+                <div><strong>Acquisition:</strong> {vehicle.acquisition_type}</div>
+                <div><strong>Purchase Price:</strong> £{Number(vehicle.purchase_price).toLocaleString()}</div>
+                <div><strong>Acquired:</strong> {format(new Date(vehicle.acquisition_date), "dd/MM/yyyy")}</div>
+              </CardContent>
+            </Card>
+
+            {/* P&L Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  P&L Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Total Revenue:</span>
+                  <span className="font-medium text-green-600">£{plSummary.totalRevenue.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Costs:</span>
+                  <span className="font-medium text-red-600">£{plSummary.totalCosts.toLocaleString()}</span>
+                </div>
+                <hr />
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Net Profit:</span>
+                  <div className={`flex items-center gap-1 font-medium ${
+                    netProfit >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {netProfit >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    £{Math.abs(netProfit).toLocaleString()}
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Rental Status */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-red-600" />
-                  Total Costs
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Rental Status
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">
-                  £{totalCosts.toLocaleString()}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  {netProfit >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-600" />
-                  )}
-                  Net P&L
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  £{Math.abs(netProfit).toLocaleString()}
-                </div>
+                {rentals && rentals.length > 0 ? (
+                  <div className="space-y-2">
+                    <div><strong>Active Rentals:</strong> {rentals.filter(r => r.status === 'Active').length}</div>
+                    <div><strong>Total Rentals:</strong> {rentals.length}</div>
+                    {rentals.filter(r => r.status === 'Active').map(rental => (
+                      <div key={rental.id} className="p-2 bg-muted rounded">
+                        <div className="text-sm font-medium">{rental.customers.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          £{rental.monthly_amount}/month
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-muted-foreground">No active rentals</div>
+                )}
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
-        <TabsContent value="ledger">
+        <TabsContent value="pl" className="mt-6">
+          <div className="space-y-6">
+            {/* P&L Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-green-600">Revenue</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Rental Income:</span>
+                    <span>£{plSummary.rentalRevenue.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fees:</span>
+                    <span>£{plSummary.feesRevenue.toLocaleString()}</span>
+                  </div>
+                  <hr />
+                  <div className="flex justify-between font-medium">
+                    <span>Total Revenue:</span>
+                    <span>£{plSummary.totalRevenue.toLocaleString()}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-red-600">Costs</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Acquisition:</span>
+                    <span>£{plSummary.acquisitionCosts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Finance:</span>
+                    <span>£{plSummary.financeCosts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Service:</span>
+                    <span>£{plSummary.serviceCosts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Fines:</span>
+                    <span>£{plSummary.finesCosts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Other:</span>
+                    <span>£{plSummary.otherCosts.toLocaleString()}</span>
+                  </div>
+                  <hr />
+                  <div className="flex justify-between font-medium">
+                    <span>Total Costs:</span>
+                    <span>£{plSummary.totalCosts.toLocaleString()}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Net Profit Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Net Profit
+                  <div className={`flex items-center gap-1 ${
+                    netProfit >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {netProfit >= 0 ? (
+                      <TrendingUp className="h-5 w-5" />
+                    ) : (
+                      <TrendingDown className="h-5 w-5" />
+                    )}
+                    £{Math.abs(netProfit).toLocaleString()}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+
+            {/* P&L Entries Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle>P&L Entries</CardTitle>
+                <CardDescription>Detailed profit and loss entries for this vehicle</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {plEntries && plEntries.length > 0 ? (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead>Reference</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {plEntries.map((entry) => (
+                          <TableRow key={entry.id}>
+                            <TableCell>{format(new Date(entry.entry_date), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>
+                              <Badge variant={entry.side === 'Revenue' ? 'default' : 'destructive'}>
+                                {entry.side}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{entry.category}</TableCell>
+                            <TableCell className={`text-right font-medium ${
+                              entry.side === 'Revenue' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {entry.side === 'Revenue' ? '+' : '-'}£{Number(entry.amount).toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{entry.source_ref || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No P&L entries found for this vehicle
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="rentals" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Vehicle Ledger</CardTitle>
-              <CardDescription>All charges and payments for this vehicle</CardDescription>
+              <CardTitle>Rental History</CardTitle>
+              <CardDescription>All rentals for this vehicle</CardDescription>
             </CardHeader>
             <CardContent>
-              {ledgerEntries && ledgerEntries.length > 0 ? (
+              {rentals && rentals.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-right">Remaining</TableHead>
+                        <TableHead>Customer</TableHead>
+                        <TableHead>Start Date</TableHead>
+                        <TableHead>End Date</TableHead>
+                        <TableHead>Monthly Amount</TableHead>
+                        <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {ledgerEntries.map((entry) => (
-                        <TableRow key={entry.id}>
-                          <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
+                      {rentals.map((rental) => (
+                        <TableRow key={rental.id}>
+                          <TableCell className="font-medium">{rental.customers.name}</TableCell>
+                          <TableCell>{format(new Date(rental.start_date), "dd/MM/yyyy")}</TableCell>
                           <TableCell>
-                            <Badge variant={entry.type === 'Charge' ? 'destructive' : 'default'}>
-                              {entry.type}
+                            {rental.end_date ? format(new Date(rental.end_date), "dd/MM/yyyy") : 'Ongoing'}
+                          </TableCell>
+                          <TableCell>£{Number(rental.monthly_amount).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge variant={rental.status === 'Active' ? 'default' : 'outline'}>
+                              {rental.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{entry.category}</TableCell>
-                          <TableCell>
-                            {entry.due_date ? new Date(entry.due_date).toLocaleDateString() : '-'}
-                          </TableCell>
-                          <TableCell className="text-right">£{Number(entry.amount).toLocaleString()}</TableCell>
-                          <TableCell className="text-right">£{Number(entry.remaining_amount).toLocaleString()}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
               ) : (
-                <p className="text-center py-8 text-muted-foreground">No ledger entries found</p>
+                <div className="text-center py-8 text-muted-foreground">
+                  No rentals found for this vehicle
+                </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="pl">
+        <TabsContent value="history" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Profit & Loss Statement</CardTitle>
-              <CardDescription>Revenue and cost breakdown for this vehicle</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Vehicle History
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {plEntries && plEntries.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Side</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Source</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {plEntries.map((entry, index) => (
-                        <TableRow key={index}>
-                          <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Badge variant={entry.side === 'Revenue' ? 'default' : 'destructive'}>
-                              {entry.side}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{entry.category}</TableCell>
-                          <TableCell className={`text-right ${entry.side === 'Revenue' ? 'text-green-600' : 'text-red-600'}`}>
-                            £{Number(entry.amount).toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{entry.source_ref}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ) : (
-                <p className="text-center py-8 text-muted-foreground">No P&L entries found</p>
-              )}
+              <div className="text-center py-8 text-muted-foreground">
+                Vehicle history tracking coming soon
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="expenses" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5" />
+                Expenses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                Expense tracking coming soon
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="services" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="h-5 w-5" />
+                Services & Maintenance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                Service history coming soon
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="files" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Documents & Files
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                File management coming soon
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
-};
-
-export default VehicleDetail;
+}

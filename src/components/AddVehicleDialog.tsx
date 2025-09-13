@@ -64,7 +64,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      const { data: vehicle, error } = await supabase
         .from("vehicles")
         .insert({
           reg: data.reg,
@@ -75,9 +75,22 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           purchase_price: data.purchase_price,
           acquisition_date: data.acquisition_date.toISOString().split('T')[0],
           status: "Available"
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Call pnl_post_acquisition if purchase_price and acquisition_date are present
+      if (data.purchase_price && data.acquisition_date) {
+        const { error: pnlError } = await supabase.rpc('pnl_post_acquisition', {
+          v_id: vehicle.id
+        });
+        
+        if (pnlError) {
+          console.error('Error posting acquisition to P&L:', pnlError);
+        }
+      }
 
       toast({
         title: "Vehicle Added",
@@ -87,8 +100,9 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       form.reset();
       handleOpenChange(false);
       
-      // Refresh the vehicles list
-      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      // Refresh the vehicles list and P&L data
+      queryClient.invalidateQueries({ queryKey: ["vehicles-list"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles-pl"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle-count"] });
     } catch (error) {
       toast({

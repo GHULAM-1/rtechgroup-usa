@@ -588,6 +588,7 @@ export type Database = {
           category: string | null
           entry_date: string
           id: string
+          payment_id: string | null
           side: string
           source_ref: string | null
           vehicle_id: string | null
@@ -597,6 +598,7 @@ export type Database = {
           category?: string | null
           entry_date: string
           id?: string
+          payment_id?: string | null
           side: string
           source_ref?: string | null
           vehicle_id?: string | null
@@ -606,6 +608,7 @@ export type Database = {
           category?: string | null
           entry_date?: string
           id?: string
+          payment_id?: string | null
           side?: string
           source_ref?: string | null
           vehicle_id?: string | null

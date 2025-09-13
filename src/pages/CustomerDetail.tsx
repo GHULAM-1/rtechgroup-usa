@@ -313,18 +313,18 @@ const CustomerDetail = () => {
             <div className="space-y-3">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Status</p>
-                {netPosition === 0 ? (
-                  <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+{netPosition === 0 ? (
+                  <span className="text-lg font-semibold text-green-600">
                     Settled
-                  </Badge>
+                  </span>
                 ) : netPosition > 0 ? (
-                  <Badge variant="destructive" className="text-lg px-3 py-1">
+                  <span className="text-lg font-semibold text-red-600">
                     In Debt (£{Math.abs(netPosition).toLocaleString()})
-                  </Badge>
+                  </span>
                 ) : (
-                  <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+                  <span className="text-lg font-semibold text-green-600">
                     Settled (+£{Math.abs(netPosition).toLocaleString()})
-                  </Badge>
+                  </span>
                 )}
               </div>
             </div>

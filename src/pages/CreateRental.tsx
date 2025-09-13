@@ -21,6 +21,9 @@ const rentalSchema = z.object({
   end_date: z.date(),
   monthly_amount: z.number().min(0.01, "Monthly amount must be greater than 0"),
   initial_fee: z.number().min(0, "Initial fee cannot be negative").optional(),
+}).refine((data) => data.start_date < data.end_date, {
+  message: "End date must be after start date",
+  path: ["end_date"],
 });
 
 type RentalFormData = z.infer<typeof rentalSchema>;
@@ -71,6 +74,14 @@ const CreateRental = () => {
   const onSubmit = async (data: RentalFormData) => {
     setLoading(true);
     try {
+      // Validate customer_id and vehicle_id are valid UUIDs
+      if (!data.customer_id || data.customer_id === "") {
+        throw new Error("Please select a customer");
+      }
+      if (!data.vehicle_id || data.vehicle_id === "") {
+        throw new Error("Please select a vehicle");
+      }
+
       // Create rental
       const { data: rental, error: rentalError } = await supabase
         .from("rentals")
@@ -142,6 +153,12 @@ const CreateRental = () => {
         .update({ status: "Rented" })
         .eq("id", data.vehicle_id);
 
+      // Call backfill function to generate rental charges
+      const { error: backfillError } = await supabase.rpc('backfill_rental_charges_full');
+      if (backfillError) {
+        console.warn("Warning: Failed to generate rental charges automatically:", backfillError);
+      }
+
       toast({
         title: "Rental Created",
         description: "Rental agreement has been created successfully with monthly charges scheduled.",
@@ -150,12 +167,19 @@ const CreateRental = () => {
       // Refresh queries and navigate
       queryClient.invalidateQueries({ queryKey: ["rentals-list"] });
       queryClient.invalidateQueries({ queryKey: ["vehicles-list"] });
+      queryClient.invalidateQueries({ queryKey: ["rental-detail", rental.id] });
       navigate(`/rentals/${rental.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating rental:", error);
+      
+      // Surface detailed error information
+      const errorMessage = error?.message || "Failed to create rental agreement. Please try again.";
+      const errorDetails = error?.details || error?.hint || "";
+      const fullError = errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage;
+      
       toast({
-        title: "Error",
-        description: "Failed to create rental agreement. Please try again.",
+        title: "Error Creating Rental",
+        description: fullError,
         variant: "destructive",
       });
     } finally {

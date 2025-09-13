@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format, subYears, addYears } from "date-fns";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { CalendarIcon } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,18 +13,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const paymentSchema = z.object({
+  customer_id: z.string().min(1, "Customer is required"),
+  vehicle_id: z.string().min(1, "Vehicle is required"),
+  rental_id: z.string().optional(),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_date: z.date({
     required_error: "Payment date is required",
   }),
   method: z.string().min(1, "Payment method is required"),
   payment_type: z.enum(['Rental', 'InitialFee', 'Other']).default('Rental'),
-  rental_id: z.string().optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -34,8 +34,8 @@ interface AddPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   rental_id?: string;
-  customer_id: string;
-  vehicle_id: string;
+  customer_id?: string;
+  vehicle_id?: string;
 }
 
 export const AddPaymentDialog = ({ 
@@ -52,6 +52,9 @@ export const AddPaymentDialog = ({
   const form = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
+      customer_id: customer_id || "",
+      vehicle_id: vehicle_id || "",
+      rental_id: rental_id || "",
       amount: 0,
       payment_date: toZonedTime(new Date(), 'Europe/London'),
       method: "Card",
@@ -59,72 +62,109 @@ export const AddPaymentDialog = ({
     },
   });
 
+  const selectedCustomerId = form.watch("customer_id") || customer_id;
+  const selectedVehicleId = form.watch("vehicle_id") || vehicle_id;
+
   const { data: activeRentals } = useQuery({
-    queryKey: ["active-rentals", customer_id],
+    queryKey: ["active-rentals", selectedCustomerId],
     queryFn: async () => {
-      if (!customer_id) return [];
+      if (!selectedCustomerId) return [];
+      
       const { data, error } = await supabase
         .from("rentals")
         .select(`
-          *,
+          id,
+          customer_id,
+          vehicle_id,
+          start_date,
+          end_date,
+          monthly_amount,
           customers(name),
           vehicles(reg)
         `)
-        .eq("customer_id", customer_id)
         .eq("status", "Active")
+        .eq("customer_id", selectedCustomerId)
         .order("start_date", { ascending: false });
       
       if (error) throw error;
       return data;
     },
-    enabled: !!customer_id,
+    enabled: !!selectedCustomerId,
   });
 
-  
+  const { data: customers } = useQuery({
+    queryKey: ["customers-for-payment"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customers").select("id, name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: vehicles } = useQuery({
+    queryKey: ["vehicles-for-payment"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("vehicles").select("id, reg");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
-      // Determine rental to use
-      let resolvedRentalId = data.rental_id || rental_id;
-      
-      // For Rental payments, enforce rental context
+      const finalCustomerId = data.customer_id || customer_id;
+      const finalVehicleId = data.vehicle_id || vehicle_id;
+      let finalRentalId = data.rental_id || rental_id;
+
+      // For Rental payments, ensure rental context is resolved
       if (data.payment_type === 'Rental') {
-        if (!resolvedRentalId) {
-          const customerRentals = activeRentals || [];
+        if (!finalRentalId && finalCustomerId) {
+          const customerRentals = activeRentals?.filter(r => r.customer_id === finalCustomerId);
           
-          if (customerRentals.length === 0) {
+          if (customerRentals?.length === 1) {
+            finalRentalId = customerRentals[0].id;
+          } else if (customerRentals?.length === 0) {
             toast({
               title: "Error",
               description: "No active rental found for this customer.",
               variant: "destructive",
             });
             return;
-          } else if (customerRentals.length === 1) {
-            resolvedRentalId = customerRentals[0].id;
-          } else {
+          } else if (customerRentals && customerRentals.length > 1) {
             toast({
-              title: "Error",
-              description: "Please select a rental - customer has multiple active rentals.",
+              title: "Error", 
+              description: "Customer has multiple active rentals. Please select a rental.",
               variant: "destructive",
             });
             return;
           }
         }
+
+        if (!finalRentalId) {
+          toast({
+            title: "Error",
+            description: "Rental must be specified for rental payments.",
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
-      // Create payment record - auto-application handled by database triggers
-      const { error: paymentError } = await supabase
+      // Create payment record - auto-application will be handled by database triggers
+      const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
-          customer_id: customer_id,
-          rental_id: resolvedRentalId,
-          vehicle_id: vehicle_id,
+          customer_id: finalCustomerId,
+          rental_id: finalRentalId || null,
+          vehicle_id: finalVehicleId,
           amount: data.amount,
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,
           payment_type: data.payment_type,
-        });
+        })
+        .select()
+        .single();
 
       if (paymentError) throw paymentError;
 
@@ -137,16 +177,18 @@ export const AddPaymentDialog = ({
       onOpenChange(false);
       
       // Refresh queries
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
-      if (resolvedRentalId) {
-        queryClient.invalidateQueries({ queryKey: ["rental", resolvedRentalId] });
+      if (finalRentalId) {
+        queryClient.invalidateQueries({ queryKey: ["rental-ledger", finalRentalId] });
+        queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", finalRentalId] });
+        queryClient.invalidateQueries({ queryKey: ["rental", finalRentalId] });
       }
+      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
     } catch (error) {
       console.error("Error adding payment:", error);
       toast({
         title: "Error",
-        description: "Failed to add payment. Please try again.",
+        description: error.message || "Failed to add payment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -162,6 +204,87 @@ export const AddPaymentDialog = ({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {!customer_id && (
+              <FormField
+                control={form.control}
+                name="customer_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Customer *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {customers?.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {!vehicle_id && (
+              <FormField
+                control={form.control}
+                name="vehicle_id" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vehicle *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select vehicle" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {vehicles?.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.reg}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {activeRentals && activeRentals.length > 1 && (
+              <FormField
+                control={form.control}
+                name="rental_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rental Agreement *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || rental_id}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select rental" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activeRentals?.map((rental) => (
+                          <SelectItem key={rental.id} value={rental.id}>
+                            {rental.vehicles?.reg} - {formatInTimeZone(new Date(rental.start_date), 'Europe/London', 'dd/MM/yyyy')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             <FormField
               control={form.control}
               name="amount"
@@ -213,7 +336,7 @@ export const AddPaymentDialog = ({
                         selected={field.value}
                         onSelect={field.onChange}
                         fromYear={new Date().getFullYear() - 5}
-                        toYear={new Date().getFullYear() + 2}
+                        toYear={new Date().getFullYear() + 1}
                         captionLayout="dropdown-buttons"
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
@@ -221,13 +344,12 @@ export const AddPaymentDialog = ({
                     </PopoverContent>
                   </Popover>
                   <FormDescription className="text-sm text-muted-foreground">
-                    Payments are automatically applied to charges. Future payments are allowed as accounting entries.
+                    Payments are automatically applied to outstanding charges. Future payments apply to next due charges.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
 
             <FormField
               control={form.control}
@@ -275,37 +397,6 @@ export const AddPaymentDialog = ({
                 </FormItem>
               )}
             />
-
-            {/* Show rental selector for Rental payments when customer has multiple active rentals */}
-            {form.watch("payment_type") === "Rental" && activeRentals && activeRentals.length > 1 && (
-              <FormField
-                control={form.control}
-                name="rental_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rental Agreement *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rental" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activeRentals.map((rental) => (
-                          <SelectItem key={rental.id} value={rental.id}>
-                            {rental.vehicles?.reg} - Started {format(new Date(rental.start_date), 'dd/MM/yyyy')}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      Customer has multiple active rentals - please select which rental this payment is for.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

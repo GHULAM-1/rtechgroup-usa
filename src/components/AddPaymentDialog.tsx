@@ -169,12 +169,22 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
-      // Payment processing is automatically handled by database trigger
-      console.log('Payment created:', payment.id, '- automatic processing via trigger');
+      // Apply payment using edge function
+      const { error: applyError } = await supabase.functions.invoke('apply-payment', {
+        body: { paymentId: payment.id }
+      });
+
+      if (applyError) {
+        console.error('Payment application error:', applyError);
+        // Delete the payment record since processing failed
+        await supabase.from('payments').delete().eq('id', payment.id);
+        
+        throw new Error(applyError.message || 'Payment processing failed');
+      }
 
       toast({
         title: "Success",
-        description: "Payment recorded and processed automatically",
+        description: "Payment recorded and processed successfully",
       });
 
       form.reset();

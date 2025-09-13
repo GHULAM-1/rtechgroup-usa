@@ -44,6 +44,7 @@ const paymentFormSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
   vehicle_id: z.string().optional(),
   rental_id: z.string().optional(),
+  fine_id: z.string().optional(),
   amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
     message: "Amount must be a positive number",
   }),
@@ -51,7 +52,8 @@ const paymentFormSchema = z.object({
     required_error: "Payment date is required",
   }),
   method: z.string().optional(),
-  payment_type: z.enum(["Rental", "InitialFee", "Fine"]),
+  payment_type: z.enum(["Rental", "InitialFee", "Fine", "Other"]),
+  notes: z.string().optional(),
 });
 
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
@@ -121,6 +123,30 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
     enabled: !!selectedCustomer,
   });
 
+  // Fetch fines for selected customer (if Fine payment type)
+  const selectedPaymentType = form.watch("payment_type");
+  const { data: fines } = useQuery({
+    queryKey: ["customer-fines", selectedCustomer, selectedPaymentType],
+    queryFn: async () => {
+      if (!selectedCustomer || selectedPaymentType !== "Fine") return [];
+      const { data, error } = await supabase
+        .from("fines")
+        .select(`
+          id,
+          reference_no,
+          amount,
+          status,
+          due_date,
+          vehicles(reg)
+        `)
+        .eq("customer_id", selectedCustomer)
+        .in("status", ["Open", "Partially Paid"]);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCustomer && selectedPaymentType === "Fine",
+  });
+
   const createPaymentMutation = useMutation({
     mutationFn: async (values: PaymentFormValues) => {
       const { data: payment, error } = await supabase
@@ -139,15 +165,18 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
 
       if (error) throw error;
 
-      // Apply payment using the canonical payment_apply_fifo function
-      await supabase.rpc("payment_apply_fifo", { p_id: payment.id });
+      // Apply payment using FIFO allocation to due/overdue charges
+      const { error: rpcError } = await supabase.rpc("payment_apply_fifo", { p_id: payment.id });
+      if (rpcError) throw rpcError;
 
       return payment;
     },
     onSuccess: () => {
-      toast.success("Payment recorded successfully");
+      toast.success("Payment recorded and applied successfully");
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["rental-ledger"] });
       queryClient.invalidateQueries({ queryKey: ["fines"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles-list"] }); // For P&L refresh
       onOpenChange(false);
       form.reset();
     },
@@ -211,11 +240,12 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
                           <SelectValue placeholder="Select payment type" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Rental">Rental</SelectItem>
-                        <SelectItem value="InitialFee">Initial Fee</SelectItem>
-                        <SelectItem value="Fine">Fine</SelectItem>
-                      </SelectContent>
+                       <SelectContent>
+                         <SelectItem value="Rental">Rental</SelectItem>
+                         <SelectItem value="InitialFee">Initial Fee</SelectItem>
+                         <SelectItem value="Fine">Fine</SelectItem>
+                         <SelectItem value="Other">Other</SelectItem>
+                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
@@ -247,7 +277,35 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
               />
             </div>
 
-            {rentals && rentals.length > 0 && (
+            {selectedPaymentType === "Fine" && fines && fines.length > 0 && (
+              <FormField
+                control={form.control}
+                name="fine_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Fine (Optional)</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select fine" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="none">General fine payment</SelectItem>
+                        {fines?.map((fine) => (
+                          <SelectItem key={fine.id} value={fine.id}>
+                            {fine.reference_no} - £{fine.amount} ({fine.vehicles?.reg})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {rentals && rentals.length > 0 && selectedPaymentType === "Rental" && (
               <FormField
                 control={form.control}
                 name="rental_id"
@@ -359,11 +417,25 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
                     </Popover>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-            </div>
+                 )}
+               />
+             </div>
 
-            <div className="flex justify-end space-x-2">
+             <FormField
+               control={form.control}
+               name="notes"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Notes (Optional)</FormLabel>
+                   <FormControl>
+                     <Input placeholder="Payment notes or reference" {...field} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+
+             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>

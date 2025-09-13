@@ -23,8 +23,10 @@ interface Payment {
   payment_date: string;
   method: string | null;
   payment_type: string;
+  status?: string;
+  notes?: string;
   customers: { name: string };
-  vehicles: { reg: string };
+  vehicles: { reg: string } | null;
   rentals: { id: string } | null;
 }
 
@@ -343,38 +345,58 @@ const PaymentsList = () => {
           {payments && payments.length > 0 ? (
             <div className="rounded-md border">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Date</TableHead>
+                     <TableHead>Customer</TableHead>
+                     <TableHead>Vehicle</TableHead>
+                     <TableHead>Rental</TableHead>
+                     <TableHead>Type</TableHead>
+                     <TableHead>Method</TableHead>
+                     <TableHead>Status</TableHead>
+                     <TableHead>Notes</TableHead>
+                     <TableHead className="text-right">Amount</TableHead>
+                   </TableRow>
+                 </TableHeader>
                 <TableBody>
                   {payments.map((payment) => (
-                    <TableRow key={payment.id} className="hover:bg-muted/50">
-                      <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                      <TableCell>{payment.customers?.name}</TableCell>
-                      <TableCell>{payment.vehicles?.reg}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={
-                            payment.payment_type === 'Rental' ? 'default' :
-                            payment.payment_type === 'InitialFee' ? 'secondary' :
-                            payment.payment_type === 'Fine' ? 'destructive' : 'outline'
-                          }
-                        >
-                          {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{payment.method || 'Cash'}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        £{Number(payment.amount).toLocaleString()}
-                      </TableCell>
-                    </TableRow>
+                     <TableRow key={payment.id} className="hover:bg-muted/50">
+                       <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                       <TableCell>{payment.customers?.name}</TableCell>
+                       <TableCell>{payment.vehicles?.reg || '-'}</TableCell>
+                       <TableCell>
+                         {payment.rentals ? (
+                           <Badge variant="outline" className="text-xs">
+                             Rental #{payment.rentals.id.slice(0, 8)}
+                           </Badge>
+                         ) : (
+                           '-'
+                         )}
+                       </TableCell>
+                       <TableCell>
+                         <Badge 
+                           variant={
+                             payment.payment_type === 'Rental' ? 'default' :
+                             payment.payment_type === 'InitialFee' ? 'secondary' :
+                             payment.payment_type === 'Fine' ? 'destructive' : 'outline'
+                           }
+                         >
+                           {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>{payment.method || 'Cash'}</TableCell>
+                       <TableCell>
+                         <Badge variant="default" className="text-xs">
+                           Applied
+                         </Badge>
+                       </TableCell>
+                       <TableCell className="text-sm text-muted-foreground">
+                         {payment.notes || '-'}
+                       </TableCell>
+                       <TableCell className="text-right font-medium">
+                         £{Number(payment.amount).toLocaleString()}
+                       </TableCell>
+                     </TableRow>
                   ))}
                 </TableBody>
               </Table>

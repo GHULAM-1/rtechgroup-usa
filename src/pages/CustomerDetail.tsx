@@ -337,6 +337,12 @@ const CustomerDetail = () => {
                 {fines?.filter(f => f.status === 'Open').length || 0}
               </span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Fines Outstanding</span>
+              <span className="font-medium text-red-600">
+                £{fines?.filter(f => f.status === 'Open').reduce((sum, f) => sum + f.amount, 0).toFixed(2) || '0.00'}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>

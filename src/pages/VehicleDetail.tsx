@@ -289,6 +289,13 @@ export default function VehicleDetail() {
                   <div className="space-y-2">
                     <div><strong>Active Rentals:</strong> {rentals.filter(r => r.status === 'Active').length}</div>
                     <div><strong>Total Rentals:</strong> {rentals.length}</div>
+                    <div><strong>Fines:</strong> {fines?.length || 0} 
+                      {fines && fines.length > 0 && (
+                        <span className="text-red-600 ml-1">
+                          (£{fines.filter(f => f.status === 'Open').reduce((sum, f) => sum + f.amount, 0).toLocaleString()} outstanding)
+                        </span>
+                      )}
+                    </div>
                     {rentals.filter(r => r.status === 'Active').map(rental => (
                       <div key={rental.id} className="p-2 bg-muted rounded">
                         <div className="text-sm font-medium">{rental.customers.name}</div>
@@ -506,7 +513,15 @@ export default function VehicleDetail() {
                     <TableBody>
                       {fines.map((fine) => (
                         <TableRow key={fine.id}>
-                          <TableCell className="font-medium">{fine.reference_no || fine.id.slice(0, 8)}</TableCell>
+                         <TableCell className="font-medium">
+                           <Button
+                             variant="link"
+                             className="p-0 h-auto font-medium"
+                             onClick={() => navigate(`/fines/${fine.id}`)}
+                           >
+                             {fine.reference_no || fine.id.slice(0, 8)}
+                           </Button>
+                         </TableCell>
                           <TableCell>{fine.customers?.name || 'No customer'}</TableCell>
                           <TableCell>{fine.type}</TableCell>
                           <TableCell>{format(new Date(fine.issue_date), "dd/MM/yyyy")}</TableCell>

@@ -25,6 +25,7 @@ const paymentSchema = z.object({
   }),
   method: z.string().min(1, "Payment method is required"),
   payment_type: z.enum(['Rental', 'InitialFee', 'Other']).default('Rental'),
+  rental_id: z.string().optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -32,7 +33,7 @@ type PaymentFormData = z.infer<typeof paymentSchema>;
 interface AddPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rental_id: string;
+  rental_id?: string;
   customer_id: string;
   vehicle_id: string;
 }
@@ -59,8 +60,9 @@ export const AddPaymentDialog = ({
   });
 
   const { data: activeRentals } = useQuery({
-    queryKey: ["active-rentals"],
+    queryKey: ["active-rentals", customer_id],
     queryFn: async () => {
+      if (!customer_id) return [];
       const { data, error } = await supabase
         .from("rentals")
         .select(`
@@ -68,12 +70,14 @@ export const AddPaymentDialog = ({
           customers(name),
           vehicles(reg)
         `)
+        .eq("customer_id", customer_id)
         .eq("status", "Active")
         .order("start_date", { ascending: false });
       
       if (error) throw error;
       return data;
     },
+    enabled: !!customer_id,
   });
 
   
@@ -81,47 +85,36 @@ export const AddPaymentDialog = ({
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
-      // Auto-resolve rental based on customer, vehicle, and payment date
-      let resolvedRentalId = rental_id;
+      // Determine rental to use
+      let resolvedRentalId = data.rental_id || rental_id;
       
-      if (!resolvedRentalId && customer_id && vehicle_id) {
-        const matchingRentals = activeRentals?.filter(r => 
-          r.customer_id === customer_id &&
-          r.vehicle_id === vehicle_id &&
-          new Date(formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd')) >= new Date(r.start_date) &&
-          (r.end_date === null || new Date(formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd')) <= new Date(r.end_date))
-        );
-        
-        if (matchingRentals?.length === 1) {
-          resolvedRentalId = matchingRentals[0].id;
-        } else if (matchingRentals?.length === 0) {
-          toast({
-            title: "Error",
-            description: "No active rental found for this customer/vehicle on the payment date.",
-            variant: "destructive",
-          });
-          return;
-        } else if (matchingRentals && matchingRentals.length > 1) {
-          toast({
-            title: "Error", 
-            description: "Multiple active rentals found. Please specify the rental.",
-            variant: "destructive",
-          });
-          return;
+      // For Rental payments, enforce rental context
+      if (data.payment_type === 'Rental') {
+        if (!resolvedRentalId) {
+          const customerRentals = activeRentals || [];
+          
+          if (customerRentals.length === 0) {
+            toast({
+              title: "Error",
+              description: "No active rental found for this customer.",
+              variant: "destructive",
+            });
+            return;
+          } else if (customerRentals.length === 1) {
+            resolvedRentalId = customerRentals[0].id;
+          } else {
+            toast({
+              title: "Error",
+              description: "Please select a rental - customer has multiple active rentals.",
+              variant: "destructive",
+            });
+            return;
+          }
         }
       }
 
-      if (!resolvedRentalId) {
-        toast({
-          title: "Error",
-          description: "Rental must be specified for payment.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create payment record - auto-application will be handled by database triggers
-      const { data: payment, error: paymentError } = await supabase
+      // Create payment record - auto-application handled by database triggers
+      const { error: paymentError } = await supabase
         .from("payments")
         .insert({
           customer_id: customer_id,
@@ -131,26 +124,24 @@ export const AddPaymentDialog = ({
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,
           payment_type: data.payment_type,
-        })
-        .select()
-        .single();
+        });
 
       if (paymentError) throw paymentError;
 
       toast({
         title: "Payment Added",
-        description: `Payment of £${data.amount} has been recorded and will be automatically applied to charges.`,
+        description: `Payment of £${data.amount} has been recorded and automatically applied.`,
       });
 
       form.reset();
       onOpenChange(false);
       
       // Refresh queries
-      queryClient.invalidateQueries({ queryKey: ["rental-ledger", resolvedRentalId] });
-      queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", resolvedRentalId] });
-      queryClient.invalidateQueries({ queryKey: ["rental", resolvedRentalId] });
-      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
       queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
+      if (resolvedRentalId) {
+        queryClient.invalidateQueries({ queryKey: ["rental", resolvedRentalId] });
+      }
     } catch (error) {
       console.error("Error adding payment:", error);
       toast({
@@ -221,9 +212,8 @@ export const AddPaymentDialog = ({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date > new Date()}
                         fromYear={new Date().getFullYear() - 5}
-                        toYear={new Date().getFullYear()}
+                        toYear={new Date().getFullYear() + 2}
                         captionLayout="dropdown-buttons"
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
@@ -231,7 +221,7 @@ export const AddPaymentDialog = ({
                     </PopoverContent>
                   </Popover>
                   <FormDescription className="text-sm text-muted-foreground">
-                    Payments are automatically applied to outstanding or future charges. If no charges are due yet, the payment will be credited and auto-applied to the next rental charge.
+                    Payments are automatically applied to charges. Future payments are allowed as accounting entries.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -285,6 +275,37 @@ export const AddPaymentDialog = ({
                 </FormItem>
               )}
             />
+
+            {/* Show rental selector for Rental payments when customer has multiple active rentals */}
+            {form.watch("payment_type") === "Rental" && activeRentals && activeRentals.length > 1 && (
+              <FormField
+                control={form.control}
+                name="rental_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rental Agreement *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select rental" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activeRentals.map((rental) => (
+                          <SelectItem key={rental.id} value={rental.id}>
+                            {rental.vehicles?.reg} - Started {format(new Date(rental.start_date), 'dd/MM/yyyy')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Customer has multiple active rentals - please select which rental this payment is for.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

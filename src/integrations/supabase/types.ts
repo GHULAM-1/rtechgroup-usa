@@ -1311,6 +1311,10 @@ export type Database = {
         Args: { payment_id: string }
         Returns: undefined
       }
+      apply_payment_fully: {
+        Args: { p_payment_id: string }
+        Returns: undefined
+      }
       apply_payments_to_charges: {
         Args: { p_rental_id?: string }
         Returns: undefined
@@ -1333,6 +1337,10 @@ export type Database = {
       }
       generate_monthly_charges: {
         Args: { rental_id: string }
+        Returns: undefined
+      }
+      generate_next_rental_charge: {
+        Args: { r_id: string }
         Returns: undefined
       }
       generate_rental_charges: {

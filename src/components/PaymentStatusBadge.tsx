@@ -6,13 +6,7 @@ interface PaymentStatusBadgeProps {
 }
 
 export const PaymentStatusBadge = ({ applied, amount }: PaymentStatusBadgeProps) => {
-  if (applied === 0) {
-    return (
-      <Badge variant="outline" className="text-xs">
-        Unapplied
-      </Badge>
-    );
-  } else if (applied >= amount) {
+  if (applied >= amount) {
     return (
       <Badge variant="default" className="text-xs bg-green-600 hover:bg-green-700">
         Applied
@@ -21,7 +15,7 @@ export const PaymentStatusBadge = ({ applied, amount }: PaymentStatusBadgeProps)
   } else {
     return (
       <Badge variant="secondary" className="text-xs">
-        Part-applied
+        Partially Applied
       </Badge>
     );
   }

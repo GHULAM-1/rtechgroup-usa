@@ -89,16 +89,21 @@ const PaymentsList = () => {
     },
   });
 
-  const { data: rentals } = useQuery({
-    queryKey: ["rentals-for-payment"],
+  const selectedCustomerId = form.watch("customer_id");
+
+  const { data: customerRentals } = useQuery({
+    queryKey: ["customer-rentals", selectedCustomerId],
     queryFn: async () => {
+      if (!selectedCustomerId) return [];
       const { data, error } = await supabase
         .from("rentals")
-        .select("id, customers(name), vehicles(reg)")
+        .select("id, start_date, vehicles(reg)")
+        .eq("customer_id", selectedCustomerId)
         .eq("status", "Active");
       if (error) throw error;
       return data;
     },
+    enabled: !!selectedCustomerId,
   });
 
   const { data: payments, isLoading } = useQuery({
@@ -137,8 +142,32 @@ const PaymentsList = () => {
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
-      // Insert payment - automatic application will be handled by database triggers
-      const { data: payment, error: paymentError } = await supabase
+      // Validate rental context for Rental payments
+      if (data.payment_type === 'Rental') {
+        if (!data.rental_id) {
+          const rentals = customerRentals || [];
+          if (rentals.length === 0) {
+            toast({
+              title: "Error",
+              description: "No active rental found for this customer.",
+              variant: "destructive",
+            });
+            return;
+          } else if (rentals.length > 1) {
+            toast({
+              title: "Error",
+              description: "Please select a rental - customer has multiple active rentals.",
+              variant: "destructive",
+            });
+            return;
+          } else {
+            data.rental_id = rentals[0].id;
+          }
+        }
+      }
+
+      // Insert payment - automatic application handled by database triggers
+      const { error: paymentError } = await supabase
         .from("payments")
         .insert({
           customer_id: data.customer_id,
@@ -148,15 +177,13 @@ const PaymentsList = () => {
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method || null,
           payment_type: data.payment_type,
-        })
-        .select()
-        .single();
+        });
 
       if (paymentError) throw paymentError;
 
       toast({
         title: "Payment Recorded",
-        description: `Payment of £${data.amount} has been recorded and will be automatically applied.`,
+        description: `Payment of £${data.amount} has been recorded and automatically applied.`,
       });
 
       form.reset({
@@ -171,6 +198,7 @@ const PaymentsList = () => {
       setShowAddDialog(false);
       queryClient.invalidateQueries({ queryKey: ["payments-list"] });
     } catch (error) {
+      console.error("Error recording payment:", error);
       toast({
         title: "Error",
         description: "Failed to record payment. Please try again.",
@@ -352,28 +380,61 @@ const PaymentsList = () => {
                                </FormControl>
                              </PopoverTrigger>
                              <PopoverContent className="w-auto p-0" align="start">
-                               <Calendar
-                                 mode="single"
-                                 selected={field.value}
-                                 onSelect={field.onChange}
-                                 disabled={(date) =>
-                                   date > new Date() || date < new Date("1900-01-01")
-                                 }
-                                 initialFocus
-                                 className={cn("p-3 pointer-events-auto")}
-                               />
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                    date < new Date("1900-01-01")
+                                  }
+                                  fromYear={new Date().getFullYear() - 5}
+                                  toYear={new Date().getFullYear() + 2}
+                                  initialFocus
+                                  className={cn("p-3 pointer-events-auto")}
+                                />
                               </PopoverContent>
                             </Popover>
-                            <FormDescription className="text-sm text-muted-foreground">
-                              Payments are automatically applied to outstanding or future charges. If no charges are due yet, the payment will be credited and auto-applied to the next rental charge.
-                            </FormDescription>
+                             <FormDescription className="text-sm text-muted-foreground">
+                               Payments are automatically applied to charges. Future payments are allowed as accounting entries.
+                             </FormDescription>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
                      </div>
 
-                    <div className="flex justify-end gap-2 pt-4">
+                     {/* Show rental selector when payment type is Rental and customer has multiple rentals */}
+                     {form.watch("payment_type") === "Rental" && customerRentals && customerRentals.length > 1 && (
+                       <FormField
+                         control={form.control}
+                         name="rental_id"
+                         render={({ field }) => (
+                           <FormItem>
+                             <FormLabel>Rental Agreement *</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                               <FormControl>
+                                 <SelectTrigger>
+                                   <SelectValue placeholder="Select rental" />
+                                 </SelectTrigger>
+                               </FormControl>
+                               <SelectContent>
+                                 {customerRentals.map((rental) => (
+                                   <SelectItem key={rental.id} value={rental.id}>
+                                     {rental.vehicles?.reg} - Started {format(new Date(rental.start_date), 'dd/MM/yyyy')}
+                                   </SelectItem>
+                                 ))}
+                               </SelectContent>
+                             </Select>
+                             <FormDescription>
+                               Customer has multiple active rentals - please select which rental this payment is for.
+                             </FormDescription>
+                             <FormMessage />
+                           </FormItem>
+                         )}
+                       />
+                     )}
+
+                     <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                       Cancel
                     </Button>
@@ -446,27 +507,23 @@ const PaymentsList = () => {
                            </div>
                          </TableCell>
                          <TableCell>{payment.method || 'Cash'}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                               <span>
-                                 {(payment as any).status === 'Credit' 
-                                   ? "Unapplied Credit"
-                                   : (payment as any).status === 'Partial' 
-                                   ? `£${((payment as any).remaining_amount || 0).toFixed(2)} Credit`
-                                   : "Fully Applied"
-                                 }
-                               </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              (payment as any).status === 'Applied' ? 'default' :
-                              (payment as any).status === 'Credit' ? 'secondary' :
-                              (payment as any).status === 'Partial' ? 'outline' : 'default'
-                            }>
-                              {(payment as any).status || 'Applied'}
-                            </Badge>
-                          </TableCell>
+                           <TableCell>
+                             <span className="text-sm text-muted-foreground">
+                               {(payment as any).remaining_amount > 0 
+                                 ? `£${((payment as any).remaining_amount || 0).toFixed(2)} remaining`
+                                 : "Fully applied"
+                               }
+                             </span>
+                           </TableCell>
+                           <TableCell>
+                             <Badge variant={
+                               (payment as any).status === 'Applied' ? 'default' :
+                               (payment as any).status === 'Partially Applied' ? 'secondary' :
+                               'default'
+                             }>
+                               {(payment as any).status || 'Applied'}
+                             </Badge>
+                           </TableCell>
                        <TableCell className="text-sm text-muted-foreground">
                          {payment.notes || '-'}
                        </TableCell>

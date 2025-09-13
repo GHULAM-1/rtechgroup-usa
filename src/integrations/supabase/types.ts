@@ -93,6 +93,7 @@ export type Database = {
           phone: string | null
           status: string | null
           type: string
+          updated_at: string
           whatsapp_opt_in: boolean | null
         }
         Insert: {
@@ -103,6 +104,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           type: string
+          updated_at?: string
           whatsapp_opt_in?: boolean | null
         }
         Update: {
@@ -113,6 +115,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           type?: string
+          updated_at?: string
           whatsapp_opt_in?: boolean | null
         }
         Relationships: []
@@ -241,6 +244,7 @@ export type Database = {
         Row: {
           amount: number
           category: string
+          created_at: string
           customer_id: string | null
           due_date: string | null
           entry_date: string
@@ -248,11 +252,13 @@ export type Database = {
           remaining_amount: number
           rental_id: string | null
           type: string
+          updated_at: string
           vehicle_id: string | null
         }
         Insert: {
           amount: number
           category: string
+          created_at?: string
           customer_id?: string | null
           due_date?: string | null
           entry_date: string
@@ -260,11 +266,13 @@ export type Database = {
           remaining_amount?: number
           rental_id?: string | null
           type: string
+          updated_at?: string
           vehicle_id?: string | null
         }
         Update: {
           amount?: number
           category?: string
+          created_at?: string
           customer_id?: string | null
           due_date?: string | null
           entry_date?: string
@@ -272,6 +280,7 @@ export type Database = {
           remaining_amount?: number
           rental_id?: string | null
           type?: string
+          updated_at?: string
           vehicle_id?: string | null
         }
         Relationships: [
@@ -418,6 +427,7 @@ export type Database = {
         Row: {
           amount: number
           apply_from_date: string | null
+          created_at: string
           customer_id: string
           id: string
           is_early: boolean
@@ -427,11 +437,13 @@ export type Database = {
           remaining_amount: number | null
           rental_id: string | null
           status: string | null
+          updated_at: string
           vehicle_id: string | null
         }
         Insert: {
           amount: number
           apply_from_date?: string | null
+          created_at?: string
           customer_id: string
           id?: string
           is_early?: boolean
@@ -441,11 +453,13 @@ export type Database = {
           remaining_amount?: number | null
           rental_id?: string | null
           status?: string | null
+          updated_at?: string
           vehicle_id?: string | null
         }
         Update: {
           amount?: number
           apply_from_date?: string | null
+          created_at?: string
           customer_id?: string
           id?: string
           is_early?: boolean
@@ -455,6 +469,7 @@ export type Database = {
           remaining_amount?: number | null
           rental_id?: string | null
           status?: string | null
+          updated_at?: string
           vehicle_id?: string | null
         }
         Relationships: [
@@ -798,6 +813,7 @@ export type Database = {
           schedule: string | null
           start_date: string
           status: string | null
+          updated_at: string
           vehicle_id: string | null
         }
         Insert: {
@@ -809,6 +825,7 @@ export type Database = {
           schedule?: string | null
           start_date: string
           status?: string | null
+          updated_at?: string
           vehicle_id?: string | null
         }
         Update: {
@@ -820,6 +837,7 @@ export type Database = {
           schedule?: string | null
           start_date?: string
           status?: string | null
+          updated_at?: string
           vehicle_id?: string | null
         }
         Relationships: [
@@ -906,6 +924,7 @@ export type Database = {
           purchase_price: number | null
           reg: string
           status: string | null
+          updated_at: string
         }
         Insert: {
           acquisition_date?: string | null
@@ -919,6 +938,7 @@ export type Database = {
           purchase_price?: number | null
           reg: string
           status?: string | null
+          updated_at?: string
         }
         Update: {
           acquisition_date?: string | null
@@ -932,6 +952,7 @@ export type Database = {
           purchase_price?: number | null
           reg?: string
           status?: string | null
+          updated_at?: string
         }
         Relationships: []
       }

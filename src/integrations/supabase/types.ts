@@ -257,6 +257,7 @@ export type Database = {
           entry_date: string
           id: string
           payment_id: string | null
+          reference: string | null
           remaining_amount: number
           rental_id: string | null
           type: string
@@ -272,6 +273,7 @@ export type Database = {
           entry_date: string
           id?: string
           payment_id?: string | null
+          reference?: string | null
           remaining_amount?: number
           rental_id?: string | null
           type: string
@@ -287,6 +289,7 @@ export type Database = {
           entry_date?: string
           id?: string
           payment_id?: string | null
+          reference?: string | null
           remaining_amount?: number
           rental_id?: string | null
           type?: string
@@ -621,6 +624,7 @@ export type Database = {
           entry_date: string
           id: string
           payment_id: string | null
+          reference: string | null
           rental_id: string | null
           side: string
           source_ref: string | null
@@ -633,6 +637,7 @@ export type Database = {
           entry_date: string
           id?: string
           payment_id?: string | null
+          reference?: string | null
           rental_id?: string | null
           side: string
           source_ref?: string | null
@@ -645,6 +650,7 @@ export type Database = {
           entry_date?: string
           id?: string
           payment_id?: string | null
+          reference?: string | null
           rental_id?: string | null
           side?: string
           source_ref?: string | null

@@ -98,6 +98,35 @@ const CreateFine = () => {
 
       if (fineError) throw fineError;
 
+      // Business Logic based on liability
+      if (data.liability === 'Customer' && data.customer_id && data.customer_id !== "none") {
+        // Create ledger charge entry for customer liability
+        await supabase
+          .from("ledger_entries")
+          .insert({
+            customer_id: data.customer_id,
+            vehicle_id: data.vehicle_id,
+            entry_date: data.issue_date.toISOString().split('T')[0],
+            type: "Charge",
+            category: "Fine",
+            amount: data.amount,
+            due_date: data.due_date.toISOString().split('T')[0],
+            remaining_amount: data.amount
+          });
+      } else if (data.liability === 'Business') {
+        // Create P&L cost entry for business liability
+        await supabase
+          .from("pnl_entries")
+          .insert({
+            vehicle_id: data.vehicle_id,
+            entry_date: data.issue_date.toISOString().split('T')[0],
+            side: "Cost",
+            category: "Fines",
+            amount: data.amount,
+            source_ref: fine.id
+          });
+      }
+
       // Upload evidence files if any
       if (evidenceFiles.length > 0) {
         for (const file of evidenceFiles) {

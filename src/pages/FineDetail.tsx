@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { FineAppealDialog } from "@/components/FineAppealDialog";
 
 interface Fine {
   id: string;
@@ -47,6 +49,7 @@ const FineDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showAppealDialog, setShowAppealDialog] = useState(false);
 
   const { data: fine, isLoading } = useQuery({
     queryKey: ["fine", id],
@@ -216,24 +219,13 @@ const FineDetail = () => {
         </div>
         <div className="flex gap-2">
           {fine.status === "Open" && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => appealSuccessfulMutation.mutate()}
-                disabled={appealSuccessfulMutation.isPending}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Appeal Successful
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => waiveFine.mutate()}
-                disabled={waiveFine.isPending}
-              >
-                <Scale className="h-4 w-4 mr-2" />
-                Waive Fine
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              onClick={() => setShowAppealDialog(true)}
+            >
+              <Scale className="h-4 w-4 mr-2" />
+              Appeal / Waive
+            </Button>
           )}
         </div>
       </div>
@@ -526,6 +518,15 @@ const FineDetail = () => {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Appeal Dialog */}
+      <FineAppealDialog
+        open={showAppealDialog}
+        onOpenChange={setShowAppealDialog}
+        fineId={fine.id}
+        fineAmount={fine.amount}
+        customerId={fine.customer_id || undefined}
+      />
     </div>
   );
 };

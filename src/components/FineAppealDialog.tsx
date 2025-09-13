@@ -1,142 +1,189 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as z from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
 
-const appealFormSchema = z.object({
-  action: z.enum(["appeal_submitted", "appeal_successful", "appeal_rejected", "waive"]),
+const appealSchema = z.object({
+  action: z.enum(['appeal_successful', 'waive']),
 });
 
-type AppealFormValues = z.infer<typeof appealFormSchema>;
+type AppealFormData = z.infer<typeof appealSchema>;
 
 interface FineAppealDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  fineId: string | null;
+  fineId: string;
+  fineAmount: number;
+  customerId?: string;
 }
 
-export const FineAppealDialog = ({ open, onOpenChange, fineId }: FineAppealDialogProps) => {
+export const FineAppealDialog = ({ 
+  open, 
+  onOpenChange, 
+  fineId, 
+  fineAmount, 
+  customerId 
+}: FineAppealDialogProps) => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const form = useForm<AppealFormValues>({
-    resolver: zodResolver(appealFormSchema),
+  
+  const form = useForm<AppealFormData>({
+    resolver: zodResolver(appealSchema),
+    defaultValues: {
+      action: "appeal_successful",
+    },
   });
 
-  // Get fine details
-  const { data: fine } = useQuery({
-    queryKey: ["fine", fineId],
-    queryFn: async () => {
-      if (!fineId) return null;
-      const { data, error } = await supabase
-        .from("fines")
-        .select("*")
-        .eq("id", fineId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!fineId,
-  });
+  const handleAppealSuccessful = async () => {
+    if (!customerId) return;
 
-  const appealMutation = useMutation({
-    mutationFn: async (values: AppealFormValues) => {
-      if (!fineId) throw new Error("No fine selected");
+    // Get current remaining amount for this customer's fine charges
+    const { data: charges } = await supabase
+      .from("ledger_entries")
+      .select("remaining_amount")
+      .eq("customer_id", customerId)
+      .eq("category", "Fine")
+      .eq("type", "Charge")
+      .gt("remaining_amount", 0);
 
-      let newStatus = "";
-      switch (values.action) {
-        case "appeal_submitted":
-          newStatus = "Appeal Submitted";
-          break;
-        case "appeal_successful":
-          newStatus = "Appeal Successful";
-          break;
-        case "appeal_rejected":
-          newStatus = "Appeal Rejected";
-          break;
-        case "waive":
-          newStatus = "Waived";
-          break;
+    const totalRemaining = charges?.reduce((sum, charge) => sum + Number(charge.remaining_amount), 0) || 0;
+    const totalPaid = fineAmount - totalRemaining;
+
+    // Void remaining charges via negative adjustment
+    if (totalRemaining > 0) {
+      await supabase
+        .from("ledger_entries")
+        .insert({
+          customer_id: customerId,
+          entry_date: new Date().toISOString().split('T')[0],
+          type: "Adjustment",
+          category: "Fine",
+          amount: -totalRemaining,
+          remaining_amount: 0
+        });
+
+      // Clear remaining amounts on existing charges
+      await supabase
+        .from("ledger_entries")
+        .update({ remaining_amount: 0 })
+        .eq("customer_id", customerId)
+        .eq("category", "Fine")
+        .eq("type", "Charge")
+        .gt("remaining_amount", 0);
+    }
+
+    // If amount was already paid, create customer credit
+    if (totalPaid > 0) {
+      await supabase
+        .from("ledger_entries")
+        .insert({
+          customer_id: customerId,
+          entry_date: new Date().toISOString().split('T')[0],
+          type: "Credit",
+          category: "Fine",
+          amount: totalPaid,
+          remaining_amount: totalPaid  // Unapplied credit
+        });
+    }
+
+    // Update fine status
+    await supabase
+      .from("fines")
+      .update({ status: "Appeal Successful" })
+      .eq("id", fineId);
+  };
+
+  const handleWaive = async () => {
+    if (!customerId) return;
+
+    // Clear unpaid remainder with negative adjustment
+    const { data: charges } = await supabase
+      .from("ledger_entries")
+      .select("remaining_amount")
+      .eq("customer_id", customerId)
+      .eq("category", "Fine")
+      .eq("type", "Charge")
+      .gt("remaining_amount", 0);
+
+    const totalRemaining = charges?.reduce((sum, charge) => sum + Number(charge.remaining_amount), 0) || 0;
+
+    if (totalRemaining > 0) {
+      await supabase
+        .from("ledger_entries")
+        .insert({
+          customer_id: customerId,
+          entry_date: new Date().toISOString().split('T')[0],
+          type: "Adjustment",
+          category: "Fine",
+          amount: -totalRemaining,
+          remaining_amount: 0
+        });
+
+      // Clear remaining amounts on existing charges
+      await supabase
+        .from("ledger_entries")
+        .update({ remaining_amount: 0 })
+        .eq("customer_id", customerId)
+        .eq("category", "Fine")
+        .eq("type", "Charge")
+        .gt("remaining_amount", 0);
+    }
+
+    // Update fine status
+    await supabase
+      .from("fines")
+      .update({ status: "Waived" })
+      .eq("id", fineId);
+  };
+
+  const onSubmit = async (data: AppealFormData) => {
+    setLoading(true);
+    try {
+      if (data.action === 'appeal_successful') {
+        await handleAppealSuccessful();
+        toast({
+          title: "Appeal Successful",
+          description: "Fine has been successfully appealed. Unpaid remainder voided and customer credited for paid amount.",
+        });
+      } else {
+        await handleWaive();
+        toast({
+          title: "Fine Waived",
+          description: "Fine has been waived and unpaid remainder cleared.",
+        });
       }
 
-      // Update fine status
-      const { error } = await supabase
-        .from("fines")
-        .update({ status: newStatus })
-        .eq("id", fineId);
-
-      if (error) throw error;
-
-      // If appeal successful or waived, void the charge
-      if (values.action === "appeal_successful" || values.action === "waive") {
-        await supabase.rpc("fine_void_charge", { f_id: fineId });
-      }
-
-      return { status: newStatus };
-    },
-    onSuccess: () => {
-      toast.success("Fine status updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["fines"] });
-      queryClient.invalidateQueries({ queryKey: ["fine", fineId] });
       onOpenChange(false);
-      form.reset();
-    },
-    onError: (error) => {
-      console.error("Error updating fine:", error);
-      toast.error("Failed to update fine status");
-    },
-  });
-
-  const onSubmit = (values: AppealFormValues) => {
-    appealMutation.mutate(values);
+      
+      // Refresh queries
+      queryClient.invalidateQueries({ queryKey: ["fine", fineId] });
+      queryClient.invalidateQueries({ queryKey: ["fine-ledger", fineId] });
+      queryClient.invalidateQueries({ queryKey: ["fines-list"] });
+    } catch (error) {
+      console.error("Error processing appeal:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Update Fine Status</DialogTitle>
-          <DialogDescription>
-            Change the status of this fine for appeal processing or waiving
-          </DialogDescription>
+          <DialogTitle>Fine Appeal/Waiver</DialogTitle>
         </DialogHeader>
-
-        {fine && (
-          <div className="mb-4 p-3 bg-muted rounded-lg">
-            <p><strong>Type:</strong> {fine.type}</p>
-            <p><strong>Amount:</strong> £{fine.amount}</p>
-            <p><strong>Reference:</strong> {fine.reference_no || "N/A"}</p>
-            <p><strong>Current Status:</strong> {fine.status}</p>
-          </div>
-        )}
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -145,30 +192,45 @@ export const FineAppealDialog = ({ open, onOpenChange, fineId }: FineAppealDialo
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Action</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select action" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="appeal_submitted">Mark Appeal Submitted</SelectItem>
-                      <SelectItem value="appeal_successful">Mark Appeal Successful</SelectItem>
-                      <SelectItem value="appeal_rejected">Mark Appeal Rejected</SelectItem>
-                      <SelectItem value="waive">Waive Fine</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="appeal"
+                          value="appeal_successful"
+                          checked={field.value === "appeal_successful"}
+                          onChange={() => field.onChange("appeal_successful")}
+                        />
+                        <label htmlFor="appeal" className="text-sm">
+                          Appeal Successful - Void remainder + credit if paid
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="waive"
+                          value="waive"
+                          checked={field.value === "waive"}
+                          onChange={() => field.onChange("waive")}
+                        />
+                        <label htmlFor="waive" className="text-sm">
+                          Waive Fine - Clear unpaid remainder only
+                        </label>
+                      </div>
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={appealMutation.isPending}>
-                {appealMutation.isPending ? "Updating..." : "Update Status"}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Processing..." : "Confirm"}
               </Button>
             </div>
           </form>

@@ -349,7 +349,9 @@ export default function FinesPage() {
       <FineAppealDialog 
         open={showAppealDialog} 
         onOpenChange={setShowAppealDialog}
-        fineId={selectedFineId}
+        fineId={selectedFineId || ""}
+        fineAmount={0}
+        customerId={undefined}
       />
     </div>
   );

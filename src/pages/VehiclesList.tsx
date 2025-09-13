@@ -155,8 +155,7 @@ const VehiclesList = () => {
                     <TableHead>Make/Model</TableHead>
                     <TableHead>Colour</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Acquisition Cost</TableHead>
-                    <TableHead className="text-right">Net P&L</TableHead>
+                     <TableHead className="text-right">Net P&L</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,12 +172,9 @@ const VehiclesList = () => {
                         <TableCell>
                           <StatusBadge status={vehicle.status} />
                         </TableCell>
-                        <TableCell className="text-right">
-                          £{Number(vehicle.purchase_price || 0).toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <PLPill netProfit={netProfit} />
-                        </TableCell>
+                         <TableCell className="text-right">
+                           <PLPill netProfit={netProfit} />
+                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="outline"

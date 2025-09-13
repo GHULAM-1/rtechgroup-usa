@@ -169,35 +169,38 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
-      // Call the apply-payment edge function using direct fetch for proper HTTP status handling
-      const res = await fetch(`https://wrogevjpvhvputrjhvvg.supabase.co/functions/v1/apply-payment`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2dldmpwdmh2cHV0cmpodnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MTUxNDYsImV4cCI6MjA3MzI5MTE0Nn0.gORhHgYY3GpcOiiGfI-K8PrtQscttZgMVvH_Fv_wUII`,
-        },
-        body: JSON.stringify({ paymentId: payment.id })
+      // Call the apply-payment edge function using Supabase client for better error handling
+      const { data: applyResult, error: applyError } = await supabase.functions.invoke('apply-payment', {
+        body: { paymentId: payment.id }
       });
 
-      // Parse response data with proper error handling
-      let responseData: any = {};
-      try { 
-        responseData = await res.json(); 
-      } catch (e) {
-        console.error('Failed to parse response JSON:', e);
-      }
-
-      // Log error details for debugging
-      if (responseData.detail) {
-        console.error('Payment processing detail:', responseData.detail);
-      }
-
-      // Check for HTTP errors or application errors
-      if (!res.ok || responseData?.ok === false) {
-        const msg = responseData?.error || responseData?.detail || `Payment failed (status ${res.status})`;
+      // Handle edge function errors
+      if (applyError) {
+        // Handle new JSON error response format from edge function
+        let errorMessage = 'Payment processing failed';
+        try {
+          if (applyError.message) {
+            const errorData = JSON.parse(applyError.message);
+            errorMessage = errorData.error || errorData.detail || errorMessage;
+          }
+        } catch {
+          errorMessage = applyError.message || errorMessage;
+        }
+        
         toast({
           title: "Payment Processing Error", 
-          description: msg,
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check for application-level errors
+      if (!applyResult?.ok) {
+        const errorMessage = applyResult?.error || applyResult?.detail || 'Payment processing failed';
+        toast({
+          title: "Payment Processing Error", 
+          description: errorMessage,
           variant: "destructive",
         });
         return;

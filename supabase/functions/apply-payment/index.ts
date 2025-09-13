@@ -145,7 +145,7 @@ serve(async (req) => {
       remaining: processResult.remaining,
       status: processResult.status
     }), {
-      status: 200,
+      status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

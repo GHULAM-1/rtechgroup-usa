@@ -230,6 +230,9 @@ export const AddPaymentDialog = ({
                       />
                     </PopoverContent>
                   </Popover>
+                  <FormDescription className="text-sm text-muted-foreground">
+                    Payments are automatically applied to outstanding or future charges. If no charges are due yet, the payment will be credited and auto-applied to the next rental charge.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

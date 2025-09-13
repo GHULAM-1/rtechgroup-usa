@@ -39,7 +39,6 @@ interface Payment {
   payment_date: string;
   payment_type: string;
   method?: string;
-  is_early: boolean;
   remaining?: number;
   vehicles: { reg: string };
 }

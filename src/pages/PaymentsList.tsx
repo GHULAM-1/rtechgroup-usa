@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { CreditCard, Plus, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,8 +31,6 @@ interface Payment {
   payment_type: string;
   status?: string;
   notes?: string;
-  is_early: boolean;
-  apply_from_date: string | null;
   customers: { name: string };
   vehicles: { reg: string } | null;
   rentals: { id: string } | null;
@@ -47,7 +44,6 @@ const paymentSchema = z.object({
   payment_type: z.enum(['Rental', 'InitialFee', 'Fine', 'Other']),
   method: z.string().optional(),
   payment_date: z.date(),
-  is_early: z.boolean().default(false),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -71,7 +67,6 @@ const PaymentsList = () => {
       payment_type: "Rental",
       method: "",
       payment_date: toZonedTime(new Date(), 'Europe/London'),
-      is_early: false,
     },
   });
 
@@ -367,39 +362,18 @@ const PaymentsList = () => {
                                  initialFocus
                                  className={cn("p-3 pointer-events-auto")}
                                />
-                             </PopoverContent>
-                           </Popover>
-                           <FormMessage />
-                         </FormItem>
-                       )}
-                     />
-                    </div>
+                              </PopoverContent>
+                            </Popover>
+                            <FormDescription className="text-sm text-muted-foreground">
+                              Payments are automatically applied to outstanding or future charges. If no charges are due yet, the payment will be credited and auto-applied to the next rental charge.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                     </div>
 
-                     {/* Early Payment Controls */}
-                     <FormField
-                       control={form.control}
-                       name="is_early"
-                       render={({ field }) => (
-                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                           <FormControl>
-                             <Checkbox
-                               checked={field.value}
-                               onCheckedChange={field.onChange}
-                             />
-                           </FormControl>
-                           <div className="space-y-1 leading-none">
-                             <FormLabel>
-                               Mark as early payment (hold as credit until next due)
-                             </FormLabel>
-                             <p className="text-xs text-muted-foreground">
-                               Early payments are held as credit and automatically applied to your next due charges.
-                             </p>
-                           </div>
-                         </FormItem>
-                       )}
-                     />
-
-                   <div className="flex justify-end gap-2 pt-4">
+                    <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                       Cancel
                     </Button>
@@ -460,21 +434,16 @@ const PaymentsList = () => {
                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
-                            <Badge 
-                              variant={
-                                payment.payment_type === 'Rental' ? 'default' :
-                                payment.payment_type === 'InitialFee' ? 'secondary' :
-                                payment.payment_type === 'Fine' ? 'destructive' : 'outline'
-                              }
-                            >
-                              {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                            </Badge>
-                            {payment.is_early && (
-                              <Badge variant="outline" className="text-xs">
-                                Early
-                              </Badge>
-                            )}
-                          </div>
+                             <Badge 
+                               variant={
+                                 payment.payment_type === 'Rental' ? 'default' :
+                                 payment.payment_type === 'InitialFee' ? 'secondary' :
+                                 payment.payment_type === 'Fine' ? 'destructive' : 'outline'
+                               }
+                             >
+                               {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                             </Badge>
+                           </div>
                          </TableCell>
                          <TableCell>{payment.method || 'Cash'}</TableCell>
                           <TableCell>

@@ -123,30 +123,39 @@ const RentalDetail = () => {
     return { ...entry, runningBalance };
   }) || [];
 
+  // Calculate rental totals properly
   const totalCharges = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  const totalPayments = ledgerEntries?.filter(e => e.type === 'Payment').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+  
+  // Get total payments (cash received) for this rental directly from payments table
+  const { data: totalPayments } = useQuery({
+    queryKey: ["rental-total-payments", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("rental_id", id);
+      
+      if (error) throw error;
+      return data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    },
+    enabled: !!id,
+  });
+  
   const outstandingBalance = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
 
   const handleApplyCredit = async () => {
     if (!rental || !customerCredit || customerCredit <= 0 || outstandingBalance <= 0) return;
 
     try {
-      // Find the earliest outstanding charge
-      const outstandingCharges = ledgerEntries?.filter(e => 
-        e.type === 'Charge' && Number(e.remaining_amount) > 0
-      ).sort((a, b) => new Date(a.due_date || a.entry_date).getTime() - new Date(b.due_date || b.entry_date).getTime());
+      const amountToApply = Math.min(customerCredit, outstandingBalance);
 
-      if (!outstandingCharges?.length) return;
-
-      const firstCharge = outstandingCharges[0];
-      const amountToApply = Math.min(customerCredit, Number(firstCharge.remaining_amount));
-
-      // Create a payment for the credit application
+      // Create a payment for the credit application with rental_id
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
           customer_id: rental.customers?.id,
           vehicle_id: rental.vehicles?.id,
+          rental_id: rental.id,
           amount: amountToApply,
           payment_date: new Date().toISOString().split('T')[0],
           method: "Credit Application",
@@ -158,36 +167,21 @@ const RentalDetail = () => {
 
       if (paymentError) throw paymentError;
 
-      // Apply the payment to the charge
-      const { error: applicationError } = await supabase
-        .from("payment_applications")
-        .insert({
-          payment_id: payment.id,
-          charge_entry_id: firstCharge.id,
-          amount_applied: amountToApply
-        });
-
-      if (applicationError) throw applicationError;
-
-      // Update the remaining amount on the charge
-      const { error: updateError } = await supabase
-        .from("ledger_entries")
-        .update({
-          remaining_amount: Number(firstCharge.remaining_amount) - amountToApply
-        })
-        .eq("id", firstCharge.id);
-
-      if (updateError) throw updateError;
+      // Apply the payment using the updated FIFO function
+      await supabase.rpc("payment_apply_fifo", {
+        p_id: payment.id
+      });
 
       toast({
         title: "Credit Applied",
-        description: `£${amountToApply.toLocaleString()} credit has been applied to outstanding charges.`,
+        description: `£${amountToApply.toLocaleString()} credit has been applied across the rental schedule.`,
       });
 
       // Refresh all relevant data
       queryClient.invalidateQueries({ queryKey: ["rental-ledger", id] });
       queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", id] });
       queryClient.invalidateQueries({ queryKey: ["customer-credit", rental.customers?.id] });
+      queryClient.invalidateQueries({ queryKey: ["rental-total-payments", id] });
       queryClient.invalidateQueries({ queryKey: ["payments"] });
 
     } catch (error) {
@@ -276,7 +270,7 @@ const RentalDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              £{totalPayments.toLocaleString()}
+              £{(totalPayments || 0).toLocaleString()}
             </div>
           </CardContent>
         </Card>

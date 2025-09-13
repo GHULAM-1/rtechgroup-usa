@@ -11,6 +11,7 @@ import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, Al
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
+import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 
 interface Customer {
   id: string;
@@ -127,24 +128,27 @@ const CustomerDetail = () => {
         .order("payment_date", { ascending: false });
       
       if (error) throw error;
-      
-      // Get remaining amounts for each payment
-      const paymentsWithRemaining = await Promise.all(
+
+      // Get payment applications for each payment to calculate applied/remaining amounts
+      const paymentsWithStatus = await Promise.all(
         (data || []).map(async (payment) => {
-          const { data: remainingData, error: remainingError } = await supabase.rpc('get_payment_remaining', {
-            payment_id_param: payment.id
-          });
+          const { data: applications } = await supabase
+            .from("payment_applications")
+            .select("amount_applied")
+            .eq("payment_id", payment.id);
           
-          if (remainingError) throw remainingError;
+          const applied = applications?.reduce((sum, app) => sum + Number(app.amount_applied), 0) || 0;
+          const remaining = Number(payment.amount) - applied;
           
           return {
             ...payment,
-            remaining: remainingData as number
+            applied,
+            remaining
           };
         })
       );
       
-      return paymentsWithRemaining;
+      return paymentsWithStatus as (Payment & { applied: number; remaining: number })[];
     },
     enabled: !!id,
   });
@@ -215,73 +219,17 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
-  const { data: balance } = useQuery({
-    queryKey: ["customer-balance", id],
+  // Customer net position calculation using the new database function
+  const { data: netPosition } = useQuery({
+    queryKey: ["customer-net-position", id],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      
       const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("amount, remaining_amount, type, due_date")
-        .eq("customer_id", id)
-        .lte("due_date", today);
+        .rpc("get_customer_net_position", {
+          customer_id_param: id
+        });
       
       if (error) throw error;
-      
-      let totalDue = 0;
-      let availableCredit = 0;
-      let nextDueAmount = 0;
-      let nextDueDate = '';
-      
-      // Calculate due/overdue charges and available credit
-      data?.forEach(entry => {
-        if (entry.type === 'Charge' && entry.remaining_amount > 0) {
-          totalDue += Number(entry.remaining_amount);
-        } else if (entry.type === 'Payment' && entry.remaining_amount === 0) {
-          availableCredit += Number(entry.amount);
-        }
-      });
-      
-      // Get next due payment
-      const { data: nextDue } = await supabase
-        .from("ledger_entries")
-        .select("amount, due_date")
-        .eq("customer_id", id)
-        .eq("type", "Charge")
-        .gt("remaining_amount", 0)
-        .gt("due_date", today)
-        .order("due_date", { ascending: true })
-        .limit(1);
-      
-      if (nextDue && nextDue.length > 0) {
-        nextDueAmount = Number(nextDue[0].amount);
-        nextDueDate = nextDue[0].due_date;
-      }
-      
-      const netBalance = totalDue - availableCredit;
-      let status = 'Settled';
-      if (netBalance > 0) status = 'In Debt';
-      else if (netBalance < 0) status = 'In Credit';
-      
-      return { 
-        balance: netBalance, 
-        status, 
-        nextDue: { amount: nextDueAmount, date: nextDueDate }
-      };
-    },
-    enabled: !!id,
-  });
-
-  // Get customer credit
-  const { data: customerCredit } = useQuery({
-    queryKey: ["customer-credit", id],
-    queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_customer_credit', {
-        customer_id_param: id
-      });
-      
-      if (error) throw error;
-      return data as number;
+      return Number(data) || 0;
     },
     enabled: !!id,
   });
@@ -362,38 +310,24 @@ const CustomerDetail = () => {
             <CardTitle>Account Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            {balance && (
-              <div className="space-y-2">
-                <div className={`text-2xl font-bold ${
-                  balance.status === 'In Debt' ? 'text-destructive' :
-                  balance.status === 'In Credit' ? 'text-blue-600' : 'text-green-600'
-                }`}>
-                  {balance.status}
-                  {balance.balance !== 0 && (
-                    <div className="text-lg">£{Math.abs(balance.balance).toLocaleString()}</div>
-                  )}
-                </div>
-                {customerCredit && customerCredit > 0 && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          Credit available £{customerCredit.toLocaleString()}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Unapplied payments that will auto-apply to due charges</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-                {balance.nextDue.amount > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    Next due: £{balance.nextDue.amount.toLocaleString()} on {new Date(balance.nextDue.date).toLocaleDateString()}
-                  </div>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Status</p>
+                {netPosition === 0 ? (
+                  <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+                    Settled
+                  </Badge>
+                ) : netPosition > 0 ? (
+                  <Badge variant="destructive" className="text-lg px-3 py-1">
+                    In Debt (£{Math.abs(netPosition).toLocaleString()})
+                  </Badge>
+                ) : (
+                  <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+                    Settled (+£{Math.abs(netPosition).toLocaleString()})
+                  </Badge>
                 )}
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
 
@@ -504,49 +438,42 @@ const CustomerDetail = () => {
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Vehicle</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Applied/Remaining</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                      </TableRow>
+                        <TableRow>
+                         <TableHead>Date</TableHead>
+                         <TableHead>Vehicle</TableHead>
+                         <TableHead>Type</TableHead>
+                         <TableHead>Method</TableHead>
+                         <TableHead className="text-right">Amount & Status</TableHead>
+                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment) => {
-                        const remaining = payment.remaining || 0;
-                        const applied = payment.amount - remaining;
-                        
-                        let statusBadge;
-                        if (remaining === 0) {
-                          statusBadge = <Badge variant="default">Applied</Badge>;
-                        } else if (remaining === payment.amount) {
-                          statusBadge = <Badge variant="secondary">Unapplied £{remaining.toLocaleString()}</Badge>;
-                        } else {
-                          statusBadge = <Badge variant="outline">Part-applied</Badge>;
-                        }
-                        
-                        return (
-                          <TableRow key={payment.id}>
-                            <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                            <TableCell>{payment.vehicles?.reg}</TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Badge variant={payment.payment_type === 'Rental' ? 'default' : 'secondary'}>
-                                  {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                                </Badge>
-                                {payment.is_early && (
-                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                    Early
-                                  </Badge>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>{statusBadge}</TableCell>
-                            <TableCell className="text-right">£{Number(payment.amount).toLocaleString()}</TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {payments.map((payment) => (
+                         <TableRow key={payment.id}>
+                           <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                           <TableCell>{payment.vehicles?.reg}</TableCell>
+                           <TableCell>
+                             <Badge variant={payment.payment_type === 'Rental' ? 'default' : 'secondary'}>
+                               {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                             </Badge>
+                           </TableCell>
+                           <TableCell>{payment.method || 'Cash'}</TableCell>
+                           <TableCell>
+                             <div className="text-right">
+                               <div className="font-medium">
+                                 £{Number(payment.amount).toLocaleString()}
+                               </div>
+                               <div className="text-xs text-muted-foreground">
+                                 Applied: £{(payment.applied || 0).toLocaleString()} | 
+                                 Remaining: £{(payment.remaining || 0).toLocaleString()}
+                               </div>
+                               <PaymentStatusBadge 
+                                 applied={payment.applied || 0} 
+                                 amount={Number(payment.amount)}
+                               />
+                             </div>
+                           </TableCell>
+                         </TableRow>
+                       ))}
                     </TableBody>
                   </Table>
                 </div>

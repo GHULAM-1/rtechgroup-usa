@@ -5,7 +5,7 @@ import * as z from "zod";
 import { format, subYears, addYears } from "date-fns";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { CalendarIcon } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,17 +75,74 @@ export const AddPaymentDialog = ({
     },
   });
 
+  const { data: activeRentals } = useQuery({
+    queryKey: ["active-rentals"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rentals")
+        .select(`
+          *,
+          customers(name),
+          vehicles(reg)
+        `)
+        .eq("status", "Active")
+        .order("start_date", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const isEarly = form.watch("is_early");
 
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
+      // Auto-resolve rental based on customer, vehicle, and payment date
+      let resolvedRentalId = rental_id;
+      
+      if (!resolvedRentalId && customer_id && vehicle_id) {
+        const matchingRentals = activeRentals?.filter(r => 
+          r.customer_id === customer_id &&
+          r.vehicle_id === vehicle_id &&
+          new Date(formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd')) >= new Date(r.start_date) &&
+          (r.end_date === null || new Date(formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd')) <= new Date(r.end_date))
+        );
+        
+        if (matchingRentals?.length === 1) {
+          resolvedRentalId = matchingRentals[0].id;
+        } else if (matchingRentals?.length === 0) {
+          toast({
+            title: "Error",
+            description: "No active rental found for this customer/vehicle on the payment date.",
+            variant: "destructive",
+          });
+          return;
+        } else if (matchingRentals && matchingRentals.length > 1) {
+          toast({
+            title: "Error", 
+            description: "Multiple active rentals found. Please specify the rental.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      if (!resolvedRentalId) {
+        toast({
+          title: "Error",
+          description: "Rental must be specified for payment.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create payment record
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
           customer_id: customer_id,
-          rental_id: rental_id,
+          rental_id: resolvedRentalId,
           vehicle_id: vehicle_id,
           amount: data.amount,
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
@@ -99,7 +156,7 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
-      // Apply payment using FIFO allocation
+      // Apply payment using updated FIFO allocation
       const { error: applyError } = await supabase.rpc('payment_apply_fifo', {
         p_id: payment.id
       });
@@ -108,16 +165,18 @@ export const AddPaymentDialog = ({
 
       toast({
         title: "Payment Added",
-        description: `Payment of £${data.amount} has been applied successfully.`,
+        description: `Payment of £${data.amount} has been applied across the rental schedule.`,
       });
 
       form.reset();
       onOpenChange(false);
       
       // Refresh queries
-      queryClient.invalidateQueries({ queryKey: ["rental-ledger", rental_id] });
-      queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", rental_id] });
-      queryClient.invalidateQueries({ queryKey: ["rental", rental_id] });
+      queryClient.invalidateQueries({ queryKey: ["rental-ledger", resolvedRentalId] });
+      queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", resolvedRentalId] });
+      queryClient.invalidateQueries({ queryKey: ["rental", resolvedRentalId] });
+      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
     } catch (error) {
       console.error("Error adding payment:", error);
       toast({

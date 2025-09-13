@@ -169,58 +169,12 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
-      // Call the apply-payment edge function using Supabase client for better error handling
-      const { data: applyResult, error: applyError } = await supabase.functions.invoke('apply-payment', {
-        body: { paymentId: payment.id }
-      });
-
-      // Handle edge function errors
-      if (applyError) {
-        // Handle new JSON error response format from edge function
-        let errorMessage = 'Payment processing failed';
-        try {
-          // Try multiple ways to extract error details
-          if (applyError.message) {
-            try {
-              const errorData = JSON.parse(applyError.message);
-              errorMessage = errorData.error || errorData.detail || errorMessage;
-            } catch {
-              // If parsing fails, check if it's already structured
-              if (typeof applyError === 'object' && (applyError.error || applyError.detail)) {
-                errorMessage = applyError.error || applyError.detail || errorMessage;
-              } else {
-                errorMessage = applyError.message || errorMessage;
-              }
-            }
-          } else if (applyError.error || applyError.detail) {
-            errorMessage = applyError.error || applyError.detail || errorMessage;
-          }
-        } catch {
-          errorMessage = applyError.message || 'Unknown payment processing error';
-        }
-        
-        toast({
-          title: "Payment Processing Error", 
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Check for application-level errors
-      if (!applyResult?.ok && !applyResult?.success) {
-        const errorMessage = applyResult?.error || applyResult?.detail || 'Payment processing failed';
-        toast({
-          title: "Payment Processing Error", 
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return;
-      }
+      // Payment processing is automatically handled by database trigger
+      console.log('Payment created:', payment.id, '- automatic processing via trigger');
 
       toast({
         title: "Success",
-        description: "Payment recorded",
+        description: "Payment recorded and processed automatically",
       });
 
       form.reset();

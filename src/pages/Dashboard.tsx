@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock, CreditCard } from "lucide-react";
 
 interface DashboardWidget {
   title: string;
@@ -145,6 +146,40 @@ const Dashboard = () => {
     },
   });
 
+  // Held credit query
+  const { data: heldCredit } = useQuery({
+    queryKey: ["held-credit"],
+    queryFn: async () => {
+      const { data: customers } = await supabase
+        .from("customers")
+        .select("id, name");
+      
+      if (!customers) return { totalCredit: 0, topCustomers: [] };
+      
+      const customerCredits = await Promise.all(
+        customers.map(async (customer) => {
+          const { data: credit } = await supabase.rpc('get_customer_credit', {
+            customer_id_param: customer.id
+          });
+          
+          return {
+            id: customer.id,
+            name: customer.name,
+            credit: credit || 0
+          };
+        })
+      );
+      
+      const totalCredit = customerCredits.reduce((sum, c) => sum + c.credit, 0);
+      const topCustomers = customerCredits
+        .filter(c => c.credit > 0)
+        .sort((a, b) => b.credit - a.credit)
+        .slice(0, 5);
+      
+      return { totalCredit, topCustomers };
+    },
+  });
+
   const { data: activeReminders } = useQuery({
     queryKey: ["active-reminders"],
     queryFn: async () => {
@@ -206,6 +241,14 @@ const Dashboard = () => {
       icon: AlertTriangle,
       color: openFines?.overdueCount && openFines.overdueCount > 0 ? "text-red-500" : "text-orange-500",
       href: "/fines?filter=open"
+    },
+    {
+      title: "Held Credit",
+      value: `£${(heldCredit?.totalCredit || 0).toLocaleString()}`,
+      description: `${heldCredit?.topCustomers?.length || 0} customers with credit`,
+      icon: CreditCard,
+      color: "text-purple-500",
+      href: "/payments?filter=unapplied"
     }
   ];
 
@@ -235,6 +278,37 @@ const Dashboard = () => {
           />
         ))}
       </div>
+
+      {/* Held Credit Section */}
+      {heldCredit && heldCredit.totalCredit > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-purple-500" />
+              Held Credit Details
+            </CardTitle>
+            <CardDescription>Customers with unapplied payment credit</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Customer</TableHead>
+                  <TableHead className="text-right">Credit Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {heldCredit.topCustomers.map((customer) => (
+                  <TableRow key={customer.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/customers/${customer.id}`)}>
+                    <TableCell>{customer.name}</TableCell>
+                    <TableCell className="text-right font-medium">£{customer.credit.toLocaleString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

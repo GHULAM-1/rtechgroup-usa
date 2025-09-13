@@ -1298,7 +1298,7 @@ export type Database = {
         Returns: undefined
       }
       get_customer_credit: {
-        Args: { p_customer: string }
+        Args: { customer_id_param: string }
         Returns: number
       }
       get_customer_statement: {
@@ -1313,6 +1313,10 @@ export type Database = {
           type: string
           vehicle_reg: string
         }[]
+      }
+      get_payment_remaining: {
+        Args: { payment_id_param: string }
+        Returns: number
       }
       get_pending_charges_for_reminders: {
         Args: Record<PropertyKey, never>
@@ -1336,7 +1340,7 @@ export type Database = {
         }[]
       }
       get_rental_credit: {
-        Args: { p_rental: string }
+        Args: { rental_id_param: string }
         Returns: number
       }
       hash_password: {

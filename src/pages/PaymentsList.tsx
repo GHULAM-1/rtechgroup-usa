@@ -444,7 +444,7 @@ const PaymentsList = () => {
                      <TableHead>Rental</TableHead>
                      <TableHead>Type</TableHead>
                      <TableHead>Method</TableHead>
-                     <TableHead>Apply From</TableHead>
+                     <TableHead>Remaining</TableHead>
                      <TableHead>Status</TableHead>
                      <TableHead>Notes</TableHead>
                      <TableHead className="text-right">Amount</TableHead>
@@ -482,18 +482,32 @@ const PaymentsList = () => {
                               </Badge>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell>{payment.method || 'Cash'}</TableCell>
-                        <TableCell>
-                          {payment.apply_from_date ? (
-                            formatInTimeZone(new Date(payment.apply_from_date), 'Europe/London', 'dd/MM/yyyy')
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="default" className="text-xs">
-                            Applied
-                          </Badge>
-                        </TableCell>
+                         </TableCell>
+                         <TableCell>{payment.method || 'Cash'}</TableCell>
+                         <TableCell>
+                           {(() => {
+                             const remaining = (payment as any).remaining || 0;
+                             if (remaining === 0) {
+                               return "£0 (Fully Applied)";
+                             } else if (remaining === payment.amount) {
+                               return `£${remaining.toLocaleString()} (Unapplied)`;
+                             } else {
+                               return `£${remaining.toLocaleString()} (Partial)`;
+                             }
+                           })()}
+                         </TableCell>
+                         <TableCell>
+                           {(() => {
+                             const remaining = (payment as any).remaining || 0;
+                             if (remaining === 0) {
+                               return <Badge variant="default">Applied</Badge>;
+                             } else if (remaining === payment.amount) {
+                               return <Badge variant="secondary">Unapplied</Badge>;
+                             } else {
+                               return <Badge variant="outline">Part-applied</Badge>;
+                             }
+                           })()}
+                         </TableCell>
                        <TableCell className="text-sm text-muted-foreground">
                          {payment.notes || '-'}
                        </TableCell>

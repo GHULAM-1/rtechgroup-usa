@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, AlertTriangle, FolderOpen, CalendarPlus, DollarSign } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
 
 interface Customer {
@@ -35,6 +36,9 @@ interface Payment {
   amount: number;
   payment_date: string;
   payment_type: string;
+  method?: string;
+  is_early: boolean;
+  remaining?: number;
   vehicles: { reg: string };
 }
 
@@ -123,7 +127,24 @@ const CustomerDetail = () => {
         .order("payment_date", { ascending: false });
       
       if (error) throw error;
-      return data as Payment[];
+      
+      // Get remaining amounts for each payment
+      const paymentsWithRemaining = await Promise.all(
+        (data || []).map(async (payment) => {
+          const { data: remainingData, error: remainingError } = await supabase.rpc('get_payment_remaining', {
+            payment_id_param: payment.id
+          });
+          
+          if (remainingError) throw remainingError;
+          
+          return {
+            ...payment,
+            remaining: remainingData as number
+          };
+        })
+      );
+      
+      return paymentsWithRemaining;
     },
     enabled: !!id,
   });
@@ -251,6 +272,20 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
+  // Get customer credit
+  const { data: customerCredit } = useQuery({
+    queryKey: ["customer-credit", id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_customer_credit', {
+        customer_id_param: id
+      });
+      
+      if (error) throw error;
+      return data as number;
+    },
+    enabled: !!id,
+  });
+
   if (isLoading) {
     return <div>Loading customer details...</div>;
   }
@@ -338,6 +373,20 @@ const CustomerDetail = () => {
                     <div className="text-lg">£{Math.abs(balance.balance).toLocaleString()}</div>
                   )}
                 </div>
+                {customerCredit && customerCredit > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          Credit available £{customerCredit.toLocaleString()}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Unapplied payments that will auto-apply to due charges</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
                 {balance.nextDue.amount > 0 && (
                   <div className="text-sm text-muted-foreground">
                     Next due: £{balance.nextDue.amount.toLocaleString()} on {new Date(balance.nextDue.date).toLocaleDateString()}
@@ -459,22 +508,45 @@ const CustomerDetail = () => {
                         <TableHead>Date</TableHead>
                         <TableHead>Vehicle</TableHead>
                         <TableHead>Type</TableHead>
+                        <TableHead>Applied/Remaining</TableHead>
                         <TableHead className="text-right">Amount</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {payments.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                          <TableCell>{payment.vehicles?.reg}</TableCell>
-                          <TableCell>
-                            <Badge variant={payment.payment_type === 'Rental' ? 'default' : 'secondary'}>
-                              {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">£{Number(payment.amount).toLocaleString()}</TableCell>
-                        </TableRow>
-                      ))}
+                      {payments.map((payment) => {
+                        const remaining = payment.remaining || 0;
+                        const applied = payment.amount - remaining;
+                        
+                        let statusBadge;
+                        if (remaining === 0) {
+                          statusBadge = <Badge variant="default">Applied</Badge>;
+                        } else if (remaining === payment.amount) {
+                          statusBadge = <Badge variant="secondary">Unapplied £{remaining.toLocaleString()}</Badge>;
+                        } else {
+                          statusBadge = <Badge variant="outline">Part-applied</Badge>;
+                        }
+                        
+                        return (
+                          <TableRow key={payment.id}>
+                            <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                            <TableCell>{payment.vehicles?.reg}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Badge variant={payment.payment_type === 'Rental' ? 'default' : 'secondary'}>
+                                  {payment.payment_type === 'InitialFee' ? 'Initial Fee' : payment.payment_type}
+                                </Badge>
+                                {payment.is_early && (
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                    Early
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>{statusBadge}</TableCell>
+                            <TableCell className="text-right">£{Number(payment.amount).toLocaleString()}</TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

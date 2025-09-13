@@ -23,6 +23,7 @@ import FinesList from "@/pages/FinesList";
 import CreateFine from "@/pages/CreateFine";
 import FineDetail from "@/pages/FineDetail";
 import RemindersPageNew from "@/pages/RemindersPageNew";
+import PlatesList from "@/pages/PlatesList";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/rentals/:id" element={<Layout><RentalDetail /></Layout>} />
           <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
           <Route path="/charges" element={<Layout><ChargesList /></Layout>} />
+          <Route path="/plates" element={<Layout><PlatesList /></Layout>} />
           <Route path="/reminders-new" element={<Layout><RemindersPageNew /></Layout>} />
           <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
           <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />

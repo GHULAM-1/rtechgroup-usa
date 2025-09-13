@@ -455,6 +455,57 @@ export type Database = {
           },
         ]
       }
+      plates: {
+        Row: {
+          assigned_vehicle_id: string | null
+          created_at: string | null
+          document_name: string | null
+          document_url: string | null
+          id: string
+          notes: string | null
+          plate_number: string
+          retention_doc_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_vehicle_id?: string | null
+          created_at?: string | null
+          document_name?: string | null
+          document_url?: string | null
+          id?: string
+          notes?: string | null
+          plate_number: string
+          retention_doc_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_vehicle_id?: string | null
+          created_at?: string | null
+          document_name?: string | null
+          document_url?: string | null
+          id?: string
+          notes?: string | null
+          plate_number?: string
+          retention_doc_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plates_assigned_vehicle_id_fkey"
+            columns: ["assigned_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plates_assigned_vehicle_id_fkey"
+            columns: ["assigned_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
       pnl_entries: {
         Row: {
           amount: number

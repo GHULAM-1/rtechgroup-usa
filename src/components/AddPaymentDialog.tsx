@@ -22,12 +22,9 @@ const paymentSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_date: z.date({
     required_error: "Payment date is required",
-  }).refine((date) => date <= new Date(), {
-    message: "Payment date cannot be in the future",
   }),
   method: z.string().min(1, "Payment method is required"),
-  payment_type: z.enum(['Rental', 'Fine']).default('Rental'),
-  is_early: z.boolean().default(false),
+  payment_type: z.enum(['Rental', 'InitialFee', 'Other']).default('Rental'),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -58,7 +55,6 @@ export const AddPaymentDialog = ({
       payment_date: toZonedTime(new Date(), 'Europe/London'),
       method: "Card",
       payment_type: "Rental",
-      is_early: false,
     },
   });
 
@@ -124,7 +120,7 @@ export const AddPaymentDialog = ({
         return;
       }
 
-      // Create payment record
+      // Create payment record - auto-application will be handled by database triggers
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
@@ -135,23 +131,15 @@ export const AddPaymentDialog = ({
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,
           payment_type: data.payment_type,
-          is_early: data.is_early,
         })
         .select()
         .single();
 
       if (paymentError) throw paymentError;
 
-      // Apply payment using updated FIFO allocation
-      const { error: applyError } = await supabase.rpc('payment_apply_fifo', {
-        p_id: payment.id
-      });
-
-      if (applyError) throw applyError;
-
       toast({
         title: "Payment Added",
-        description: `Payment of £${data.amount} has been applied across the rental schedule.`,
+        description: `Payment of £${data.amount} has been recorded and will be automatically applied to charges.`,
       });
 
       form.reset();
@@ -247,28 +235,6 @@ export const AddPaymentDialog = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="is_early"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Mark as early payment (hold as credit until next due)
-                    </FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                      Early payments are held as credit and automatically applied to your next due charges.
-                    </p>
-                  </div>
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}
@@ -307,8 +273,9 @@ export const AddPaymentDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Rental">Rental</SelectItem>
-                      <SelectItem value="Fine">Fine</SelectItem>
+                      <SelectItem value="Rental">Rental Payment</SelectItem>
+                      <SelectItem value="InitialFee">Initial Fee</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

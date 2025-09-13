@@ -10,6 +10,7 @@ import { FileText, ArrowLeft, DollarSign, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddPaymentDialog } from "@/components/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useRentalBalance } from "@/hooks/useCustomerBalance";
 
 interface Rental {
   id: string;
@@ -90,19 +91,8 @@ const RentalDetail = () => {
     enabled: !!ledgerEntries?.length,
   });
 
-  const { data: customerCredit } = useQuery({
-    queryKey: ["customer-credit", rental?.customers?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc("get_customer_credit", {
-          customer_id_param: rental?.customers?.id
-        });
-      
-      if (error) throw error;
-      return Number(data) || 0;
-    },
-    enabled: !!rental?.customers?.id,
-  });
+  // Use the new rental balance hook
+  const { data: rentalBalance } = useRentalBalance(id, rental?.customers?.id);
 
   // Get total payments (cash received) for this rental directly from payments table
   const { data: totalPayments } = useQuery({
@@ -143,53 +133,16 @@ const RentalDetail = () => {
   
   const outstandingBalance = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
 
-  const handleApplyCredit = async () => {
-    if (!rental || !customerCredit || customerCredit <= 0 || outstandingBalance <= 0) return;
-
-    try {
-      const amountToApply = Math.min(customerCredit, outstandingBalance);
-
-      // Create a payment for the credit application with rental_id
-      const { data: payment, error: paymentError } = await supabase
-        .from("payments")
-        .insert({
-          customer_id: rental.customers?.id,
-          vehicle_id: rental.vehicles?.id,
-          rental_id: rental.id,
-          amount: amountToApply,
-          payment_date: new Date().toISOString().split('T')[0],
-          method: "Credit Application",
-          payment_type: "Rental",
-          is_early: false
-        })
-        .select()
-        .single();
-
-      if (paymentError) throw paymentError;
-
-      // Apply the payment using the updated FIFO function
-      await supabase.rpc("payment_apply_fifo", {
-        p_id: payment.id
-      });
-
-      toast({
-        title: "Credit Applied",
-        description: `£${amountToApply.toLocaleString()} credit has been applied across the rental schedule.`,
-      });
-
-      // Refresh all relevant data
-      queryClient.invalidateQueries({ queryKey: ["rental-ledger", id] });
-      queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", id] });
-      queryClient.invalidateQueries({ queryKey: ["customer-credit", rental.customers?.id] });
-      queryClient.invalidateQueries({ queryKey: ["rental-total-payments", id] });
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to apply credit.",
-        variant: "destructive",
-      });
+  // Helper to render balance chip
+  const renderBalanceChip = () => {
+    if (!rentalBalance && rentalBalance !== 0) return null;
+    
+    if (rentalBalance === 0) {
+      return <Badge variant="secondary" className="text-lg px-3 py-1">Settled</Badge>;
+    } else if (rentalBalance > 0) {
+      return <Badge variant="destructive" className="text-lg px-3 py-1">In Debt £{Math.abs(rentalBalance).toLocaleString()}</Badge>;
+    } else {
+      return <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">In Credit £{Math.abs(rentalBalance).toLocaleString()}</Badge>;
     }
   };
 
@@ -299,21 +252,10 @@ const RentalDetail = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Available Credit</CardTitle>
+            <CardTitle className="text-lg">Balance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600 mb-2">
-              £{(customerCredit || 0).toLocaleString()}
-            </div>
-            {customerCredit && customerCredit > 0 && outstandingBalance > 0 && (
-              <Button 
-                size="sm" 
-                onClick={handleApplyCredit}
-                className="w-full"
-              >
-                Apply Credit Now
-              </Button>
-            )}
+            {renderBalanceChip()}
           </CardContent>
         </Card>
       </div>

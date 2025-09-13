@@ -142,7 +142,7 @@ const PaymentsList = () => {
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
-      // Insert payment
+      // Insert payment - automatic application will be handled by database triggers
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
@@ -153,21 +153,15 @@ const PaymentsList = () => {
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method || null,
           payment_type: data.payment_type,
-          is_early: data.is_early,
         })
         .select()
         .single();
 
       if (paymentError) throw paymentError;
 
-      // Apply FIFO allocation for all payment types
-      if (payment) {
-        await supabase.rpc('payment_apply_fifo', { p_id: payment.id });
-      }
-
       toast({
         title: "Payment Recorded",
-        description: `Payment of £${data.amount} has been recorded successfully.`,
+        description: `Payment of £${data.amount} has been recorded and will be automatically applied.`,
       });
 
       form.reset({
@@ -178,7 +172,6 @@ const PaymentsList = () => {
         payment_type: "Rental",
         method: "",
         payment_date: toZonedTime(new Date(), 'Europe/London'),
-        is_early: false,
       });
       setShowAddDialog(false);
       queryClient.invalidateQueries({ queryKey: ["payments-list"] });

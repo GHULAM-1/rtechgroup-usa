@@ -118,7 +118,8 @@ const CreateRental = () => {
             amount: data.initial_fee,
             payment_date: new Date().toISOString().split('T')[0],
             payment_type: "InitialFee",
-            method: "Card"
+            method: "Card",
+            status: "Applied"
           })
           .select()
           .single();
@@ -139,14 +140,14 @@ const CreateRental = () => {
             remaining_amount: 0
           });
 
-        // Post to P&L as Revenue: Fees immediately
+        // Post to P&L as Revenue: InitialFees immediately (updated category)
         await supabase
           .from("pnl_entries")
           .insert({
             vehicle_id: data.vehicle_id,
             entry_date: new Date().toISOString().split('T')[0],
             side: "Revenue",
-            category: "Fees",
+            category: "InitialFees",
             amount: data.initial_fee,
             source_ref: payment.id,
           });

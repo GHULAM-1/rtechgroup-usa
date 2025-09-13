@@ -18,6 +18,8 @@ interface Payment {
   payment_date: string;
   method: string;
   payment_type: string;
+  status: string;
+  remaining_amount: number;
   customers: {
     name: string;
   };
@@ -33,8 +35,8 @@ const PaymentTypeBadge = ({ type }: { type: string }) => {
         return 'default';
       case 'Rental':
         return 'secondary';
-      case 'Fine':
-        return 'destructive';
+      case 'Other':
+        return 'outline';
       default:
         return 'outline';
     }
@@ -45,6 +47,17 @@ const PaymentTypeBadge = ({ type }: { type: string }) => {
       {type === 'InitialFee' ? 'Initial Fee' : type}
     </Badge>
   );
+};
+
+const PaymentStatusBadge = ({ status, remaining }: { status: string; remaining: number }) => {
+  if (status === 'Applied') {
+    return <Badge variant="default" className="text-xs bg-green-600 hover:bg-green-700">Applied</Badge>;
+  } else if (status === 'Credit') {
+    return <Badge variant="outline" className="text-xs">Credit (£{remaining.toLocaleString()})</Badge>;
+  } else if (status === 'Partial') {
+    return <Badge variant="secondary" className="text-xs">Partial (£{remaining.toLocaleString()})</Badge>;
+  }
+  return <Badge variant="outline" className="text-xs">{status}</Badge>;
 };
 
 export const PaymentManagement = () => {
@@ -100,6 +113,7 @@ export const PaymentManagement = () => {
                   <TableHead>Type</TableHead>
                   <TableHead>Method</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -116,6 +130,12 @@ export const PaymentManagement = () => {
                     <TableCell>{payment.method || 'Cash'}</TableCell>
                     <TableCell className="text-right font-medium">
                       £{Number(payment.amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <PaymentStatusBadge 
+                        status={payment.status} 
+                        remaining={Number(payment.remaining_amount) || 0} 
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1311,6 +1311,10 @@ export type Database = {
         Args: { payment_id: string }
         Returns: undefined
       }
+      apply_payments_to_charges: {
+        Args: { p_rental_id?: string }
+        Returns: undefined
+      }
       attach_payments_to_rentals: {
         Args: Record<PropertyKey, never>
         Returns: undefined

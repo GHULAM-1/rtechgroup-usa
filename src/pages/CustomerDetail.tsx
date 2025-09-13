@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
 import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
+import { useCustomerBalance } from "@/hooks/useCustomerBalance";
 
 interface Customer {
   id: string;
@@ -219,42 +220,8 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
-  // Customer balance calculation (consolidated debt/credit)
-  const { data: customerBalance } = useQuery({
-    queryKey: ["customer-balance", id],
-    queryFn: async () => {
-      // Calculate balance: charges - applied payments - held credit
-      const { data: charges, error: chargesError } = await supabase
-        .from("ledger_entries")
-        .select("amount")
-        .eq("customer_id", id)
-        .eq("type", "Charge");
-      
-      if (chargesError) throw chargesError;
-      
-      const { data: appliedPayments, error: appliedError } = await supabase
-        .from("payment_applications")
-        .select("amount_applied, payments!inner(customer_id)")
-        .eq("payments.customer_id", id);
-      
-      if (appliedError) throw appliedError;
-      
-      const { data: heldCredit, error: creditError } = await supabase
-        .from("payments")
-        .select("remaining_amount")
-        .eq("customer_id", id)
-        .in("status", ["Credit", "Partial"]);
-      
-      if (creditError) throw creditError;
-      
-      const totalCharges = charges?.reduce((sum, c) => sum + Number(c.amount), 0) || 0;
-      const totalApplied = appliedPayments?.reduce((sum, a) => sum + Number(a.amount_applied), 0) || 0;
-      const totalCredit = heldCredit?.reduce((sum, c) => sum + Number(c.remaining_amount), 0) || 0;
-      
-      return totalCharges - totalApplied - totalCredit;
-    },
-    enabled: !!id,
-  });
+  // Use the new customer balance hook
+  const { data: customerBalance } = useCustomerBalance(id);
 
   if (isLoading) {
     return <div>Loading customer details...</div>;
@@ -333,17 +300,17 @@ const CustomerDetail = () => {
           </CardHeader>
           <CardContent>
             <div>
-              {(customerBalance ?? 0) < 0 ? (
-                <Badge variant="destructive" className="text-lg px-3 py-1">
-                  In Debt (£{Math.abs(customerBalance || 0).toFixed(2)})
-                </Badge>
-              ) : (customerBalance ?? 0) > 0 ? (
-                <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
-                  In Credit (+£{customerBalance?.toFixed(2)})
-                </Badge>
-              ) : (
+              {(customerBalance ?? 0) === 0 ? (
                 <Badge variant="secondary" className="text-lg px-3 py-1">
                   Settled
+                </Badge>
+              ) : (customerBalance ?? 0) > 0 ? (
+                <Badge variant="destructive" className="text-lg px-3 py-1">
+                  In Debt £{Math.abs(customerBalance || 0).toFixed(2)}
+                </Badge>
+              ) : (
+                <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+                  In Credit £{Math.abs(customerBalance || 0).toFixed(2)}
                 </Badge>
               )}
             </div>

@@ -84,7 +84,7 @@ const CreateFine = () => {
         .insert({
           type: data.type,
           vehicle_id: data.vehicle_id,
-          customer_id: data.customer_id || null,
+          customer_id: data.customer_id === "none" ? null : data.customer_id || null,
           reference_no: data.reference_no || null,
           issue_date: data.issue_date.toISOString().split('T')[0],
           due_date: data.due_date.toISOString().split('T')[0],
@@ -257,7 +257,7 @@ const CreateFine = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No specific customer</SelectItem>
+                          <SelectItem value="none">No specific customer</SelectItem>
                           {customers?.map((customer) => (
                             <SelectItem key={customer.id} value={customer.id}>
                               {customer.name}

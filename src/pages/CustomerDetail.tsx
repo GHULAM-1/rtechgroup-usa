@@ -307,26 +307,23 @@ const CustomerDetail = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Account Balance</CardTitle>
+            <CardTitle>Account Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Status</p>
-{netPosition === 0 ? (
-                  <span className="text-lg font-semibold text-green-600">
-                    Settled
-                  </span>
-                ) : netPosition > 0 ? (
-                  <span className="text-lg font-semibold text-red-600">
-                    In Debt (£{Math.abs(netPosition).toLocaleString()})
-                  </span>
-                ) : (
-                  <span className="text-lg font-semibold text-green-600">
-                    Settled (+£{Math.abs(netPosition).toLocaleString()})
-                  </span>
-                )}
-              </div>
+            <div>
+              {netPosition === 0 ? (
+                <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+                  Settled
+                </Badge>
+              ) : netPosition > 0 ? (
+                <Badge variant="destructive" className="text-lg px-3 py-1">
+                  In Debt (£{Math.abs(netPosition).toLocaleString()})
+                </Badge>
+              ) : (
+                <Badge variant="default" className="text-lg px-3 py-1 bg-green-600 hover:bg-green-700">
+                  Settled (+£{Math.abs(netPosition).toLocaleString()})
+                </Badge>
+              )}
             </div>
           </CardContent>
         </Card>

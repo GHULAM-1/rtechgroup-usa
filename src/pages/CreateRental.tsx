@@ -74,14 +74,19 @@ const CreateRental = () => {
   const onSubmit = async (data: RentalFormData) => {
     setLoading(true);
     try {
-      // Validate customer_id and vehicle_id are valid UUIDs
-      if (!data.customer_id || data.customer_id === "") {
-        throw new Error("Please select a customer");
+      // Validate form data
+      if (!data.customer_id || !data.vehicle_id) {
+        throw new Error("Customer and Vehicle must be selected");
       }
-      if (!data.vehicle_id || data.vehicle_id === "") {
-        throw new Error("Please select a vehicle");
+      
+      if (data.monthly_amount <= 0) {
+        throw new Error("Monthly amount must be greater than 0");
       }
-
+      
+      if (data.initial_fee && data.initial_fee < 0) {
+        throw new Error("Initial fee cannot be negative");
+      }
+      
       // Create rental
       const { data: rental, error: rentalError } = await supabase
         .from("rentals")
@@ -153,11 +158,8 @@ const CreateRental = () => {
         .update({ status: "Rented" })
         .eq("id", data.vehicle_id);
 
-      // Call backfill function to generate rental charges
-      const { error: backfillError } = await supabase.rpc('backfill_rental_charges_full');
-      if (backfillError) {
-        console.warn("Warning: Failed to generate rental charges automatically:", backfillError);
-      }
+      // Generate rental charges
+      await supabase.rpc("backfill_rental_charges_full");
 
       toast({
         title: "Rental Created",
@@ -167,15 +169,24 @@ const CreateRental = () => {
       // Refresh queries and navigate
       queryClient.invalidateQueries({ queryKey: ["rentals-list"] });
       queryClient.invalidateQueries({ queryKey: ["vehicles-list"] });
-      queryClient.invalidateQueries({ queryKey: ["rental-detail", rental.id] });
+      queryClient.invalidateQueries({ queryKey: ["customer-rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["customer-net-position"] });
       navigate(`/rentals/${rental.id}`);
     } catch (error: any) {
       console.error("Error creating rental:", error);
       
-      // Surface detailed error information
+      // Surface full Postgres error
       const errorMessage = error?.message || "Failed to create rental agreement. Please try again.";
       const errorDetails = error?.details || error?.hint || "";
-      const fullError = errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage;
+      const fullError = errorDetails ? `${errorMessage}\n\nDetails: ${errorDetails}` : errorMessage;
+      
+      console.error("Full rental creation error:", {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+        error
+      });
       
       toast({
         title: "Error Creating Rental",

@@ -104,7 +104,7 @@ const Dashboard = () => {
   const { data: openFines } = useQuery({
     queryKey: ["open-fines"],
     queryFn: async () => {
-      // Get fines with liability='Customer' and join with ledger to get remaining amounts
+      // Get customer-liability fines with remaining amounts from view_fines_export
       const { data } = await supabase
         .from("view_fines_export")
         .select("remaining_amount, due_date")
@@ -200,9 +200,11 @@ const Dashboard = () => {
     {
       title: "Open Fines",
       value: `${openFines?.totalCount || 0}`,
-      description: `£${(openFines?.totalAmount || 0).toLocaleString()} outstanding (${openFines?.overdueCount || 0} overdue)`,
+      description: openFines?.overdueCount && openFines.overdueCount > 0 
+        ? `£${(openFines?.totalAmount || 0).toLocaleString()} outstanding (${openFines?.overdueCount} overdue)`
+        : `£${(openFines?.totalAmount || 0).toLocaleString()} outstanding`,
       icon: AlertTriangle,
-      color: "text-orange-500",
+      color: openFines?.overdueCount && openFines.overdueCount > 0 ? "text-red-500" : "text-orange-500",
       href: "/fines?filter=open"
     }
   ];

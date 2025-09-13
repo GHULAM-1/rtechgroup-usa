@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CreditCard, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
+import { AddPaymentDialog } from "./AddPaymentDialog";
 
 interface Payment {
   id: string;
@@ -133,6 +134,7 @@ export const PaymentManagement = () => {
           </div>
         )}
       </CardContent>
+      <AddPaymentDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
     </Card>
   );
 };

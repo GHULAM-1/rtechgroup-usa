@@ -105,8 +105,20 @@ export const DashboardStats = () => {
     },
   });
 
+  const { data: openFines } = useQuery({
+    queryKey: ["open-fines"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("fines")
+        .select("*", { count: "exact", head: true })
+        .not("status", "in", ["Paid", "Appeal Successful", "Waived"]);
+      
+      return count || 0;
+    },
+  });
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       <StatCard
         title="Total Fleet"
         value={vehicleCount?.toString() || "0"}
@@ -125,10 +137,16 @@ export const DashboardStats = () => {
         variant="success"
       />
       <StatCard
+        title="Open Fines"
+        value={openFines?.toString() || "0"}
+        icon={AlertTriangle}
+        variant="warning"
+      />
+      <StatCard
         title="Overdue Payments"
         value={overduePayments?.toString() || "0"}
         icon={AlertTriangle}
-        variant="warning"
+        variant="danger"
       />
     </div>
   );

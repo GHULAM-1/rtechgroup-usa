@@ -10,7 +10,8 @@ import {
   X,
   TestTube,
   Bell,
-  BarChart3
+  BarChart3,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Customers", href: "/customers", icon: Users },
   { name: "Rentals", href: "/rentals", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Fines", href: "/fines", icon: AlertCircle },
   { name: "Reminders", href: "/reminders", icon: Bell },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Tests", href: "/test", icon: TestTube },

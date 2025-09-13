@@ -586,9 +586,11 @@ export type Database = {
         Row: {
           amount: number
           category: string | null
+          customer_id: string | null
           entry_date: string
           id: string
           payment_id: string | null
+          rental_id: string | null
           side: string
           source_ref: string | null
           vehicle_id: string | null
@@ -596,9 +598,11 @@ export type Database = {
         Insert: {
           amount: number
           category?: string | null
+          customer_id?: string | null
           entry_date: string
           id?: string
           payment_id?: string | null
+          rental_id?: string | null
           side: string
           source_ref?: string | null
           vehicle_id?: string | null
@@ -606,9 +610,11 @@ export type Database = {
         Update: {
           amount?: number
           category?: string | null
+          customer_id?: string | null
           entry_date?: string
           id?: string
           payment_id?: string | null
+          rental_id?: string | null
           side?: string
           source_ref?: string | null
           vehicle_id?: string | null

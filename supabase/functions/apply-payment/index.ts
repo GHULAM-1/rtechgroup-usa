@@ -88,16 +88,10 @@ serve(async (req) => {
       entryDate
     });
 
-    // Call atomic payment processing function
+    // Call the simple payment processing function without parameters
     const { data: processResult, error: processError } = await supabase
       .rpc('process_payment_transaction', {
-        p_payment_id: payment.id,
-        p_customer_id: payment.customer_id,
-        p_rental_id: payment.rental_id,
-        p_vehicle_id: payment.vehicle_id,
-        p_amount: payment.amount,
-        p_payment_type: payment.payment_type,
-        p_payment_date: entryDate
+        p_payment_id: payment.id
       });
 
     if (processError) {

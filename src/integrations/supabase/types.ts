@@ -249,6 +249,7 @@ export type Database = {
           due_date: string | null
           entry_date: string
           id: string
+          payment_id: string | null
           remaining_amount: number
           rental_id: string | null
           type: string
@@ -263,6 +264,7 @@ export type Database = {
           due_date?: string | null
           entry_date: string
           id?: string
+          payment_id?: string | null
           remaining_amount?: number
           rental_id?: string | null
           type: string
@@ -277,6 +279,7 @@ export type Database = {
           due_date?: string | null
           entry_date?: string
           id?: string
+          payment_id?: string | null
           remaining_amount?: number
           rental_id?: string | null
           type?: string

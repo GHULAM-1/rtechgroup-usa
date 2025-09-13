@@ -228,6 +228,13 @@ export type Database = {
             foreignKeyName: "fines_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "fines_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -328,6 +335,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "view_rentals_export"
             referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "ledger_entries_vehicle_id_fkey"
@@ -522,6 +536,13 @@ export type Database = {
             foreignKeyName: "payments_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "payments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -569,6 +590,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "plates_assigned_vehicle_id_fkey"
+            columns: ["assigned_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
           {
             foreignKeyName: "plates_assigned_vehicle_id_fkey"
             columns: ["assigned_vehicle_id"]
@@ -623,6 +651,13 @@ export type Database = {
           vehicle_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pnl_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
           {
             foreignKeyName: "pnl_entries_vehicle_id_fkey"
             columns: ["vehicle_id"]
@@ -738,6 +773,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "view_rentals_export"
             referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "reminder_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "reminder_events_vehicle_id_fkey"
@@ -873,6 +915,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "rentals_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "rentals_vehicle_id_fkey"
@@ -1064,6 +1113,25 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_pnl_rollup: {
+        Row: {
+          cost_acquisition: number | null
+          cost_finance: number | null
+          cost_fines: number | null
+          cost_other: number | null
+          cost_service: number | null
+          cost_total: number | null
+          entry_date: string | null
+          make: string | null
+          model: string | null
+          reg: string | null
+          revenue_initial_fees: number | null
+          revenue_other: number | null
+          revenue_rental: number | null
+          vehicle_id: string | null
+        }
+        Relationships: []
+      }
       view_aging_receivables: {
         Row: {
           bucket_0_30: number | null
@@ -1139,6 +1207,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "view_rentals_export"
             referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "ledger_entries_vehicle_id_fkey"
@@ -1240,6 +1315,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "view_rentals_export"
             referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "payments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
           },
           {
             foreignKeyName: "payments_vehicle_id_fkey"

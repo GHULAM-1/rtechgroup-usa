@@ -127,8 +127,8 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
         .from("payments")
         .insert({
           customer_id: values.customer_id,
-          vehicle_id: values.vehicle_id || null,
-          rental_id: values.rental_id || null,
+          vehicle_id: values.vehicle_id === "none" ? null : values.vehicle_id || null,
+          rental_id: values.rental_id === "none" ? null : values.rental_id || null,
           amount: Number(values.amount),
           payment_date: format(values.payment_date, "yyyy-MM-dd"),
           method: values.method || "Cash",
@@ -265,7 +265,7 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">General payment</SelectItem>
+                        <SelectItem value="none">General payment</SelectItem>
                         {rentals?.map((rental) => (
                           <SelectItem key={rental.id} value={rental.id}>
                             {rental.vehicles?.reg} - £{rental.monthly_amount}/month
@@ -292,7 +292,7 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No specific vehicle</SelectItem>
+                      <SelectItem value="none">No specific vehicle</SelectItem>
                       {vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           {vehicle.reg} - {vehicle.make} {vehicle.model}

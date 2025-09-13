@@ -111,7 +111,7 @@ export const AddFineDialog = ({ open, onOpenChange }: AddFineDialogProps) => {
         .insert({
           type: values.type,
           vehicle_id: values.vehicle_id,
-          customer_id: values.customer_id || null,
+          customer_id: values.customer_id === "none" ? null : values.customer_id || null,
           reference_no: values.reference_no || null,
           issue_date: format(values.issue_date, "yyyy-MM-dd"),
           due_date: format(values.due_date, "yyyy-MM-dd"),
@@ -277,7 +277,7 @@ export const AddFineDialog = ({ open, onOpenChange }: AddFineDialogProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No customer assigned</SelectItem>
+                      <SelectItem value="none">No customer assigned</SelectItem>
                       {customers?.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}

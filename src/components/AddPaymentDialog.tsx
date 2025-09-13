@@ -169,17 +169,22 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
-      // Apply payment using centralized service with improved error handling
-      const response = await supabase.functions.invoke('apply-payment', {
-        body: { paymentId: payment.id }
+      // Call the apply-payment edge function using direct fetch for proper HTTP status handling
+      const res = await fetch(`https://wrogevjpvhvputrjhvvg.supabase.co/functions/v1/apply-payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indyb2dldmpwdmh2cHV0cmpodnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3MTUxNDYsImV4cCI6MjA3MzI5MTE0Nn0.gORhHgYY3GpcOiiGfI-K8PrtQscttZgMVvH_Fv_wUII`,
+        },
+        body: JSON.stringify({ paymentId: payment.id })
       });
 
-      // Parse response data, handling both success and error cases
+      // Parse response data with proper error handling
       let responseData: any = {};
-      try {
-        responseData = response.data || {};
+      try { 
+        responseData = await res.json(); 
       } catch (e) {
-        console.error('Failed to parse response data:', e);
+        console.error('Failed to parse response JSON:', e);
       }
 
       // Log error details for debugging
@@ -188,24 +193,13 @@ export const AddPaymentDialog = ({
       }
 
       // Check for HTTP errors or application errors
-      if (response.error || !responseData.success) {
-        const errorMessage = responseData.error || response.error?.message || 'Payment processing failed';
-        const errorDetail = responseData.detail || '';
+      if (!res.ok || responseData?.success === false) {
+        const msg = responseData?.error || responseData?.detail || `Payment failed (status ${res.status})`;
+        console.error('Payment error:', responseData);
         
-        console.error('Payment processing failed:', { 
-          error: errorMessage, 
-          detail: errorDetail,
-          httpError: response.error 
-        });
-        
-        // Show detailed error message to user
-        const displayMessage = errorDetail ? 
-          `${errorMessage}: ${errorDetail}` : 
-          errorMessage;
-          
         toast({
           title: "Payment Processing Error",
-          description: displayMessage,
+          description: msg,
           variant: "destructive",
         });
         return;

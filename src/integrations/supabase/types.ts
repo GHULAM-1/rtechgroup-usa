@@ -1538,6 +1538,18 @@ export type Database = {
         Args: { v_id: string }
         Returns: undefined
       }
+      process_payment_transaction: {
+        Args: {
+          p_amount: number
+          p_customer_id: string
+          p_payment_date: string
+          p_payment_id: string
+          p_payment_type: string
+          p_rental_id: string
+          p_vehicle_id: string
+        }
+        Returns: Json
+      }
       reapply_all_payments: {
         Args: Record<PropertyKey, never>
         Returns: undefined

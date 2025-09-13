@@ -51,7 +51,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
 
     console.log(`Payment ${paymentId}: ${category}, ${entryDate}, ${payment.amount}`);
 
-    // UPSERT Ledger entry (Payment, negative amount)
+    // UPSERT Ledger entry (Payment, negative amount) - use ignoreDuplicates for idempotency
     const { error: ledgerError } = await supabase
       .from('ledger_entries')
       .upsert([{
@@ -66,7 +66,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
         remaining_amount: 0,
         payment_id: payment.id
       }], {
-        onConflict: 'payment_id'
+        ignoreDuplicates: true
       });
 
     if (ledgerError) {
@@ -100,7 +100,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
     const { error: pnlError } = await supabase
       .from('pnl_entries')
       .upsert([pnlEntry], {
-        onConflict: 'reference'
+        ignoreDuplicates: true
       });
 
     if (pnlError) {

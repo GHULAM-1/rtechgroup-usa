@@ -77,6 +77,13 @@ export type Database = {
             referencedRelation: "fines"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fine_files_fine_id_fkey"
+            columns: ["fine_id"]
+            isOneToOne: false
+            referencedRelation: "view_fines_export"
+            referencedColumns: ["fine_id"]
+          },
         ]
       }
       fines: {
@@ -287,6 +294,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payment_applications_charge_entry_id_fkey"
+            columns: ["charge_entry_id"]
+            isOneToOne: false
+            referencedRelation: "view_customer_statements"
+            referencedColumns: ["entry_id"]
+          },
+          {
             foreignKeyName: "payment_applications_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
@@ -473,6 +487,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ledger_entries"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_events_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "view_customer_statements"
+            referencedColumns: ["entry_id"]
           },
           {
             foreignKeyName: "reminder_events_customer_id_fkey"
@@ -726,6 +747,94 @@ export type Database = {
           customer_id: string | null
           customer_name: string | null
           total_due: number | null
+        }
+        Relationships: []
+      }
+      view_customer_statements: {
+        Row: {
+          amount: number | null
+          category: string | null
+          customer_email: string | null
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          due_date: string | null
+          entry_date: string | null
+          entry_id: string | null
+          remaining_amount: number | null
+          rental_id: string | null
+          running_balance: number | null
+          transaction_amount: number | null
+          type: string | null
+          vehicle_id: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_reg: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "view_rentals_export"
+            referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
+      view_fines_export: {
+        Row: {
+          amount: number | null
+          appeal_status: string | null
+          customer_email: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          due_date: string | null
+          fine_id: string | null
+          issue_date: string | null
+          liability: string | null
+          notes: string | null
+          reference_no: string | null
+          remaining_amount: number | null
+          status: string | null
+          type: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_reg: string | null
         }
         Relationships: []
       }

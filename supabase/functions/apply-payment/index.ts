@@ -66,8 +66,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
         remaining_amount: 0,
         payment_id: payment.id
       }], {
-        onConflict: 'payment_id',
-        ignoreDuplicates: true
+        onConflict: 'payment_id'
       });
 
     if (ledgerError) {
@@ -79,14 +78,8 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
       };
     }
 
-    // Check if side column exists in pnl_entries
-    const { data: columnCheck } = await supabase
-      .rpc('exec', {
-        sql: `SELECT column_name FROM information_schema.columns 
-              WHERE table_name = 'pnl_entries' AND column_name = 'side'`
-      });
-
-    const hasSideColumn = columnCheck && columnCheck.length > 0;
+    // The side column exists in pnl_entries (confirmed from schema)
+    const hasSideColumn = true;
 
     // UPSERT P&L entry (Revenue, positive amount)
     const pnlEntry: any = {
@@ -107,8 +100,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
     const { error: pnlError } = await supabase
       .from('pnl_entries')
       .upsert([pnlEntry], {
-        onConflict: 'reference',
-        ignoreDuplicates: true
+        onConflict: 'reference'
       });
 
     if (pnlError) {

@@ -8,7 +8,7 @@ const corsHeaders = {
 
 interface PaymentProcessingResult {
   success: boolean;
-  paymentId?: string;
+  paymentId: string;
   category?: string;
   allocated?: number;
   remaining?: number;
@@ -28,7 +28,15 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration');
+      console.error('Missing Supabase configuration');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Missing Supabase configuration',
+        detail: 'SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -36,10 +44,11 @@ serve(async (req) => {
     const { paymentId } = await req.json();
     
     if (!paymentId) {
-      return new Response(JSON.stringify({
-        success: false,
+      console.error('Payment ID is required');
+      return new Response(JSON.stringify({ 
+        success: false, 
         error: 'Payment ID is required',
-        detail: 'Missing required parameter: paymentId'
+        detail: 'paymentId field is missing from request body'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -56,11 +65,11 @@ serve(async (req) => {
       .single();
 
     if (paymentError || !payment) {
-      console.error('Payment lookup error:', paymentError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Payment not found: ${paymentError?.message || 'Unknown error'}`,
-        detail: paymentError?.details || 'Payment lookup failed'
+      console.error('Payment not found:', paymentError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Payment not found',
+        detail: `Payment ${paymentId} not found: ${paymentError?.message || 'No payment record'}`
       }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -69,12 +78,21 @@ serve(async (req) => {
 
     console.log('Loaded payment:', payment);
 
-    // Use atomic database function for payment processing
+    // Process payment using atomic database transaction
     const entryDate = payment.payment_date || payment.created_at?.split('T')[0] || new Date().toISOString().split('T')[0];
     
-    console.log('Calling atomic payment processing function');
-    
-    const { data: result, error: functionError } = await supabase
+    console.log('Processing payment with atomic transaction:', {
+      paymentId: payment.id,
+      customerId: payment.customer_id,
+      rentalId: payment.rental_id,
+      vehicleId: payment.vehicle_id,
+      amount: payment.amount,
+      paymentType: payment.payment_type,
+      entryDate
+    });
+
+    // Call atomic payment processing function
+    const { data: processResult, error: processError } = await supabase
       .rpc('process_payment_transaction', {
         p_payment_id: payment.id,
         p_customer_id: payment.customer_id,
@@ -85,46 +103,55 @@ serve(async (req) => {
         p_payment_date: entryDate
       });
 
-    if (functionError) {
-      console.error('Database function error:', functionError);
-      return new Response(JSON.stringify({
-        success: false,
-        error: `Database transaction failed: ${functionError.message}`,
-        detail: functionError.details || functionError.hint || 'Database function execution failed'
-      }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    if (!result) {
-      console.error('No result from database function');
-      return new Response(JSON.stringify({
-        success: false,
+    if (processError) {
+      console.error('Payment processing RPC error:', processError);
+      return new Response(JSON.stringify({ 
+        success: false, 
         error: 'Payment processing failed',
-        detail: 'Database function returned no result'
+        detail: `RPC call failed: ${processError.message}`
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log('Database function result:', result);
-    
-    // Check if the function returned an error
-    if (!result.success) {
-      console.error('Payment processing error from function:', result.error);
-      return new Response(JSON.stringify({
-        success: false,
-        error: result.error || 'Payment processing failed',
-        detail: result.detail || 'Database transaction failed'
+    if (!processResult) {
+      console.error('Payment processing returned null result');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Payment processing failed',
+        detail: 'Processing function returned null result'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Payment processing result:', processResult);
+
+    // Check if processing was successful
+    if (!processResult.success) {
+      console.error('Payment processing failed:', processResult.error);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: processResult.error || 'Payment processing failed',
+        detail: processResult.detail || 'Unknown database error'
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Return successful result
+    // Return success result
+    const result: PaymentProcessingResult = {
+      success: true,
+      paymentId: processResult.paymentId,
+      category: processResult.category,
+      allocated: processResult.allocated,
+      remaining: processResult.remaining,
+      status: processResult.status
+    };
+
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -132,14 +159,15 @@ serve(async (req) => {
   } catch (error) {
     console.error('Payment processing error:', error);
     
-    const errorResult: PaymentProcessingResult = {
+    const result: PaymentProcessingResult = {
       success: false,
+      paymentId: '',
       error: error instanceof Error ? error.message : 'Unknown error',
-      detail: error instanceof Error ? error.stack || 'Payment processing failed' : String(error)
+      detail: String(error)
     };
 
-    return new Response(JSON.stringify(errorResult), {
-      status: 400,
+    return new Response(JSON.stringify(result), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

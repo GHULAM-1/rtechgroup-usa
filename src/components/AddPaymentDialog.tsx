@@ -169,24 +169,30 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
-      // Apply payment using centralized service
+      // Apply payment using centralized service with improved error handling
       const response = await supabase.functions.invoke('apply-payment', {
         body: { paymentId: payment.id }
       });
 
-      // Check for HTTP errors first
+      // Check for HTTP errors
       if (response.error) {
         console.error('Edge function error:', response.error);
         throw new Error(`Payment processing failed: ${response.error.message}`);
       }
 
-      const applyResult = response.data;
-      
-      // Check for business logic errors in the response
-      if (!applyResult.success) {
-        const errorMessage = applyResult.error || 'Payment processing failed';
-        const errorDetail = applyResult.detail ? ` (${applyResult.detail})` : '';
-        throw new Error(`${errorMessage}${errorDetail}`);
+      // Check for application errors with structured error handling
+      if (!response.data?.success) {
+        const errorMessage = response.data?.error || 'Payment processing failed';
+        const errorDetail = response.data?.detail || '';
+        console.error('Payment processing failed:', { error: errorMessage, detail: errorDetail });
+        
+        // Show detailed error message to user
+        toast({
+          title: "Payment Processing Error",
+          description: errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage,
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({

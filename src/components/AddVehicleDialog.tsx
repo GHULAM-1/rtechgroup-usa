@@ -81,17 +81,6 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
 
       if (error) throw error;
 
-      // Call pnl_post_acquisition if purchase_price and acquisition_date are present
-      if (data.purchase_price && data.acquisition_date) {
-        const { error: pnlError } = await supabase.rpc('pnl_post_acquisition', {
-          v_id: vehicle.id
-        });
-        
-        if (pnlError) {
-          console.error('Error posting acquisition to P&L:', pnlError);
-        }
-      }
-
       toast({
         title: "Vehicle Added",
         description: `${data.make} ${data.model} (${data.reg}) has been added to your fleet.`,
@@ -104,6 +93,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       queryClient.invalidateQueries({ queryKey: ["vehicles-list"] });
       queryClient.invalidateQueries({ queryKey: ["vehicles-pl"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle-count"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicle-pl-entries"] });
     } catch (error) {
       toast({
         title: "Error",

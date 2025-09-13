@@ -164,9 +164,14 @@ export const AddPaymentDialog = ({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < subYears(new Date(), 5) || date > addYears(new Date(), 2)
-                        }
+                        disabled={(date) => {
+                          // Allow dates from 5 years ago to 2 years in future
+                          const fiveYearsAgo = new Date();
+                          fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+                          const twoYearsFromNow = new Date();
+                          twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
+                          return date < fiveYearsAgo || date > twoYearsFromNow;
+                        }}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />

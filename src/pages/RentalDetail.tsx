@@ -90,6 +90,20 @@ const RentalDetail = () => {
     enabled: !!ledgerEntries?.length,
   });
 
+  const { data: customerCredit } = useQuery({
+    queryKey: ["customer-credit", rental?.customers?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc("get_customer_credit", {
+          customer_id_param: rental?.customers?.id
+        });
+      
+      if (error) throw error;
+      return Number(data) || 0;
+    },
+    enabled: !!rental?.customers?.id,
+  });
+
   if (isLoading) {
     return <div>Loading rental details...</div>;
   }
@@ -112,6 +126,78 @@ const RentalDetail = () => {
   const totalCharges = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
   const totalPayments = ledgerEntries?.filter(e => e.type === 'Payment').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
   const outstandingBalance = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
+
+  const handleApplyCredit = async () => {
+    if (!rental || !customerCredit || customerCredit <= 0 || outstandingBalance <= 0) return;
+
+    try {
+      // Find the earliest outstanding charge
+      const outstandingCharges = ledgerEntries?.filter(e => 
+        e.type === 'Charge' && Number(e.remaining_amount) > 0
+      ).sort((a, b) => new Date(a.due_date || a.entry_date).getTime() - new Date(b.due_date || b.entry_date).getTime());
+
+      if (!outstandingCharges?.length) return;
+
+      const firstCharge = outstandingCharges[0];
+      const amountToApply = Math.min(customerCredit, Number(firstCharge.remaining_amount));
+
+      // Create a payment for the credit application
+      const { data: payment, error: paymentError } = await supabase
+        .from("payments")
+        .insert({
+          customer_id: rental.customers?.id,
+          vehicle_id: rental.vehicles?.id,
+          amount: amountToApply,
+          payment_date: new Date().toISOString().split('T')[0],
+          method: "Credit Application",
+          payment_type: "Rental",
+          is_early: false
+        })
+        .select()
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // Apply the payment to the charge
+      const { error: applicationError } = await supabase
+        .from("payment_applications")
+        .insert({
+          payment_id: payment.id,
+          charge_entry_id: firstCharge.id,
+          amount_applied: amountToApply
+        });
+
+      if (applicationError) throw applicationError;
+
+      // Update the remaining amount on the charge
+      const { error: updateError } = await supabase
+        .from("ledger_entries")
+        .update({
+          remaining_amount: Number(firstCharge.remaining_amount) - amountToApply
+        })
+        .eq("id", firstCharge.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Credit Applied",
+        description: `£${amountToApply.toLocaleString()} credit has been applied to outstanding charges.`,
+      });
+
+      // Refresh all relevant data
+      queryClient.invalidateQueries({ queryKey: ["rental-ledger", id] });
+      queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", id] });
+      queryClient.invalidateQueries({ queryKey: ["customer-credit", rental.customers?.id] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to apply credit.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -172,7 +258,7 @@ const RentalDetail = () => {
       </div>
 
       {/* Rental Summary */}
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Total Charges</CardTitle>
@@ -214,6 +300,26 @@ const RentalDetail = () => {
             <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'} className="text-lg px-3 py-1">
               {rental.status}
             </Badge>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Available Credit</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600 mb-2">
+              £{(customerCredit || 0).toLocaleString()}
+            </div>
+            {customerCredit && customerCredit > 0 && outstandingBalance > 0 && (
+              <Button 
+                size="sm" 
+                onClick={handleApplyCredit}
+                className="w-full"
+              >
+                Apply Credit Now
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>

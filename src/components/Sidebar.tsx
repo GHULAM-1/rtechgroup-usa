@@ -12,7 +12,8 @@ import {
   Bell,
   BarChart3,
   AlertCircle,
-  Bookmark
+  Bookmark,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const navigation = [
   { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Fines", href: "/fines", icon: AlertCircle },
   { name: "Plates", href: "/plates", icon: Bookmark },
+  { name: "P&L Dashboard", href: "/pl-dashboard", icon: TrendingUp },
   { name: "Reminders", href: "/reminders", icon: Bell },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Tests", href: "/test", icon: TestTube },

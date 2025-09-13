@@ -14,6 +14,7 @@ import RentalDetail from "@/pages/RentalDetail";
 import PaymentsList from "@/pages/PaymentsList";
 import ChargesList from "@/pages/ChargesList";
 import PlatesList from "@/pages/PlatesList";
+import PLDashboard from "@/pages/PLDashboard";
 import CreateRental from "@/pages/CreateRental";
 import RemindersPage from "@/pages/RemindersPage";
 import ReminderSettings from "@/pages/ReminderSettings";
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
           <Route path="/charges" element={<Layout><ChargesList /></Layout>} />
           <Route path="/plates" element={<Layout><PlatesList /></Layout>} />
+          <Route path="/pl-dashboard" element={<Layout><PLDashboard /></Layout>} />
           <Route path="/reminders-new" element={<Layout><RemindersPageNew /></Layout>} />
           <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
           <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />

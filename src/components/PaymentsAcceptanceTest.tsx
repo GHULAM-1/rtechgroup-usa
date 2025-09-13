@@ -57,6 +57,14 @@ export const PaymentsAcceptanceTest = () => {
       const vehicle = vehicles[0];
 
       // Create a test rental first
+      // Clean up any existing test data first
+      console.log("Cleaning up existing test data...");
+      await supabase.from("payments").delete().eq("customer_id", customer.id);
+      await supabase.from("ledger_entries").delete().eq("customer_id", customer.id);  
+      await supabase.from("pnl_entries").delete().eq("customer_id", customer.id);
+      await supabase.from("rentals").delete().eq("customer_id", customer.id);
+
+      // Create test rental
       const { data: rental, error: rentalError } = await supabase
         .from("rentals")
         .insert([{
@@ -148,13 +156,13 @@ export const PaymentsAcceptanceTest = () => {
           body: { paymentId: payment.id }
         });
 
-        if (applyError || !applyResult?.ok) {
-          testResults.push({
-            name: `Rental Payment ${i + 1}`,
-            passed: false,
-            message: `Apply payment failed: ${applyError?.message || applyResult?.error || 'Unknown error'}`
-          });
-        }
+        testResults.push({
+          name: `Rental Payment ${i + 1}`,
+          passed: !applyError && applyResult?.ok,
+          message: applyError || !applyResult?.ok
+            ? `Apply payment failed: ${applyError?.message || applyResult?.error || 'Unknown error'}`
+            : `✓ Payment processed successfully`
+        });
       }
 
       // Check P&L totals

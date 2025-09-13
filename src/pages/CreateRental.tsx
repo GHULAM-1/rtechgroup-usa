@@ -126,11 +126,15 @@ const CreateRental = () => {
         if (paymentError) throw paymentError;
 
         // Apply payment using centralized service
+        console.log('Calling apply-payment with:', { paymentId: initialPayment.id });
         const { data: applyResult, error: applyError } = await supabase.functions.invoke('apply-payment', {
           body: { paymentId: initialPayment.id }
         });
 
+        console.log('Apply payment result:', { applyResult, applyError });
+
         if (applyError) {
+          console.error('Edge function error:', applyError);
           // Handle new JSON error response format from edge function
           let errorMessage = 'Initial payment processing failed';
           try {
@@ -141,11 +145,12 @@ const CreateRental = () => {
           } catch {
             errorMessage = applyError.message || errorMessage;
           }
-          throw new Error(errorMessage);
+          throw new Error(`Edge Function Error: ${errorMessage}`);
         }
         
-        if (!applyResult?.success) {
-          throw new Error(applyResult?.error || 'Initial payment processing failed');
+        if (!applyResult?.ok) {
+          console.error('Payment processing failed:', applyResult);
+          throw new Error(applyResult?.error || applyResult?.detail || 'Initial payment processing failed');
         }
       }
 

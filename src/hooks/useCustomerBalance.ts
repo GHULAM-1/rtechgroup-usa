@@ -7,17 +7,22 @@ export const useCustomerBalance = (customerId: string | undefined) => {
     queryFn: async () => {
       if (!customerId) return 0;
       
-      // Single source of truth: ledger_entries only
-      // Sum all entries: charges are positive, payments are negative
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Only count unpaid rental charges that are due/overdue
       const { data: entries, error } = await supabase
         .from("ledger_entries")
-        .select("amount")
-        .eq("customer_id", customerId);
+        .select("remaining_amount")
+        .eq("customer_id", customerId)
+        .eq("type", "Charge")
+        .eq("category", "Rental")
+        .lte("due_date", today)
+        .gt("remaining_amount", 0);
       
       if (error) throw error;
       
       const total = entries?.reduce((sum, entry) => {
-        return sum + Number(entry.amount);
+        return sum + Number(entry.remaining_amount);
       }, 0) || 0;
       
       return total;

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Users, Plus, Mail, Phone, Eye, Edit, Search } from "lucide-react";
 import { CustomerFormModal } from "@/components/CustomerFormModal";
+import { BalanceDebugTool } from "@/components/BalanceDebugTool";
 
 interface Customer {
   id: string;
@@ -64,11 +65,14 @@ const CustomersList = () => {
     queryFn: async () => {
       const today = new Date().toISOString().split('T')[0];
       
-      // Get all ledger entries for balance calculation
+      // Get all rental charges that are due/overdue for balance calculation
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("customer_id, amount, remaining_amount, type, due_date")
-        .lte("due_date", today);
+        .select("customer_id, remaining_amount, type, category")
+        .eq("type", "Charge")
+        .eq("category", "Rental") 
+        .lte("due_date", today)
+        .gt("remaining_amount", 0);
       
       if (error) throw error;
       
@@ -83,13 +87,8 @@ const CustomersList = () => {
           };
         }
         
-        // Add due/overdue charges, subtract payments for unified balance calculation
-        if (entry.type === 'Charge' && entry.remaining_amount > 0) {
-          balanceMap[entry.customer_id].balance += Number(entry.remaining_amount);
-        } else if (entry.type === 'Payment' && entry.remaining_amount === 0) {
-          // Subtract payment amounts from balance (unified calculation: charges - payments)
-          balanceMap[entry.customer_id].balance -= Number(entry.amount);
-        }
+        // Only count unpaid rental charges that are due/overdue
+        balanceMap[entry.customer_id].balance += Number(entry.remaining_amount);
       });
       
       // Determine status based on final balance
@@ -185,88 +184,99 @@ const CustomersList = () => {
           </div>
           
           {filteredCustomers && filteredCustomers.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCustomers.map((customer) => {
-                    const balance = balances?.[customer.id];
-                    
-                    return (
-                      <TableRow key={customer.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{customer.type}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {customer.email && (
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Mail className="h-3 w-3" />
-                                {customer.email}
-                              </div>
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Balance</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCustomers.map((customer) => {
+                      const balance = balances?.[customer.id];
+                      
+                      return (
+                        <TableRow key={customer.id} className="hover:bg-muted/50">
+                          <TableCell className="font-medium">{customer.name}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{customer.type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              {customer.email && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Mail className="h-3 w-3" />
+                                  {customer.email}
+                                </div>
+                              )}
+                              {customer.phone && (
+                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Phone className="h-3 w-3" />
+                                  {customer.phone}
+                                  {customer.whatsapp_opt_in && (
+                                    <Badge variant="outline" className="ml-1 text-xs">WhatsApp</Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={customer.status === 'Active' ? 'default' : 'secondary'}>
+                              {customer.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {balance ? (
+                              <BalancePill 
+                                balance={balance.balance} 
+                                status={balance.status} 
+                              />
+                            ) : (
+                              <BalancePill balance={0} status="Settled" />
                             )}
-                            {customer.phone && (
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Phone className="h-3 w-3" />
-                                {customer.phone}
-                                {customer.whatsapp_opt_in && (
-                                  <Badge variant="outline" className="ml-1 text-xs">WhatsApp</Badge>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={customer.status === 'Active' ? 'default' : 'secondary'}>
-                            {customer.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {balance ? (
-                            <BalancePill 
-                              balance={balance.balance} 
-                              status={balance.status} 
-                            />
-                          ) : (
-                            <BalancePill balance={0} status="Settled" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditCustomer(customer)}
-                            >
-                              <Edit className="h-4 w-4 mr-1" />
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/customers/${customer.id}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditCustomer(customer)}
+                              >
+                                <Edit className="h-4 w-4 mr-1" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => navigate(`/customers/${customer.id}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                View
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Debug tool for checking balance calculations */}
+              {filteredCustomers.map((customer) => (
+                <BalanceDebugTool 
+                  key={`debug-${customer.id}`}
+                  customerId={customer.id} 
+                  customerName={customer.name}
+                />
+              ))}
+            </>
           ) : (
             <div className="text-center py-8">
               <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />

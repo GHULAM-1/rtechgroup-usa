@@ -87,7 +87,26 @@ const CreateRental = () => {
 
       if (rentalError) throw rentalError;
 
-      // If there's an initial fee, record it as a payment and post to P&L
+      // Generate monthly charges using the RPC function
+      const startDate = new Date(data.start_date);
+      const endDate = new Date(data.end_date);
+      const monthsDiff = (endDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                        (endDate.getMonth() - startDate.getMonth());
+
+      for (let month = 0; month < monthsDiff; month++) {
+        const dueDate = new Date(startDate);
+        dueDate.setMonth(dueDate.getMonth() + month);
+        
+        const { error: chargeError } = await supabase.rpc('rental_create_charge', {
+          r_id: rental.id,
+          due: dueDate.toISOString().split('T')[0],
+          amt: data.monthly_amount
+        });
+        
+        if (chargeError) throw chargeError;
+      }
+
+      // If there's an initial fee, create payment and ledger entry (no balance impact)
       if (data.initial_fee && data.initial_fee > 0) {
         // Record initial fee payment
         const { data: payment, error: paymentError } = await supabase
@@ -99,13 +118,28 @@ const CreateRental = () => {
             amount: data.initial_fee,
             payment_date: new Date().toISOString().split('T')[0],
             payment_type: "InitialFee",
+            method: "Card"
           })
           .select()
           .single();
 
         if (paymentError) throw paymentError;
 
-        // Post initial fee to P&L as revenue
+        // Create ledger entry for fee (no remaining amount - paid immediately)
+        await supabase
+          .from("ledger_entries")
+          .insert({
+            customer_id: data.customer_id,
+            rental_id: rental.id,
+            vehicle_id: data.vehicle_id,
+            entry_date: new Date().toISOString().split('T')[0],
+            type: "Payment",
+            category: "InitialFee",
+            amount: data.initial_fee,
+            remaining_amount: 0
+          });
+
+        // Post to P&L as Revenue: Fees immediately
         await supabase
           .from("pnl_entries")
           .insert({

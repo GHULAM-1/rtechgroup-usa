@@ -66,6 +66,24 @@ const RentalDetail = () => {
     enabled: !!id,
   });
 
+  const { data: paymentApplications } = useQuery({
+    queryKey: ["rental-payment-applications", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payment_applications")
+        .select(`
+          *,
+          payments(amount, payment_date, method),
+          ledger_entries!charge_entry_id(amount, due_date, category)
+        `)
+        .in("charge_entry_id", ledgerEntries?.map(e => e.id) || []);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!ledgerEntries?.length,
+  });
+
   if (isLoading) {
     return <div>Loading rental details...</div>;
   }
@@ -212,17 +230,18 @@ const RentalDetail = () => {
           {entriesWithBalance && entriesWithBalance.length > 0 ? (
             <div className="rounded-md border">
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Remaining</TableHead>
-                    <TableHead className="text-right">Running Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
+                 <TableHeader>
+                   <TableRow>
+                     <TableHead>Date</TableHead>
+                     <TableHead>Type</TableHead>
+                     <TableHead>Category</TableHead>
+                     <TableHead>Due Date</TableHead>
+                     <TableHead className="text-right">Amount</TableHead>
+                     <TableHead className="text-right">Remaining</TableHead>
+                     <TableHead className="text-right">Allocations</TableHead>
+                     <TableHead className="text-right">Running Balance</TableHead>
+                   </TableRow>
+                 </TableHeader>
                 <TableBody>
                   {entriesWithBalance.map((entry) => (
                     <TableRow key={entry.id}>
@@ -239,12 +258,19 @@ const RentalDetail = () => {
                       <TableCell className={`text-right ${entry.type === 'Charge' ? 'text-red-600' : 'text-green-600'}`}>
                         {entry.type === 'Charge' ? '+' : '-'}£{Number(entry.amount).toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right">
-                        £{Number(entry.remaining_amount).toLocaleString()}
-                      </TableCell>
-                      <TableCell className={`text-right font-medium ${entry.runningBalance > 0 ? 'text-red-600' : entry.runningBalance < 0 ? 'text-green-600' : 'text-gray-600'}`}>
-                        £{Math.abs(entry.runningBalance).toLocaleString()}
-                      </TableCell>
+                       <TableCell className="text-right">
+                         £{Number(entry.remaining_amount).toLocaleString()}
+                       </TableCell>
+                       <TableCell className="text-right text-sm">
+                         {paymentApplications?.filter(app => app.charge_entry_id === entry.id).map(app => (
+                           <div key={app.id} className="text-blue-600">
+                             £{Number(app.amount_applied).toLocaleString()} from payment
+                           </div>
+                         )) || '-'}
+                       </TableCell>
+                       <TableCell className={`text-right font-medium ${entry.runningBalance > 0 ? 'text-red-600' : entry.runningBalance < 0 ? 'text-green-600' : 'text-gray-600'}`}>
+                         £{Math.abs(entry.runningBalance).toLocaleString()}
+                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

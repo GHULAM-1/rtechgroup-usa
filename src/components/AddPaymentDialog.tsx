@@ -179,12 +179,24 @@ export const AddPaymentDialog = ({
         // Handle new JSON error response format from edge function
         let errorMessage = 'Payment processing failed';
         try {
+          // Try multiple ways to extract error details
           if (applyError.message) {
-            const errorData = JSON.parse(applyError.message);
-            errorMessage = errorData.error || errorData.detail || errorMessage;
+            try {
+              const errorData = JSON.parse(applyError.message);
+              errorMessage = errorData.error || errorData.detail || errorMessage;
+            } catch {
+              // If parsing fails, check if it's already structured
+              if (typeof applyError === 'object' && (applyError.error || applyError.detail)) {
+                errorMessage = applyError.error || applyError.detail || errorMessage;
+              } else {
+                errorMessage = applyError.message || errorMessage;
+              }
+            }
+          } else if (applyError.error || applyError.detail) {
+            errorMessage = applyError.error || applyError.detail || errorMessage;
           }
         } catch {
-          errorMessage = applyError.message || errorMessage;
+          errorMessage = applyError.message || 'Unknown payment processing error';
         }
         
         toast({
@@ -196,7 +208,7 @@ export const AddPaymentDialog = ({
       }
 
       // Check for application-level errors
-      if (!applyResult?.ok) {
+      if (!applyResult?.ok && !applyResult?.success) {
         const errorMessage = applyResult?.error || applyResult?.detail || 'Payment processing failed';
         toast({
           title: "Payment Processing Error", 

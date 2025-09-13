@@ -62,47 +62,33 @@ const CustomersList = () => {
   const { data: balances } = useQuery({
     queryKey: ["customer-balances-list"],
     queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Get all rental charges that are due/overdue for balance calculation
-      const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("customer_id, remaining_amount, type, category")
-        .eq("type", "Charge")
-        .eq("category", "Rental") 
-        .lte("due_date", today)
-        .gt("remaining_amount", 0);
-      
-      if (error) throw error;
+      if (!customers?.length) return {};
       
       const balanceMap: Record<string, CustomerBalance> = {};
       
-      data?.forEach((entry) => {
-        if (!balanceMap[entry.customer_id]) {
-          balanceMap[entry.customer_id] = {
-            customer_id: entry.customer_id,
-            balance: 0,
-            status: 'Settled',
-          };
+      // Get balance status for each customer using the corrected database function
+      for (const customer of customers) {
+        const { data, error } = await supabase
+          .rpc('get_customer_balance_with_status', { 
+            customer_id_param: customer.id 
+          })
+          .single();
+        
+        if (error) {
+          console.error('Error fetching balance for customer:', customer.id, error);
+          continue;
         }
         
-        // Only count unpaid rental charges that are due/overdue
-        balanceMap[entry.customer_id].balance += Number(entry.remaining_amount);
-      });
-      
-      // Determine status based on final balance
-      Object.values(balanceMap).forEach((balance) => {
-        if (balance.balance > 0) {
-          balance.status = 'In Debt';
-        } else if (balance.balance < 0) {
-          balance.status = 'In Credit';
-        } else {
-          balance.status = 'Settled';
-        }
-      });
+        balanceMap[customer.id] = {
+          customer_id: customer.id,
+          balance: data.balance,
+          status: data.status as 'In Credit' | 'Settled' | 'In Debt',
+        };
+      }
       
       return balanceMap;
     },
+    enabled: !!customers?.length,
   });
 
   // Keyboard shortcut handler

@@ -19,7 +19,9 @@ import { cn } from "@/lib/utils";
 
 const paymentSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
-  payment_date: z.date(),
+  payment_date: z.date({
+    required_error: "Payment date is required",
+  }),
   method: z.string().min(1, "Payment method is required"),
   payment_type: z.enum(['Rental', 'Fine']).default('Rental'),
 });
@@ -164,14 +166,9 @@ export const AddPaymentDialog = ({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => {
-                          // Allow dates from 5 years ago to 2 years in future
-                          const fiveYearsAgo = new Date();
-                          fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-                          const twoYearsFromNow = new Date();
-                          twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
-                          return date < fiveYearsAgo || date > twoYearsFromNow;
-                        }}
+                        fromYear={new Date().getFullYear() - 5}
+                        toYear={new Date().getFullYear() + 2}
+                        captionLayout="dropdown-buttons"
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />

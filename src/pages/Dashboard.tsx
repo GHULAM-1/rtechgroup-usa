@@ -145,6 +145,23 @@ const Dashboard = () => {
     },
   });
 
+  const { data: activeReminders } = useQuery({
+    queryKey: ["active-reminders"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("reminder_events")
+        .select("id, reminder_type, status")
+        .eq("status", "Delivered");
+      
+      const due = data?.filter(r => r.reminder_type === "Due").length || 0;
+      const overdue = data?.filter(r => r.reminder_type.startsWith("Overdue")).length || 0;
+      const upcoming = data?.filter(r => r.reminder_type === "Upcoming").length || 0;
+      const total = data?.length || 0;
+      
+      return { due, overdue, upcoming, total };
+    },
+  });
+
   const widgets: DashboardWidget[] = [
     {
       title: "Overdue Payments",

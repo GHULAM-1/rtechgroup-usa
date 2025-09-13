@@ -134,7 +134,13 @@ export const PaymentManagement = () => {
           </div>
         )}
       </CardContent>
-      <AddPaymentDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <AddPaymentDialog 
+        open={showAddDialog} 
+        onOpenChange={setShowAddDialog}
+        rental_id=""
+        customer_id=""
+        vehicle_id=""
+      />
     </Card>
   );
 };

@@ -1,357 +1,169 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as z from "zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
 
-const paymentFormSchema = z.object({
-  customer_id: z.string().min(1, "Customer is required"),
-  vehicle_id: z.string().optional(),
-  rental_id: z.string().optional(),
-  fine_id: z.string().optional(),
-  amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Amount must be a positive number",
-  }),
-  payment_date: z.date({
-    required_error: "Payment date is required",
-  }),
-  method: z.string().optional(),
-  payment_type: z.enum(["Rental", "InitialFee", "Fine", "Other"]),
-  notes: z.string().optional(),
+const paymentSchema = z.object({
+  amount: z.number().min(0.01, "Amount must be greater than 0"),
+  payment_date: z.date(),
+  method: z.string().min(1, "Payment method is required"),
+  payment_type: z.enum(['Rental', 'Fine']).default('Rental'),
 });
 
-type PaymentFormValues = z.infer<typeof paymentFormSchema>;
+type PaymentFormData = z.infer<typeof paymentSchema>;
 
 interface AddPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  rental_id: string;
+  customer_id: string;
+  vehicle_id: string;
 }
 
-export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) => {
+export const AddPaymentDialog = ({ 
+  open, 
+  onOpenChange, 
+  rental_id, 
+  customer_id, 
+  vehicle_id 
+}: AddPaymentDialogProps) => {
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const form = useForm<PaymentFormValues>({
-    resolver: zodResolver(paymentFormSchema),
+  
+  const form = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
     defaultValues: {
+      amount: 0,
+      payment_date: new Date(),
+      method: "Card",
       payment_type: "Rental",
-      method: "Cash",
     },
   });
 
-  // Fetch customers
-  const { data: customers } = useQuery({
-    queryKey: ["customers"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name")
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch vehicles
-  const { data: vehicles } = useQuery({
-    queryKey: ["vehicles"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("vehicles")
-        .select("id, reg, make, model")
-        .order("reg");
-      if (error) throw error;
-      return data;
-    },
-  });
-
-  // Fetch rentals for selected customer
-  const selectedCustomer = form.watch("customer_id");
-  const { data: rentals } = useQuery({
-    queryKey: ["customer-rentals", selectedCustomer],
-    queryFn: async () => {
-      if (!selectedCustomer) return [];
-      const { data, error } = await supabase
-        .from("rentals")
-        .select(`
-          id,
-          start_date,
-          end_date,
-          monthly_amount,
-          vehicles(reg)
-        `)
-        .eq("customer_id", selectedCustomer)
-        .eq("status", "Active");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedCustomer,
-  });
-
-  // Fetch fines for selected customer (if Fine payment type)
-  const selectedPaymentType = form.watch("payment_type");
-  const { data: fines } = useQuery({
-    queryKey: ["customer-fines", selectedCustomer, selectedPaymentType],
-    queryFn: async () => {
-      if (!selectedCustomer || selectedPaymentType !== "Fine") return [];
-      const { data, error } = await supabase
-        .from("fines")
-        .select(`
-          id,
-          reference_no,
-          amount,
-          status,
-          due_date,
-          vehicles(reg)
-        `)
-        .eq("customer_id", selectedCustomer)
-        .in("status", ["Open", "Partially Paid"]);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedCustomer && selectedPaymentType === "Fine",
-  });
-
-  const createPaymentMutation = useMutation({
-    mutationFn: async (values: PaymentFormValues) => {
-      const { data: payment, error } = await supabase
+  const onSubmit = async (data: PaymentFormData) => {
+    setLoading(true);
+    try {
+      // Create payment record
+      const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
-          customer_id: values.customer_id,
-          vehicle_id: values.vehicle_id === "none" ? null : values.vehicle_id || null,
-          rental_id: values.rental_id === "none" ? null : values.rental_id || null,
-          amount: Number(values.amount),
-          payment_date: format(values.payment_date, "yyyy-MM-dd"),
-          method: values.method || "Cash",
-          payment_type: values.payment_type,
+          customer_id: customer_id,
+          rental_id: rental_id,
+          vehicle_id: vehicle_id,
+          amount: data.amount,
+          payment_date: data.payment_date.toISOString().split('T')[0],
+          method: data.method,
+          payment_type: data.payment_type,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (paymentError) throw paymentError;
 
-      // Apply payment using FIFO allocation to due/overdue charges
-      const { error: rpcError } = await supabase.rpc("payment_apply_fifo", { p_id: payment.id });
-      if (rpcError) throw rpcError;
+      // Apply payment using FIFO allocation
+      const { error: applyError } = await supabase.rpc('payment_apply_fifo', {
+        p_id: payment.id
+      });
 
-      return payment;
-    },
-    onSuccess: () => {
-      toast.success("Payment recorded and applied successfully");
-      queryClient.invalidateQueries({ queryKey: ["payments"] });
-      queryClient.invalidateQueries({ queryKey: ["rental-ledger"] });
-      queryClient.invalidateQueries({ queryKey: ["fines"] });
-      queryClient.invalidateQueries({ queryKey: ["vehicles-list"] }); // For P&L refresh
-      onOpenChange(false);
+      if (applyError) throw applyError;
+
+      toast({
+        title: "Payment Added",
+        description: `Payment of £${data.amount} has been applied successfully.`,
+      });
+
       form.reset();
-    },
-    onError: (error) => {
-      console.error("Error recording payment:", error);
-      toast.error("Failed to record payment");
-    },
-  });
-
-  const onSubmit = (values: PaymentFormValues) => {
-    createPaymentMutation.mutate(values);
+      onOpenChange(false);
+      
+      // Refresh queries
+      queryClient.invalidateQueries({ queryKey: ["rental-ledger", rental_id] });
+      queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", rental_id] });
+      queryClient.invalidateQueries({ queryKey: ["rental", rental_id] });
+    } catch (error) {
+      console.error("Error adding payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
-          <DialogTitle>Record Payment</DialogTitle>
-          <DialogDescription>
-            Record a new payment from a customer
-          </DialogDescription>
+          <DialogTitle>Add Payment</DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="customer_id"
+              name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select customer" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {customers?.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Payment Amount (£)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="payment_type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payment Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment type" />
-                        </SelectTrigger>
-                      </FormControl>
-                       <SelectContent>
-                         <SelectItem value="Rental">Rental</SelectItem>
-                         <SelectItem value="InitialFee">Initial Fee</SelectItem>
-                         <SelectItem value="Fine">Fine</SelectItem>
-                         <SelectItem value="Other">Other</SelectItem>
-                       </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="method"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payment Method</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select method" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Cash">Cash</SelectItem>
-                        <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                        <SelectItem value="Card">Card</SelectItem>
-                        <SelectItem value="Cheque">Cheque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {selectedPaymentType === "Fine" && fines && fines.length > 0 && (
-              <FormField
-                control={form.control}
-                name="fine_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fine (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select fine" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">General fine payment</SelectItem>
-                        {fines?.map((fine) => (
-                          <SelectItem key={fine.id} value={fine.id}>
-                            {fine.reference_no} - £{fine.amount} ({fine.vehicles?.reg})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {rentals && rentals.length > 0 && selectedPaymentType === "Rental" && (
-              <FormField
-                control={form.control}
-                name="rental_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rental (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rental" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="none">General payment</SelectItem>
-                        {rentals?.map((rental) => (
-                          <SelectItem key={rental.id} value={rental.id}>
-                            {rental.vehicles?.reg} - £{rental.monthly_amount}/month
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <FormField
               control={form.control}
-              name="vehicle_id"
+              name="payment_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Vehicle (Optional)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FormLabel>Payment Date</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      {...field}
+                      value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                      onChange={(e) => field.onChange(new Date(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Method</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select vehicle" />
+                        <SelectValue placeholder="Select method" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">No specific vehicle</SelectItem>
-                      {vehicles?.map((vehicle) => (
-                        <SelectItem key={vehicle.id} value={vehicle.id}>
-                          {vehicle.reg} - {vehicle.make} {vehicle.model}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="Card">Card</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -359,88 +171,34 @@ export const AddPaymentDialog = ({ open, onOpenChange }: AddPaymentDialogProps) 
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Amount *</FormLabel>
+            <FormField
+              control={form.control}
+              name="payment_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payment Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        {...field}
-                      />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <SelectContent>
+                      <SelectItem value="Rental">Rental</SelectItem>
+                      <SelectItem value="Fine">Fine</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="payment_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Payment Date *</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date > new Date()}
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                 )}
-               />
-             </div>
-
-             <FormField
-               control={form.control}
-               name="notes"
-               render={({ field }) => (
-                 <FormItem>
-                   <FormLabel>Notes (Optional)</FormLabel>
-                   <FormControl>
-                     <Input placeholder="Payment notes or reference" {...field} />
-                   </FormControl>
-                   <FormMessage />
-                 </FormItem>
-               )}
-             />
-
-             <div className="flex justify-end space-x-2">
+            <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createPaymentMutation.isPending}>
-                {createPaymentMutation.isPending ? "Recording..." : "Record Payment"}
+              <Button type="submit" disabled={loading}>
+                {loading ? "Processing..." : "Add Payment"}
               </Button>
             </div>
           </form>

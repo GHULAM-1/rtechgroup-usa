@@ -898,6 +898,7 @@ export type Database = {
         Returns: {
           amount: number
           charge_id: string
+          charge_type: string
           customer_balance: number
           customer_email: string
           customer_id: string

@@ -72,6 +72,13 @@ export type Database = {
             foreignKeyName: "customer_documents_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "customer_documents_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -204,6 +211,13 @@ export type Database = {
             foreignKeyName: "fines_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "fines_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -272,6 +286,13 @@ export type Database = {
             foreignKeyName: "ledger_entries_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -281,6 +302,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rentals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "v_rental_credit"
+            referencedColumns: ["rental_id"]
           },
           {
             foreignKeyName: "ledger_entries_rental_id_fkey"
@@ -374,6 +402,13 @@ export type Database = {
             foreignKeyName: "payment_applications_payment_id_fkey"
             columns: ["payment_id"]
             isOneToOne: false
+            referencedRelation: "v_payment_remaining"
+            referencedColumns: ["payment_id"]
+          },
+          {
+            foreignKeyName: "payment_applications_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
             referencedRelation: "view_payments_export"
             referencedColumns: ["payment_id"]
           },
@@ -428,6 +463,13 @@ export type Database = {
             foreignKeyName: "payments_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -437,6 +479,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rentals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "v_rental_credit"
+            referencedColumns: ["rental_id"]
           },
           {
             foreignKeyName: "payments_rental_id_fkey"
@@ -626,6 +675,13 @@ export type Database = {
             foreignKeyName: "reminder_events_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "reminder_events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -635,6 +691,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rentals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_events_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "v_rental_credit"
+            referencedColumns: ["rental_id"]
           },
           {
             foreignKeyName: "reminder_events_rental_id_fkey"
@@ -765,6 +828,13 @@ export type Database = {
             foreignKeyName: "rentals_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "rentals_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -858,6 +928,100 @@ export type Database = {
       }
     }
     Views: {
+      v_customer_credit: {
+        Row: {
+          credit_available: number | null
+          customer_id: string | null
+        }
+        Insert: {
+          credit_available?: never
+          customer_id?: string | null
+        }
+        Update: {
+          credit_available?: never
+          customer_id?: string | null
+        }
+        Relationships: []
+      }
+      v_payment_remaining: {
+        Row: {
+          customer_id: string | null
+          payment_id: string | null
+          remaining: number | null
+          rental_id: string | null
+        }
+        Insert: {
+          customer_id?: string | null
+          payment_id?: string | null
+          remaining?: never
+          rental_id?: string | null
+        }
+        Update: {
+          customer_id?: string | null
+          payment_id?: string | null
+          remaining?: never
+          rental_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "v_rental_credit"
+            referencedColumns: ["rental_id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "view_rentals_export"
+            referencedColumns: ["rental_id"]
+          },
+        ]
+      }
+      v_rental_credit: {
+        Row: {
+          credit_available: number | null
+          rental_id: string | null
+        }
+        Insert: {
+          credit_available?: never
+          rental_id?: string | null
+        }
+        Update: {
+          credit_available?: never
+          rental_id?: string | null
+        }
+        Relationships: []
+      }
       view_aging_receivables: {
         Row: {
           bucket_0_30: number | null
@@ -903,6 +1067,13 @@ export type Database = {
             foreignKeyName: "ledger_entries_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -912,6 +1083,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rentals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "v_rental_credit"
+            referencedColumns: ["rental_id"]
           },
           {
             foreignKeyName: "ledger_entries_rental_id_fkey"
@@ -990,6 +1168,13 @@ export type Database = {
             foreignKeyName: "payments_customer_id_fkey"
             columns: ["customer_id"]
             isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
           },
@@ -999,6 +1184,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "rentals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "v_rental_credit"
+            referencedColumns: ["rental_id"]
           },
           {
             foreignKeyName: "payments_rental_id_fkey"
@@ -1105,6 +1297,10 @@ export type Database = {
         Args: { r_id: string }
         Returns: undefined
       }
+      get_customer_credit: {
+        Args: { p_customer: string }
+        Returns: number
+      }
       get_customer_statement: {
         Args: { p_customer_id: string; p_from_date: string; p_to_date: string }
         Returns: {
@@ -1138,6 +1334,10 @@ export type Database = {
           vehicle_reg: string
           whatsapp_opt_in: boolean
         }[]
+      }
+      get_rental_credit: {
+        Args: { p_rental: string }
+        Returns: number
       }
       hash_password: {
         Args: { password: string }

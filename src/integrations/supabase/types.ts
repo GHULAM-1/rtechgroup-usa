@@ -382,8 +382,10 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          apply_from_date: string | null
           customer_id: string
           id: string
+          is_early: boolean
           method: string | null
           payment_date: string
           payment_type: string
@@ -392,18 +394,22 @@ export type Database = {
         }
         Insert: {
           amount: number
+          apply_from_date?: string | null
           customer_id: string
           id?: string
+          is_early?: boolean
           method?: string | null
-          payment_date: string
+          payment_date?: string
           payment_type: string
           rental_id?: string | null
           vehicle_id?: string | null
         }
         Update: {
           amount?: number
+          apply_from_date?: string | null
           customer_id?: string
           id?: string
+          is_early?: boolean
           method?: string | null
           payment_date?: string
           payment_type?: string
@@ -1141,6 +1147,10 @@ export type Database = {
         Args: { p_id: string }
         Returns: undefined
       }
+      payment_auto_apply_due_credit: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       pnl_post_acquisition: {
         Args: { v_id: string }
         Returns: undefined
@@ -1148,6 +1158,18 @@ export type Database = {
       recalculate_vehicle_pl: {
         Args: { p_vehicle_id: string }
         Returns: undefined
+      }
+      record_payment: {
+        Args: {
+          p_amount: number
+          p_customer: string
+          p_method: string
+          p_payment_date: string
+          p_rental: string
+          p_type: string
+          p_vehicle: string
+        }
+        Returns: string
       }
       rental_create_charge: {
         Args: { amt: number; due: string; r_id: string }

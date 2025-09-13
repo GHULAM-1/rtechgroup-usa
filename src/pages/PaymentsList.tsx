@@ -122,13 +122,7 @@ const PaymentsList = () => {
       let query = supabase
         .from("payments")
         .select(`
-          id,
-          amount,
-          payment_date,
-          method,
-          payment_type,
-          is_early,
-          apply_from_date,
+          *,
           customers(name),
           vehicles(reg),
           rentals(id)

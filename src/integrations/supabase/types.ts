@@ -1539,15 +1539,17 @@ export type Database = {
         Returns: undefined
       }
       process_payment_transaction: {
-        Args: {
-          p_amount: number
-          p_customer_id: string
-          p_payment_date: string
-          p_payment_id: string
-          p_payment_type: string
-          p_rental_id: string
-          p_vehicle_id: string
-        }
+        Args:
+          | {
+              p_amount: number
+              p_customer_id: string
+              p_payment_date: string
+              p_payment_id: string
+              p_payment_type: string
+              p_rental_id: string
+              p_vehicle_id: string
+            }
+          | { p_payment_id: string }
         Returns: Json
       }
       reapply_all_payments: {

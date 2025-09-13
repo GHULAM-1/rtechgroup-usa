@@ -891,6 +891,7 @@ export type Database = {
         Row: {
           acquisition_date: string | null
           acquisition_type: string | null
+          color: string | null
           colour: string | null
           created_at: string | null
           id: string
@@ -903,6 +904,7 @@ export type Database = {
         Insert: {
           acquisition_date?: string | null
           acquisition_type?: string | null
+          color?: string | null
           colour?: string | null
           created_at?: string | null
           id?: string
@@ -915,6 +917,7 @@ export type Database = {
         Update: {
           acquisition_date?: string | null
           acquisition_type?: string | null
+          color?: string | null
           colour?: string | null
           created_at?: string | null
           id?: string

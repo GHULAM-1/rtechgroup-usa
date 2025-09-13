@@ -136,7 +136,7 @@ const CreateRental = () => {
             entry_date: new Date().toISOString().split('T')[0],
             type: "Payment",
             category: "InitialFee",
-            amount: data.initial_fee,
+            amount: -data.initial_fee,
             remaining_amount: 0
           });
 

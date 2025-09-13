@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CreditCard, Plus } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { useState } from "react";
 import { AddPaymentDialog } from "./AddPaymentDialog";
 
@@ -106,7 +106,7 @@ export const PaymentManagement = () => {
                 {payments.map((payment) => (
                   <TableRow key={payment.id} className="hover:bg-muted/50">
                     <TableCell className="font-medium">
-                      {format(new Date(payment.payment_date), "dd/MM/yyyy")}
+                      {formatInTimeZone(new Date(payment.payment_date), 'Europe/London', "dd/MM/yyyy")}
                     </TableCell>
                     <TableCell>{payment.customers?.name}</TableCell>
                     <TableCell>{payment.vehicles?.reg}</TableCell>

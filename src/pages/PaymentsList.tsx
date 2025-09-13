@@ -16,6 +16,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { format } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface Payment {
   id: string;
@@ -37,6 +43,7 @@ const paymentSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_type: z.enum(['Rental', 'InitialFee', 'Fine', 'Other']),
   method: z.string().optional(),
+  payment_date: z.date(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -59,6 +66,7 @@ const PaymentsList = () => {
       amount: 0,
       payment_type: "Rental",
       method: "",
+      payment_date: toZonedTime(new Date(), 'Europe/London'),
     },
   });
 
@@ -137,7 +145,7 @@ const PaymentsList = () => {
           rental_id: data.rental_id || null,
           vehicle_id: data.vehicle_id,
           amount: data.amount,
-          payment_date: new Date().toISOString().split('T')[0],
+          payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method || null,
           payment_type: data.payment_type,
         })
@@ -146,8 +154,8 @@ const PaymentsList = () => {
 
       if (paymentError) throw paymentError;
 
-      // Apply FIFO if it's a rental payment
-      if (data.payment_type === 'Rental' && payment) {
+      // Apply FIFO allocation for all payment types
+      if (payment) {
         await supabase.rpc('payment_apply_fifo', { p_id: payment.id });
       }
 
@@ -301,19 +309,63 @@ const PaymentsList = () => {
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="method"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Method (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Cash, Bank Transfer" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                   <div className="grid grid-cols-2 gap-4">
+                     <FormField
+                       control={form.control}
+                       name="method"
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Payment Method (Optional)</FormLabel>
+                           <FormControl>
+                             <Input placeholder="e.g., Cash, Bank Transfer" {...field} />
+                           </FormControl>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                     <FormField
+                       control={form.control}
+                       name="payment_date"
+                       render={({ field }) => (
+                         <FormItem>
+                           <FormLabel>Payment Date *</FormLabel>
+                           <Popover>
+                             <PopoverTrigger asChild>
+                               <FormControl>
+                                 <Button
+                                   variant={"outline"}
+                                   className={cn(
+                                     "w-full pl-3 text-left font-normal",
+                                     !field.value && "text-muted-foreground"
+                                   )}
+                                 >
+                                   {field.value ? (
+                                     formatInTimeZone(field.value, 'Europe/London', "dd/MM/yyyy")
+                                   ) : (
+                                     <span>Pick a date</span>
+                                   )}
+                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                 </Button>
+                               </FormControl>
+                             </PopoverTrigger>
+                             <PopoverContent className="w-auto p-0" align="start">
+                               <Calendar
+                                 mode="single"
+                                 selected={field.value}
+                                 onSelect={field.onChange}
+                                 disabled={(date) =>
+                                   date > new Date() || date < new Date("1900-01-01")
+                                 }
+                                 initialFocus
+                                 className={cn("p-3 pointer-events-auto")}
+                               />
+                             </PopoverContent>
+                           </Popover>
+                           <FormMessage />
+                         </FormItem>
+                       )}
+                     />
+                   </div>
 
                   <div className="flex justify-end gap-2 pt-4">
                     <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
@@ -361,7 +413,7 @@ const PaymentsList = () => {
                 <TableBody>
                   {payments.map((payment) => (
                      <TableRow key={payment.id} className="hover:bg-muted/50">
-                       <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                       <TableCell>{formatInTimeZone(new Date(payment.payment_date), 'Europe/London', 'dd/MM/yyyy')}</TableCell>
                        <TableCell>{payment.customers?.name}</TableCell>
                        <TableCell>{payment.vehicles?.reg || '-'}</TableCell>
                        <TableCell>

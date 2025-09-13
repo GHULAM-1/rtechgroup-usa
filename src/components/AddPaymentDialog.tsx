@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
+import { formatInTimeZone, toZonedTime } from "date-fns-tz";
 import { CalendarIcon } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,7 +49,7 @@ export const AddPaymentDialog = ({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       amount: 0,
-      payment_date: new Date(),
+      payment_date: toZonedTime(new Date(), 'Europe/London'),
       method: "Card",
       payment_type: "Rental",
     },
@@ -65,7 +66,7 @@ export const AddPaymentDialog = ({
           rental_id: rental_id,
           vehicle_id: vehicle_id,
           amount: data.amount,
-          payment_date: data.payment_date.toISOString().split('T')[0],
+          payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,
           payment_type: data.payment_type,
         })
@@ -150,7 +151,7 @@ export const AddPaymentDialog = ({
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            formatInTimeZone(field.value, 'Europe/London', "dd/MM/yyyy")
                           ) : (
                             <span>Pick a date</span>
                           )}

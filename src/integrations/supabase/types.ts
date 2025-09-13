@@ -864,6 +864,10 @@ export type Database = {
         Args: { f_id: string }
         Returns: undefined
       }
+      generate_daily_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_monthly_charges: {
         Args: { rental_id: string }
         Returns: undefined

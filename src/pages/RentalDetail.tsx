@@ -104,6 +104,21 @@ const RentalDetail = () => {
     enabled: !!rental?.customers?.id,
   });
 
+  // Get total payments (cash received) for this rental directly from payments table
+  const { data: totalPayments } = useQuery({
+    queryKey: ["rental-total-payments", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("rental_id", id);
+      
+      if (error) throw error;
+      return data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+    },
+    enabled: !!id,
+  });
+
   if (isLoading) {
     return <div>Loading rental details...</div>;
   }
@@ -125,21 +140,6 @@ const RentalDetail = () => {
 
   // Calculate rental totals properly
   const totalCharges = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  
-  // Get total payments (cash received) for this rental directly from payments table
-  const { data: totalPayments } = useQuery({
-    queryKey: ["rental-total-payments", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payments")
-        .select("amount")
-        .eq("rental_id", id);
-      
-      if (error) throw error;
-      return data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
-    },
-    enabled: !!id,
-  });
   
   const outstandingBalance = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
 

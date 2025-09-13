@@ -152,7 +152,7 @@ export const AddPaymentDialog = ({
         }
       }
 
-      // Create payment record - auto-application will be handled by database triggers
+      // Create payment record - auto-application will be handled by centralized service
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
@@ -169,9 +169,17 @@ export const AddPaymentDialog = ({
 
       if (paymentError) throw paymentError;
 
+      // Apply payment using centralized service
+      const { data: applyResult, error: applyError } = await supabase.functions.invoke('apply-payment', {
+        body: { paymentId: payment.id }
+      });
+
+      if (applyError) throw applyError;
+      if (!applyResult.success) throw new Error(applyResult.error || 'Payment processing failed');
+
       toast({
         title: "Payment Added",
-        description: `Payment of £${data.amount} has been recorded and automatically applied.`,
+        description: `Payment of £${data.amount} has been recorded and applied.`,
       });
 
       form.reset();

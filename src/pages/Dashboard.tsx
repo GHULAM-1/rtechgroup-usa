@@ -91,15 +91,27 @@ const Dashboard = () => {
     },
   });
 
-  // Reminder counts for badges
-  const { data: activeReminders } = useQuery({
-    queryKey: ["active-reminders-count"],
+  // Reminder counts for badges  
+  const { data: dueReminders } = useQuery({
+    queryKey: ["due-reminders-count"],
     queryFn: async () => {
       const { count } = await supabase
         .from("reminder_events")
         .select("*", { count: "exact", head: true })
-        .in("status", ["Delivered", "Snoozed"])
-        .in("reminder_type", ["Due", "Overdue1", "Overdue2", "Overdue3", "Overdue4", "Overdue5"]);
+        .eq("status", "Delivered")
+        .eq("reminder_type", "Due");
+      return count || 0;
+    },
+  });
+
+  const { data: overdueReminders } = useQuery({
+    queryKey: ["overdue-reminders-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("reminder_events")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "Delivered")
+        .in("reminder_type", ["Overdue1", "OverdueN"]);
       return count || 0;
     },
   });
@@ -116,7 +128,7 @@ const Dashboard = () => {
     {
       title: "Due Today",
       value: dueToday?.toString() || "0", 
-      description: activeReminders && activeReminders > 0 ? `Payments due today (${activeReminders} active reminders)` : "Payments due today",
+      description: dueReminders && dueReminders > 0 ? `Payments due today (${dueReminders} reminders)` : "Payments due today",
       icon: Calendar,
       color: "text-yellow-500",
       href: "/payments?filter=due-today"
@@ -198,13 +210,13 @@ const Dashboard = () => {
           </CardHeader>
         </Card>
 
-        <Card className="card-hover cursor-pointer" onClick={() => navigate("/reminders")}>
+        <Card className="card-hover cursor-pointer" onClick={() => navigate("/reminders-new")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
               Reminders
-              {activeReminders && activeReminders > 0 && (
-                <Badge variant="destructive" className="ml-2">{activeReminders}</Badge>
+              {overdueReminders && overdueReminders > 0 && (
+                <Badge variant="destructive" className="ml-2">{overdueReminders}</Badge>
               )}
             </CardTitle>
             <CardDescription>View in-app payment reminders and notifications</CardDescription>

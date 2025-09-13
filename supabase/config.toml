@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.generate-export]
 verify_jwt = true
+
+[functions.daily-reminders]
+verify_jwt = false

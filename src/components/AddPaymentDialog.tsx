@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -21,9 +22,24 @@ const paymentSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_date: z.date({
     required_error: "Payment date is required",
+  }).refine((date) => date <= new Date(), {
+    message: "Payment date cannot be in the future",
   }),
   method: z.string().min(1, "Payment method is required"),
   payment_type: z.enum(['Rental', 'Fine']).default('Rental'),
+  is_early: z.boolean().default(false),
+  apply_from_date: z.date().optional(),
+}).refine((data) => {
+  if (data.is_early && !data.apply_from_date) {
+    return false;
+  }
+  if (data.is_early && data.apply_from_date && data.apply_from_date < data.payment_date) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Apply from date must be provided and cannot be before payment date",
+  path: ["apply_from_date"],
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -54,8 +70,12 @@ export const AddPaymentDialog = ({
       payment_date: toZonedTime(new Date(), 'Europe/London'),
       method: "Card",
       payment_type: "Rental",
+      is_early: false,
+      apply_from_date: undefined,
     },
   });
+
+  const isEarly = form.watch("is_early");
 
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
@@ -71,6 +91,8 @@ export const AddPaymentDialog = ({
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,
           payment_type: data.payment_type,
+          is_early: data.is_early,
+          apply_from_date: data.apply_from_date ? formatInTimeZone(data.apply_from_date, 'Europe/London', 'yyyy-MM-dd') : null,
         })
         .select()
         .single();
@@ -166,21 +188,88 @@ export const AddPaymentDialog = ({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
+                        disabled={(date) => date > new Date()}
                         fromYear={new Date().getFullYear() - 5}
-                        toYear={new Date().getFullYear() + 2}
+                        toYear={new Date().getFullYear()}
                         captionLayout="dropdown-buttons"
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
-                  <FormDescription>
-                    Future-dated payments will show as credit until charges become due.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="is_early"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      Mark as early payment (hold as credit until next due)
+                    </FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+
+            {isEarly && (
+              <FormField
+                control={form.control}
+                name="apply_from_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Apply From Date *</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              formatInTimeZone(field.value, 'Europe/London', "dd/MM/yyyy")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < form.getValues("payment_date")}
+                          fromYear={new Date().getFullYear()}
+                          toYear={new Date().getFullYear() + 2}
+                          captionLayout="dropdown-buttons"
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Credit will auto-apply from this date to due charges.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

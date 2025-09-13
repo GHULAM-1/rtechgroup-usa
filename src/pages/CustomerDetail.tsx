@@ -116,19 +116,31 @@ const CustomerDetail = () => {
   const { data: payments } = useQuery({
     queryKey: ["customer-payments", id],
     queryFn: async () => {
+      // Query payments table directly for accurate data
       const { data, error } = await supabase
-        .from("ledger_entries")
+        .from("payments")
         .select(`
-          *,
-          vehicles(reg),
-          payments(method)
+          id,
+          amount,
+          payment_date,
+          payment_type,
+          method,
+          vehicles(reg)
         `)
         .eq("customer_id", id)
-        .eq("type", "Payment")
-        .order("entry_date", { ascending: false });
+        .order("payment_date", { ascending: false });
       
       if (error) throw error;
-      return data as Payment[];
+      
+      // Transform to match expected interface
+      return data.map(payment => ({
+        id: payment.id,
+        amount: payment.amount,
+        entry_date: payment.payment_date,
+        category: payment.payment_type,
+        vehicles: payment.vehicles,
+        payments: { method: payment.method }
+      })) as Payment[];
     },
     enabled: !!id,
   });

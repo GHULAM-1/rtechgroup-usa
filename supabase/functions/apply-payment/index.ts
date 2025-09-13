@@ -56,41 +56,42 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
       console.log(`Processing Initial Fee payment - will create immediate revenue entry, no allocation to charges`);
     }
 
-    // Insert/Update Ledger entry - handle duplicates with try-catch
-    try {
-      const { error: ledgerError } = await supabase
-        .from('ledger_entries')
-        .insert([{
-          customer_id: payment.customer_id,
-          rental_id: payment.rental_id,
-          vehicle_id: payment.vehicle_id,
-          entry_date: entryDate,
-          type: 'Payment',
-          category: category,
-          amount: -Math.abs(payment.amount), // Ensure negative
-          due_date: entryDate,
-          remaining_amount: 0,
-          payment_id: payment.id
-        }]);
+    // Insert/Update Ledger entry - CRITICAL: Never fail silently
+    console.log(`Creating ledger entry for payment ${paymentId}: amount=${payment.amount}, category=${category}`);
+    
+    const { data: ledgerEntry, error: ledgerError } = await supabase
+      .from('ledger_entries')
+      .insert([{
+        customer_id: payment.customer_id,
+        rental_id: payment.rental_id,
+        vehicle_id: payment.vehicle_id,
+        entry_date: entryDate,
+        type: 'Payment',
+        category: category,
+        amount: -Math.abs(payment.amount), // Ensure negative
+        due_date: entryDate,
+        remaining_amount: 0,
+        payment_id: payment.id
+      }])
+      .select()
+      .single();
 
-      if (ledgerError && !ledgerError.message.includes('duplicate key')) {
-        console.error('Ledger insert error:', ledgerError);
+    if (ledgerError) {
+      console.error('CRITICAL: Ledger insert failed:', ledgerError);
+      
+      // Only allow duplicate key errors to pass through
+      if (ledgerError.message.includes('duplicate key') || ledgerError.code === '23505') {
+        console.log('Ledger entry already exists, continuing...');
+      } else {
+        // All other errors are critical failures
         return {
           ok: false,
-          error: 'Failed to create ledger entry',
-          detail: ledgerError.message
+          error: 'CRITICAL: Failed to create ledger entry',
+          detail: `${ledgerError.code}: ${ledgerError.message}`
         };
       }
-    } catch (err) {
-      // Ignore duplicate key errors, log others
-      if (!err.message?.includes('duplicate key')) {
-        console.error('Ledger insert error:', err);
-        return {
-          ok: false,
-          error: 'Failed to create ledger entry',
-          detail: err.message
-        };
-      }
+    } else {
+      console.log('Ledger entry created successfully:', ledgerEntry?.id);
     }
 
     // Handle different payment types

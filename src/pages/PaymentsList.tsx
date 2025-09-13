@@ -106,23 +106,32 @@ const PaymentsList = () => {
   const { data: payments, isLoading } = useQuery({
     queryKey: ["payments-list", filter],
     queryFn: async () => {
-      let query = supabase
-        .from("ledger_entries")
+      // Query payments table directly for authoritative data
+      const { data, error } = await supabase
+        .from("payments")
         .select(`
-          *,
+          id,
+          amount,
+          payment_date,
+          payment_type,
           customers(name),
           vehicles(reg),
           rentals(id)
         `)
-        .eq("type", "Payment")
-        .order("entry_date", { ascending: false });
+        .order("payment_date", { ascending: false });
 
-      // Apply filters - for now just return all
-      // In the future, we might filter by due date or other criteria
-
-      const { data, error } = await query;
       if (error) throw error;
-      return data as PaymentEntry[];
+      
+      // Transform to match expected interface
+      return data.map(payment => ({
+        id: payment.id,
+        amount: payment.amount,
+        entry_date: payment.payment_date,
+        category: payment.payment_type,
+        customers: payment.customers,
+        vehicles: payment.vehicles,
+        rentals: payment.rentals
+      })) as PaymentEntry[];
     },
   });
 

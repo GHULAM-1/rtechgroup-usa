@@ -983,6 +983,92 @@ export type Database = {
           },
         ]
       }
+      reminder_actions: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          reminder_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          reminder_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          reminder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_actions_reminder_id_fkey"
+            columns: ["reminder_id"]
+            isOneToOne: false
+            referencedRelation: "reminders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminder_config: {
+        Row: {
+          config_key: string
+          config_value: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          config_key: string
+          config_value: Json
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          config_key?: string
+          config_value?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reminder_emails: {
+        Row: {
+          body_html: string | null
+          body_text: string | null
+          id: string
+          meta: Json | null
+          sent_at: string
+          subject: string
+          to_address: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_text?: string | null
+          id?: string
+          meta?: Json | null
+          sent_at?: string
+          subject: string
+          to_address: string
+        }
+        Update: {
+          body_html?: string | null
+          body_text?: string | null
+          id?: string
+          meta?: Json | null
+          sent_at?: string
+          subject?: string
+          to_address?: string
+        }
+        Relationships: []
+      }
       reminder_events: {
         Row: {
           charge_id: string
@@ -1165,6 +1251,60 @@ export type Database = {
           id?: string
           setting_key?: string
           setting_value?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          context: Json
+          created_at: string
+          due_on: string
+          id: string
+          last_sent_at: string | null
+          message: string
+          object_id: string
+          object_type: string
+          remind_on: string
+          rule_code: string
+          severity: string
+          snooze_until: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          context?: Json
+          created_at?: string
+          due_on: string
+          id?: string
+          last_sent_at?: string | null
+          message: string
+          object_id: string
+          object_type: string
+          remind_on: string
+          rule_code: string
+          severity?: string
+          snooze_until?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          context?: Json
+          created_at?: string
+          due_on?: string
+          id?: string
+          last_sent_at?: string | null
+          message?: string
+          object_id?: string
+          object_type?: string
+          remind_on?: string
+          rule_code?: string
+          severity?: string
+          snooze_until?: string | null
+          status?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []

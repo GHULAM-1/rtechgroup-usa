@@ -1191,6 +1191,58 @@ export type Database = {
           },
         ]
       }
+      service_records: {
+        Row: {
+          cost: number
+          created_at: string | null
+          description: string | null
+          id: string
+          mileage: number | null
+          service_date: string
+          vehicle_id: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          mileage?: number | null
+          service_date: string
+          vehicle_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          mileage?: number | null
+          service_date?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "service_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_records_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
@@ -1235,6 +1287,8 @@ export type Database = {
           finance_start_date: string | null
           id: string
           initial_payment: number | null
+          last_service_date: string | null
+          last_service_mileage: number | null
           make: string | null
           model: string | null
           monthly_payment: number | null
@@ -1256,6 +1310,8 @@ export type Database = {
           finance_start_date?: string | null
           id?: string
           initial_payment?: number | null
+          last_service_date?: string | null
+          last_service_mileage?: number | null
           make?: string | null
           model?: string | null
           monthly_payment?: number | null
@@ -1277,6 +1333,8 @@ export type Database = {
           finance_start_date?: string | null
           id?: string
           initial_payment?: number | null
+          last_service_date?: string | null
+          last_service_mileage?: number | null
           make?: string | null
           model?: string | null
           monthly_payment?: number | null
@@ -1849,6 +1907,19 @@ export type Database = {
       }
       update_customer_balance: {
         Args: { customer_id: string }
+        Returns: undefined
+      }
+      update_vehicle_last_service: {
+        Args: { p_vehicle_id: string }
+        Returns: undefined
+      }
+      upsert_service_pnl_entry: {
+        Args: {
+          p_cost: number
+          p_service_date: string
+          p_service_record_id: string
+          p_vehicle_id: string
+        }
         Returns: undefined
       }
       verify_password: {

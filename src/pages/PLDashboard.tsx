@@ -35,6 +35,8 @@ interface VehiclePL {
   total_revenue: number;
   total_costs: number;
   net_profit: number;
+  is_disposed?: boolean;
+  disposal_date?: string;
 }
 
 interface MonthlyPL {
@@ -125,23 +127,42 @@ const PLDashboard: React.FC = () => {
   const { data: vehiclePLData, isLoading: isVehicleLoading } = useQuery({
     queryKey: ['vehicle-pl', dateRange, groupByMonth],
     queryFn: async (): Promise<VehiclePL[]> => {
-      if (groupByMonth) {
-        // When grouping by month, we'll aggregate data differently
-        // For now, return the vehicle data as is
-        const { data, error } = await supabase
-          .from('view_pl_by_vehicle')
-          .select('*');
+      const { data, error } = await supabase
+        .from('view_pl_by_vehicle')
+        .select(`
+          vehicle_id,
+          vehicle_reg,
+          make_model,
+          revenue_rental,
+          revenue_fees,
+          cost_acquisition,
+          cost_finance,
+          cost_service,
+          cost_fines,
+          cost_other,
+          total_revenue,
+          total_costs,
+          net_profit
+        `);
 
-        if (error) throw error;
-        return data || [];
-      } else {
-        const { data, error } = await supabase
-          .from('view_pl_by_vehicle')
-          .select('*');
+      if (error) throw error;
 
-        if (error) throw error;
-        return data || [];
-      }
+      // Fetch vehicle disposal info separately
+      const { data: vehiclesData, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('id, is_disposed, disposal_date');
+
+      if (vehiclesError) throw vehiclesError;
+
+      // Merge the data
+      return (data || []).map(plItem => {
+        const vehicleInfo = vehiclesData?.find(v => v.id === plItem.vehicle_id);
+        return {
+          ...plItem,
+          is_disposed: vehicleInfo?.is_disposed || false,
+          disposal_date: vehicleInfo?.disposal_date || null,
+        };
+      });
     },
   });
 
@@ -349,7 +370,24 @@ const PLDashboard: React.FC = () => {
     </Button>
   );
 
-  const getStatusBadge = (netProfit: number) => {
+  const getStatusBadge = (vehicle: VehiclePL) => {
+    // Show disposal status first if vehicle is disposed
+    if (vehicle.is_disposed) {
+      return <Badge variant="secondary" className="bg-muted text-muted-foreground">Disposed</Badge>;
+    }
+    
+    // Otherwise show profit/loss status
+    const netProfit = vehicle.net_profit || 0;
+    if (netProfit > 0) {
+      return <Badge className="bg-success text-success-foreground">Profitable</Badge>;
+    } else if (netProfit < 0) {
+      return <Badge className="bg-destructive text-destructive-foreground">Loss</Badge>;
+    } else {
+      return <Badge variant="secondary">Break Even</Badge>;
+    }
+  };
+
+  const getTotalsBadge = (netProfit: number) => {
     if (netProfit > 0) {
       return <Badge className="bg-success text-success-foreground">Profitable</Badge>;
     } else if (netProfit < 0) {
@@ -711,7 +749,7 @@ const PLDashboard: React.FC = () => {
                             {formatCurrency(vehicle.net_profit || 0)}
                           </span>
                         </TableCell>
-                        <TableCell>{getStatusBadge(vehicle.net_profit || 0)}</TableCell>
+                        <TableCell>{getStatusBadge(vehicle)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -742,7 +780,7 @@ const PLDashboard: React.FC = () => {
                               {formatCurrency(categoryTotals.net_profit)}
                             </span>
                           </TableCell>
-                          <TableCell>{getStatusBadge(categoryTotals.net_profit)}</TableCell>
+                          <TableCell>{getTotalsBadge(categoryTotals.net_profit)}</TableCell>
                         </TableRow>
                       </TableBody>
                     </Table>

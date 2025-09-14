@@ -855,7 +855,7 @@ export default function VehicleDetail() {
         </TabsContent>
 
         <TabsContent value="plates" className="mt-6">
-          <VehiclePlatesPanel vehicleId={id!} vehicleReg={vehicle.reg} />
+          <EnhancedVehiclePlatesPanel vehicleId={id!} vehicleReg={vehicle.reg} />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">

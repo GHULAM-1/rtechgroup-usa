@@ -95,7 +95,7 @@ export const EnhancedAddPlateDialog = ({
       vehicle_id: editPlate?.vehicle_id || preSelectedVehicleId || "",
       supplier: editPlate?.supplier || "",
       order_date: editPlate?.order_date ? new Date(editPlate.order_date) : undefined,
-      cost: editPlate?.cost?.toString() || "0",
+      cost: editPlate?.cost || 0,
       status: (editPlate?.status as any) || (preSelectedVehicleId ? 'assigned' : 'ordered'),
       retention_doc_reference: editPlate?.retention_doc_reference || "",
       notes: editPlate?.notes || "",

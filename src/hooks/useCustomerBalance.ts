@@ -11,7 +11,7 @@ export const useCustomerBalance = (customerId: string | undefined) => {
       // Calculate balance from ledger_entries - only include currently due charges
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("amount, type, due_date, payment_id")
+        .select("amount, type, due_date, payment_id, category")
         .eq("customer_id", customerId);
       
       if (error) throw error;
@@ -39,8 +39,9 @@ export const useCustomerBalance = (customerId: string | undefined) => {
           return sum;
         }
         
-        // For charges, only include if currently due
-        if (entry.type === 'Charge' && entry.due_date && new Date(entry.due_date) > new Date()) {
+        // For rental charges, only include if currently due
+        // For fine charges, include all (they're immediate debt once charged)
+        if (entry.type === 'Charge' && entry.category === 'Rental' && entry.due_date && new Date(entry.due_date) > new Date()) {
           return sum;
         }
         
@@ -62,7 +63,7 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
       
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("type, amount, due_date, payment_id")
+        .select("type, amount, due_date, payment_id, category")
         .eq("customer_id", customerId);
       
       if (error) throw error;
@@ -94,8 +95,9 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
           return;
         }
         
-        // For charges, only include if currently due
-        if (entry.type === 'Charge' && entry.due_date && new Date(entry.due_date) > new Date()) {
+        // For rental charges, only include if currently due
+        // For fine charges, include all (they're immediate debt once charged)
+        if (entry.type === 'Charge' && entry.category === 'Rental' && entry.due_date && new Date(entry.due_date) > new Date()) {
           return;
         }
         

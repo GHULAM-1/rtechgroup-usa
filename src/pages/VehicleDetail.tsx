@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users } from "lucide-react";
+import { ChevronLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
@@ -102,6 +102,7 @@ export default function VehicleDetail() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
+  const [showGhostCode, setShowGhostCode] = useState(false);
   
   // Get tab and date filtering from URL params
   const activeTab = searchParams.get('tab') || 'overview';
@@ -613,9 +614,25 @@ export default function VehicleDetail() {
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <span className="text-sm font-medium">Ghost Immobiliser</span>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {vehicle.ghost_code && `Code: ${'*'.repeat(vehicle.ghost_code.length)}`}
-                      </div>
+                      {vehicle.ghost_code && (
+                        <div className="flex items-center gap-2">
+                          <div className="text-xs text-muted-foreground">
+                            Code: {showGhostCode ? vehicle.ghost_code : '*'.repeat(vehicle.ghost_code.length)}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => setShowGhostCode(!showGhostCode)}
+                          >
+                            {showGhostCode ? (
+                              <EyeOff className="h-3 w-3" />
+                            ) : (
+                              <Eye className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                   {vehicle.has_tracker && (

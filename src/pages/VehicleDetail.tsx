@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users } from "lucide-react";
+import { ChevronLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users } from "lucide-react";
 import { format } from "date-fns";
 import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
@@ -30,6 +30,7 @@ import { VehicleFileUpload } from "@/components/VehicleFileUpload";
 import { VehicleDisposalDialog } from "@/components/VehicleDisposalDialog";
 import { VehicleUndoDisposalDialog } from "@/components/VehicleUndoDisposalDialog";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
+import { PLBreadcrumb } from "@/components/PLBreadcrumb";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,6 +104,8 @@ export default function VehicleDetail() {
   // Get tab and date filtering from URL params
   const activeTab = searchParams.get('tab') || 'overview';
   const monthParam = searchParams.get('month');
+  const selectedMonth = monthParam;
+  const fromMonthlyDrilldown = searchParams.get('from') === 'monthly';
   
   // Parse month parameter if present (format: YYYY-MM)
   const dateFilter = useMemo(() => {
@@ -294,6 +297,46 @@ export default function VehicleDetail() {
 
   const netProfit = plSummary.totalRevenue - plSummary.totalCosts;
 
+  // Context-aware back navigation
+  const getBackLink = () => {
+    if (selectedMonth && fromMonthlyDrilldown) {
+      return `/pl-dashboard/monthly/${selectedMonth}`;
+    }
+    if (selectedMonth) {
+      return `/pl-dashboard/monthly/${selectedMonth}`;
+    }
+    return '/vehicles';
+  };
+
+  const getBackLabel = () => {
+    if (selectedMonth && fromMonthlyDrilldown) {
+      return `Back to ${format(new Date(selectedMonth + '-01'), 'MMMM yyyy')}`;
+    }
+    if (selectedMonth) {
+      return `Back to ${format(new Date(selectedMonth + '-01'), 'MMMM yyyy')}`;
+    }
+    return 'Back to Vehicles';
+  };
+
+  // Breadcrumb items
+  const getBreadcrumbItems = () => {
+    const items = [];
+    
+    if (selectedMonth) {
+      items.push(
+        { label: "Global P&L Dashboard", href: "/pl-dashboard" },
+        { label: format(new Date(selectedMonth + '-01'), 'MMMM yyyy'), href: `/pl-dashboard/monthly/${selectedMonth}` }
+      );
+    }
+    
+    items.push({
+      label: `${vehicle?.reg} (${vehicle?.make} ${vehicle?.model})`,
+      current: true
+    });
+    
+    return items;
+  };
+
   if (vehicleLoading) {
     return <div>Loading vehicle details...</div>;
   }
@@ -304,12 +347,14 @@ export default function VehicleDetail() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      {selectedMonth && <PLBreadcrumb items={getBreadcrumbItems()} />}
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/vehicles")}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Vehicles
+          <Button variant="ghost" size="sm" onClick={() => navigate(getBackLink())}>
+            <ChevronLeft className="h-4 w-4 mr-2" />
+            {getBackLabel()}
           </Button>
           <div>
             <h1 className="text-3xl font-bold">{vehicle.reg}</h1>

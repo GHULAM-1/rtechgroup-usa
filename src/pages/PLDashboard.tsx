@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
 
@@ -51,17 +51,42 @@ type SortDirection = 'asc' | 'desc';
 const PLDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // State for filters and sorting - initialize from URL params
   const [dateRange, setDateRange] = useState<{
     from: Date;
     to: Date;
-  }>({
-    from: startOfMonth(subMonths(new Date(), 11)),
-    to: endOfMonth(new Date()),
+  }>(() => {
+    const dateRangeParam = searchParams.get('dateRange');
+    if (dateRangeParam) {
+      const [start, end] = dateRangeParam.split(',');
+      return {
+        from: start ? new Date(start) : startOfMonth(subMonths(new Date(), 11)),
+        to: end ? new Date(end) : endOfMonth(new Date()),
+      };
+    }
+    return {
+      from: startOfMonth(subMonths(new Date(), 11)),
+      to: endOfMonth(new Date()),
+    };
   });
-  const [groupByMonth, setGroupByMonth] = useState(false);
+  const [groupByMonth, setGroupByMonth] = useState(() => searchParams.get('groupByMonth') === 'true');
   const [sortField, setSortField] = useState<SortField>('net_profit');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showChart, setShowChart] = useState(false);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (dateRange?.from && dateRange?.to) {
+      params.set('dateRange', `${dateRange.from.toISOString()},${dateRange.to.toISOString()}`);
+    }
+    if (groupByMonth) {
+      params.set('groupByMonth', 'true');
+    }
+    setSearchParams(params, { replace: true });
+  }, [dateRange, groupByMonth, setSearchParams]);
 
   // Fetch P&L summary data
   const { data: plSummary, isLoading: isSummaryLoading } = useQuery({
@@ -334,6 +359,27 @@ const PLDashboard: React.FC = () => {
     }
   };
 
+  const handleMonthClick = (monthData: MonthlyPL) => {
+    const params = new URLSearchParams();
+    if (dateRange?.from && dateRange?.to) {
+      params.set('from', `${dateRange.from.toISOString()},${dateRange.to.toISOString()}`);
+    }
+    if (groupByMonth) {
+      params.set('groupByMonth', 'true');
+    }
+    const monthDate = new Date(`${monthData.month} 1, ${new Date().getFullYear()}`);
+    const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+    navigate(`/pl-dashboard/monthly/${monthStr}?${params.toString()}`);
+  };
+
+  const handleVehicleClick = (vehicleData: VehiclePL) => {
+    const params = new URLSearchParams({ tab: 'pl' });
+    if (dateRange?.from && dateRange?.to) {
+      params.set('dateRange', `${dateRange.from.toISOString()},${dateRange.to.toISOString()}`);
+    }
+    navigate(`/vehicles/${vehicleData.vehicle_id}?${params.toString()}`);
+  };
+
   const summaryCards = [
     {
       title: 'Total Revenue',
@@ -571,16 +617,14 @@ const PLDashboard: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                      {monthlyPLData?.map((month, index) => (
-                       <TableRow 
-                         key={index} 
-                         className="hover:bg-muted/50 transition-colors cursor-pointer"
-                         onClick={() => {
-                           // Convert month name to YYYY-MM format
-                           const monthDate = new Date(`${month.month} 1, ${new Date().getFullYear()}`);
-                           const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-                           navigate(`/pl-dashboard/monthly/${monthStr}`);
-                         }}
-                       >
+                        <TableRow 
+                          key={index} 
+                          className="hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => handleMonthClick(month)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => e.key === 'Enter' && handleMonthClick(month)}
+                        >
                          <TableCell className="font-medium">{month.month}</TableCell>
                         <TableCell className="text-right">{formatCurrency(month.total_revenue)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(month.total_costs)}</TableCell>
@@ -638,11 +682,14 @@ const PLDashboard: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {sortedVehicleData?.map((vehicle) => (
-                      <TableRow 
-                        key={vehicle.vehicle_id} 
-                        className="hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/vehicles/${vehicle.vehicle_id}?tab=pl`)}
-                      >
+                        <TableRow 
+                          key={vehicle.vehicle_id} 
+                          className="hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => handleVehicleClick(vehicle)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => e.key === 'Enter' && handleVehicleClick(vehicle)}
+                        >
                         <TableCell>
                           <div>
                             <div className="font-medium">{vehicle.vehicle_reg}</div>

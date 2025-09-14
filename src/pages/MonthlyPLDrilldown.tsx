@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Car, DollarSign, TrendingUp, TrendingDown, Download, ArrowUpDown, ArrowUp, ArrowDown, BarChart3 } from "lucide-react";
+import { ChevronLeft, Car, DollarSign, TrendingUp, TrendingDown, Download, ArrowUpDown, ArrowUp, ArrowDown, BarChart3 } from "lucide-react";
 import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { cn } from "@/lib/utils";
+import { PLBreadcrumb } from "@/components/PLBreadcrumb";
 
 interface VehicleMonthlyPL {
   vehicle_id: string;
@@ -36,6 +37,10 @@ const MonthlyPLDrilldown = () => {
   const [sortField, setSortField] = useState<SortField>('net_profit');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [showChart, setShowChart] = useState(false);
+
+  // Extract filter context from URL params
+  const fromDateRange = searchParams.get('from');
+  const groupByMonth = searchParams.get('groupByMonth') === 'true';
 
   if (!month) {
     navigate('/pl-dashboard');
@@ -256,23 +261,30 @@ const MonthlyPLDrilldown = () => {
     Net: vehicle.net_profit,
   }));
 
+  // Breadcrumb items
+  const breadcrumbItems = [
+    { label: "Global P&L Dashboard", href: `/pl-dashboard${fromDateRange ? `?dateRange=${fromDateRange}` : ''}${groupByMonth ? `${fromDateRange ? '&' : '?'}groupByMonth=true` : ''}` },
+    { label: format(parseISO(`${month}-01`), 'MMMM yyyy'), current: true }
+  ];
+
   if (isLoading) {
     return <div className="flex items-center justify-center h-64">Loading monthly breakdown...</div>;
   }
 
   return (
     <div className="space-y-6 p-6">
+      <PLBreadcrumb items={breadcrumbItems} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate('/pl-dashboard')}
+            onClick={() => navigate(`/pl-dashboard${fromDateRange ? `?dateRange=${fromDateRange}` : ''}${groupByMonth ? `${fromDateRange ? '&' : '?'}groupByMonth=true` : ''}`)}
             className="flex items-center gap-2"
           >
-            <ArrowLeft className="h-4 w-4" />
-            Back
+            <ChevronLeft className="h-4 w-4" />
+            Back to Global P&L Dashboard
           </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
@@ -436,7 +448,10 @@ const MonthlyPLDrilldown = () => {
                     <TableRow 
                       key={vehicle.vehicle_id} 
                       className="hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/vehicles/${vehicle.vehicle_id}?tab=pl&month=${month}`)}
+                      onClick={() => navigate(`/vehicles/${vehicle.vehicle_id}?tab=pl&month=${month}&from=monthly`)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && navigate(`/vehicles/${vehicle.vehicle_id}?tab=pl&month=${month}&from=monthly`)}
                     >
                       <TableCell>
                         <div>

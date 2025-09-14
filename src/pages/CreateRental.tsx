@@ -150,8 +150,8 @@ const CreateRental = () => {
         .update({ status: "Rented" })
         .eq("id", data.vehicle_id);
 
-      // Generate rental charges
-      await supabase.rpc("backfill_rental_charges_full");
+      // Generate only first month's charge (subsequent charges created monthly)
+      await supabase.rpc("backfill_rental_charges_first_month_only");
 
       toast({
         title: "Rental Created",

@@ -32,6 +32,7 @@ import { VehicleDisposalDialog } from "@/components/VehicleDisposalDialog";
 import { VehicleUndoDisposalDialog } from "@/components/VehicleUndoDisposalDialog";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { PLBreadcrumb } from "@/components/PLBreadcrumb";
+import { VehiclePhotoUpload } from "@/components/VehiclePhotoUpload";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -72,6 +73,8 @@ interface Vehicle {
   sale_proceeds?: number;
   disposal_buyer?: string;
   disposal_notes?: string;
+  // Photo field
+  photo_url?: string;
 }
 
 interface PLEntry {
@@ -391,6 +394,15 @@ export default function VehicleDetail() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
+          {/* Vehicle Photo Upload Section */}
+          <div className="mb-6">
+            <VehiclePhotoUpload 
+              vehicleId={vehicle.id}
+              vehicleReg={vehicle.reg}
+              currentPhotoUrl={vehicle.photo_url}
+            />
+          </div>
+
           {/* Vehicle Compliance Status Panel */}
           {vehicle && <VehicleCompliancePanel vehicle={vehicle} />}
           

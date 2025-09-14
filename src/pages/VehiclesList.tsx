@@ -16,6 +16,7 @@ import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 import { NetPLChip } from "@/components/NetPLChip";
+import { VehiclePhotoThumbnail } from "@/components/VehiclePhotoThumbnail";
 import { computeVehicleStatus, VehicleStatus, VehiclePLData, formatCurrency } from "@/lib/vehicleUtils";
 import { useActiveRentals } from "@/hooks/useActiveRentals";
 
@@ -32,6 +33,7 @@ interface Vehicle {
   is_disposed: boolean;
   disposal_date?: string;
   status: string;
+  photo_url?: string;
 }
 
 type SortField = 'reg' | 'make_model' | 'acquisition_type' | 'status' | 'mot_due_date' | 'tax_due_date' | 'net_profit';
@@ -386,14 +388,15 @@ export default function VehiclesListEnhanced() {
         <Card>
           <CardContent className="p-0">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('reg')}>
-                    <div className="flex items-center gap-2">
-                      Registration
-                      {getSortIcon('reg')}
-                    </div>
-                  </TableHead>
+               <TableHeader>
+                 <TableRow>
+                   <TableHead>Photo</TableHead>
+                   <TableHead className="cursor-pointer" onClick={() => handleSort('reg')}>
+                     <div className="flex items-center gap-2">
+                       Registration
+                       {getSortIcon('reg')}
+                     </div>
+                   </TableHead>
                   <TableHead className="cursor-pointer" onClick={() => handleSort('make_model')}>
                     <div className="flex items-center gap-2">
                       Make/Model
@@ -439,9 +442,17 @@ export default function VehiclesListEnhanced() {
                   <TableRow 
                     key={vehicle.id}
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleRowClick(vehicle.id)}
-                  >
-                    <TableCell>
+                     onClick={() => handleRowClick(vehicle.id)}
+                   >
+                     <TableCell>
+                       <VehiclePhotoThumbnail
+                         photoUrl={vehicle.photo_url}
+                         vehicleReg={vehicle.reg}
+                         size="sm"
+                         onClick={() => navigate(`/vehicles/${vehicle.id}`)}
+                       />
+                     </TableCell>
+                     <TableCell>
                       <Link 
                         to={`/vehicles/${vehicle.id}`}
                         className="font-bold text-primary hover:underline"

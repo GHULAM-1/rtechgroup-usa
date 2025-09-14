@@ -1801,6 +1801,7 @@ export type Database = {
           model: string | null
           monthly_payment: number | null
           mot_due_date: string | null
+          photo_url: string | null
           purchase_price: number | null
           reg: string
           sale_proceeds: number | null
@@ -1834,6 +1835,7 @@ export type Database = {
           model?: string | null
           monthly_payment?: number | null
           mot_due_date?: string | null
+          photo_url?: string | null
           purchase_price?: number | null
           reg: string
           sale_proceeds?: number | null
@@ -1867,6 +1869,7 @@ export type Database = {
           model?: string | null
           monthly_payment?: number | null
           mot_due_date?: string | null
+          photo_url?: string | null
           purchase_price?: number | null
           reg?: string
           sale_proceeds?: number | null

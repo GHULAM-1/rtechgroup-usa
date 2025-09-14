@@ -91,6 +91,14 @@ interface Vehicle {
   has_tracker?: boolean;
   has_remote_immobiliser?: boolean;
   security_notes?: string;
+  // Disposal fields
+  is_disposed?: boolean;
+  disposal_date?: string;
+  sale_proceeds?: number;
+  disposal_buyer?: string;
+  disposal_notes?: string;
+  // Photo field
+  photo_url?: string;
 }
 
 interface EditVehicleDialogProps {

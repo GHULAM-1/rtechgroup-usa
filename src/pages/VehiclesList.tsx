@@ -60,23 +60,12 @@ export default function VehiclesListEnhanced() {
     performance: (searchParams.get('performance') as PerformanceFilter) || 'all',
   });
 
-  const [sortField, setSortField] = useState<SortField>((searchParams.get('sort') as SortField) || 'reg');
-  const [sortDirection, setSortDirection] = useState<SortDirection>((searchParams.get('dir') as SortDirection) || 'asc');
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [pageSize, setPageSize] = useState(parseInt(searchParams.get('limit') || '25'));
 
-  // Sync state with URL params when they change
-  useEffect(() => {
-    const urlSortField = (searchParams.get('sort') as SortField) || 'reg';
-    const urlSortDirection = (searchParams.get('dir') as SortDirection) || 'asc';
-    const urlCurrentPage = parseInt(searchParams.get('page') || '1');
-    const urlPageSize = parseInt(searchParams.get('limit') || '25');
-
-    setSortField(urlSortField);
-    setSortDirection(urlSortDirection);
-    setCurrentPage(urlCurrentPage);
-    setPageSize(urlPageSize);
-  }, [searchParams]);
+  // Read sort params directly from URL
+  const sortField = (searchParams.get('sort') as SortField) || 'reg';
+  const sortDirection = (searchParams.get('dir') as SortDirection) || 'asc';
 
   // Update URL params when filters change
   const updateFilters = (newFilters: Partial<FiltersState>) => {
@@ -248,8 +237,6 @@ export default function VehiclesListEnhanced() {
 
   const handleSort = (field: SortField) => {
     const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
-    setSortField(field);
-    setSortDirection(newDirection);
     
     const params = new URLSearchParams(searchParams);
     params.set('sort', field);

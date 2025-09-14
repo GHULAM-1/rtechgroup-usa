@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
+import { RecordFinancePaymentDialog } from "@/components/RecordFinancePaymentDialog";
 
 interface Vehicle {
   id: string;
@@ -21,6 +22,12 @@ interface Vehicle {
   acquisition_date: string;
   acquisition_type: string;
   created_at: string;
+  // Finance fields
+  monthly_payment?: number;
+  initial_payment?: number;
+  term_months?: number;
+  balloon?: number;
+  finance_start_date?: string;
 }
 
 interface PLEntry {
@@ -241,6 +248,55 @@ export default function VehicleDetail() {
                 <div><strong>Acquired:</strong> {format(new Date(vehicle.acquisition_date), "dd/MM/yyyy")}</div>
               </CardContent>
             </Card>
+
+            {/* Finance Info Card - Only show for financed vehicles */}
+            {vehicle.acquisition_type === 'Finance' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Finance Information
+                    </div>
+                    <RecordFinancePaymentDialog 
+                      vehicleId={vehicle.id} 
+                      vehicleReg={vehicle.reg}
+                    />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {vehicle.monthly_payment && (
+                    <div><strong>Monthly Payment:</strong> £{Number(vehicle.monthly_payment).toLocaleString()}</div>
+                  )}
+                  {vehicle.term_months && (
+                    <div><strong>Term:</strong> {vehicle.term_months} months</div>
+                  )}
+                  {vehicle.balloon && vehicle.balloon > 0 && (
+                    <div><strong>Balloon Payment:</strong> £{Number(vehicle.balloon).toLocaleString()}</div>
+                  )}
+                  {vehicle.finance_start_date && (
+                    <div><strong>Finance Start:</strong> {format(new Date(vehicle.finance_start_date), "dd/MM/yyyy")}</div>
+                  )}
+                  
+                  {/* Contract Total */}
+                  {vehicle.monthly_payment && vehicle.term_months && (
+                    <div className="pt-2 border-t">
+                      <div><strong>Contract Total:</strong> £{(
+                        (vehicle.initial_payment || 0) + 
+                        (vehicle.monthly_payment * vehicle.term_months) + 
+                        (vehicle.balloon || 0)
+                      ).toLocaleString()}</div>
+                    </div>
+                  )}
+                  
+                  {/* Total Finance Paid */}
+                  <div className="pt-2 border-t">
+                    <div><strong>Total Paid:</strong> £{plSummary.financeCosts.toLocaleString()}</div>
+                    <div className="text-xs text-muted-foreground">Cash-basis finance costs recorded</div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* P&L Summary */}
             <Card>

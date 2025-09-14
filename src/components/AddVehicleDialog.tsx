@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Plus, Car } from "lucide-react";
+import { Plus, Car, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -22,7 +22,24 @@ const vehicleSchema = z.object({
   purchase_price: z.number().min(0, "Price must be positive"),
   acquisition_date: z.date(),
   acquisition_type: z.enum(['Purchase', 'Finance']),
-});
+  // Finance fields (only required when acquisition_type is 'Finance')
+  monthly_payment: z.number().min(0).optional(),
+  initial_payment: z.number().min(0).default(0),
+  term_months: z.number().int().min(1).optional(),
+  balloon: z.number().min(0).optional(),
+  finance_start_date: z.date().optional(),
+}).refine(
+  (data) => {
+    if (data.acquisition_type === 'Finance' && !data.monthly_payment) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Monthly payment is required for financed vehicles",
+    path: ["monthly_payment"],
+  }
+);
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
 
@@ -47,6 +64,11 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       purchase_price: 0,
       acquisition_date: new Date(),
       acquisition_type: "Purchase",
+      monthly_payment: 0,
+      initial_payment: 0,
+      term_months: undefined,
+      balloon: 0,
+      finance_start_date: undefined,
     },
   });
 
@@ -74,7 +96,15 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           acquisition_type: data.acquisition_type,
           purchase_price: data.purchase_price,
           acquisition_date: data.acquisition_date.toISOString().split('T')[0],
-          status: "Available"
+          status: "Available",
+          // Add finance fields only if acquisition type is Finance
+          ...(data.acquisition_type === 'Finance' && {
+            monthly_payment: data.monthly_payment,
+            initial_payment: data.initial_payment,
+            term_months: data.term_months,
+            balloon: data.balloon,
+            finance_start_date: data.finance_start_date?.toISOString().split('T')[0],
+          }),
         })
         .select()
         .single();
@@ -253,6 +283,137 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 </FormItem>
               )}
             />
+
+            {/* Finance Section - Only show when acquisition type is Finance */}
+            {form.watch("acquisition_type") === "Finance" && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-sm">Finance Information</h3>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="monthly_payment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monthly Payment (£) *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="input-focus"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="initial_payment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Initial Payment (£)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="input-focus"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="term_months"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Term (Months)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="36" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                            className="input-focus"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="balloon"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Balloon Payment (£)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            className="input-focus"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="finance_start_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Finance Start Date</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          {...field}
+                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
+                          onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                          className="input-focus"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Contract Total Display */}
+                {form.watch("monthly_payment") && (
+                  <div className="p-3 bg-primary/10 rounded border">
+                    <div className="text-sm font-medium text-primary">Contract Total (Informational)</div>
+                    <div className="text-lg font-bold">
+                      £{(
+                        (form.watch("initial_payment") || 0) + 
+                        ((form.watch("monthly_payment") || 0) * (form.watch("term_months") || 0)) + 
+                        (form.watch("balloon") || 0)
+                      ).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Initial: £{(form.watch("initial_payment") || 0).toLocaleString()} + 
+                      Monthly: £{((form.watch("monthly_payment") || 0) * (form.watch("term_months") || 0)).toLocaleString()} + 
+                      Balloon: £{(form.watch("balloon") || 0).toLocaleString()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

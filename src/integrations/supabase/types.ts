@@ -1060,43 +1060,58 @@ export type Database = {
         Row: {
           acquisition_date: string | null
           acquisition_type: string | null
+          balloon: number | null
           color: string | null
           colour: string | null
           created_at: string | null
+          finance_start_date: string | null
           id: string
+          initial_payment: number | null
           make: string | null
           model: string | null
+          monthly_payment: number | null
           purchase_price: number | null
           reg: string
           status: string | null
+          term_months: number | null
           updated_at: string
         }
         Insert: {
           acquisition_date?: string | null
           acquisition_type?: string | null
+          balloon?: number | null
           color?: string | null
           colour?: string | null
           created_at?: string | null
+          finance_start_date?: string | null
           id?: string
+          initial_payment?: number | null
           make?: string | null
           model?: string | null
+          monthly_payment?: number | null
           purchase_price?: number | null
           reg: string
           status?: string | null
+          term_months?: number | null
           updated_at?: string
         }
         Update: {
           acquisition_date?: string | null
           acquisition_type?: string | null
+          balloon?: number | null
           color?: string | null
           colour?: string | null
           created_at?: string | null
+          finance_start_date?: string | null
           id?: string
+          initial_payment?: number | null
           make?: string | null
           model?: string | null
+          monthly_payment?: number | null
           purchase_price?: number | null
           reg?: string
           status?: string | null
+          term_months?: number | null
           updated_at?: string
         }
         Relationships: []

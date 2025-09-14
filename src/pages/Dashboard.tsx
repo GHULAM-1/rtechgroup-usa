@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock, TestTube } from "lucide-react";
 import { RentalAcceptanceTest } from "@/components/RentalAcceptanceTest";
+import { FinanceAcceptanceTest } from "@/components/FinanceAcceptanceTest";
 
 interface DashboardWidget {
   title: string;
@@ -51,6 +52,20 @@ const Dashboard = () => {
       const count = data?.length || 0;
       const sum = data?.reduce((acc, item) => acc + Number(item.remaining_amount), 0) || 0;
       return { count, sum };
+    },
+  });
+
+  // Fetch finance costs for P&L
+  const { data: financeCosts } = useQuery({
+    queryKey: ["finance-costs"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pnl_entries")
+        .select("amount")
+        .eq("side", "Cost")
+        .eq("category", "Finance");
+      
+      return data?.reduce((acc, item) => acc + Number(item.amount), 0) || 0;
     },
   });
 
@@ -208,6 +223,14 @@ const Dashboard = () => {
       icon: AlertTriangle,
       color: openFines?.overdueCount && openFines.overdueCount > 0 ? "text-red-500" : "text-orange-500",
       href: "/fines?filter=open"
+    },
+    {
+      title: "Finance Costs",
+      value: `£${(financeCosts || 0).toLocaleString()}`,
+      description: "Total finance payments recorded",
+      icon: DollarSign,
+      color: "text-purple-500",
+      href: "/vehicles"
     }
   ];
 
@@ -228,7 +251,7 @@ const Dashboard = () => {
       </div>
 
       {/* Dashboard Widgets */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
         {widgets.map((widget) => (
           <DashboardCard
             key={widget.title}
@@ -287,7 +310,10 @@ const Dashboard = () => {
       {/* Acceptance Tests */}
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold">System Tests</h2>
-        <RentalAcceptanceTest />
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+          <RentalAcceptanceTest />
+          <FinanceAcceptanceTest />
+        </div>
       </div>
     </div>
   );

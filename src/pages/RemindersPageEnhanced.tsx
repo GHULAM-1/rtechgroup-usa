@@ -264,7 +264,6 @@ export default function RemindersPageEnhanced() {
                     <SelectValue placeholder="All statuses" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
                     <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="sent">Sent</SelectItem>
                     <SelectItem value="snoozed">Snoozed</SelectItem>
@@ -286,7 +285,6 @@ export default function RemindersPageEnhanced() {
                     <SelectValue placeholder="All severities" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All severities</SelectItem>
                     <SelectItem value="critical">Critical</SelectItem>
                     <SelectItem value="warning">Warning</SelectItem>
                     <SelectItem value="info">Info</SelectItem>
@@ -306,7 +304,6 @@ export default function RemindersPageEnhanced() {
                     <SelectValue placeholder="All types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All types</SelectItem>
                     <SelectItem value="Vehicle">Vehicle</SelectItem>
                     <SelectItem value="Rental">Rental</SelectItem>
                     <SelectItem value="Customer">Customer</SelectItem>

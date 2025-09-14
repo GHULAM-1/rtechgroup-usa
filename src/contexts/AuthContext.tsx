@@ -141,11 +141,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Update the must_change_password flag
-      if (appUser) {
+      if (appUser && user) {
         await supabase
           .from('app_users')
           .update({ must_change_password: false })
-          .eq('id', appUser.id);
+          .eq('auth_user_id', user.id);
         
         setAppUser(prev => prev ? { ...prev, must_change_password: false } : null);
       }

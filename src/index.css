@@ -195,59 +195,6 @@ All colors MUST be HSL.
 }
 
 @layer components {
-  /* RTECHGROUP App Shell Layout */
-  .app-shell {
-    @apply min-h-screen w-full bg-background;
-    display: grid;
-    grid-template-rows: var(--header-height) 1fr;
-    grid-template-columns: 1fr;
-  }
-
-  .app-header {
-    @apply sticky top-0 z-40 bg-background border-b border-border;
-    height: var(--header-height);
-    display: flex;
-    align-items: center;
-    grid-column: 1 / -1;
-  }
-
-  .app-body {
-    display: grid;
-    grid-template-columns: var(--sidebar-width) 1fr;
-    min-height: calc(100vh - var(--header-height));
-  }
-
-  .app-sidebar {
-    @apply bg-card border-r border-border;
-    width: var(--sidebar-width);
-    min-width: var(--sidebar-width);
-    max-width: var(--sidebar-width);
-  }
-
-  .app-main {
-    @apply bg-background overflow-auto;
-  }
-
-  /* Mobile responsive behavior */
-  @media (max-width: 1023px) {
-    .app-body {
-      grid-template-columns: 1fr;
-    }
-    
-    .app-sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      z-index: 40;
-      transform: translateX(-100%);
-      transition: transform 200ms ease-in-out;
-    }
-    
-    .app-sidebar.mobile-open {
-      transform: translateX(0);
-    }
-  }
 
   /* RTECHGROUP Component Styles */
   

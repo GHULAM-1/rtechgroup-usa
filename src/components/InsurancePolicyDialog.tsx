@@ -138,7 +138,7 @@ export function InsurancePolicyDialog({
         provider: existingPolicy.provider || "",
         start_date: new Date(existingPolicy.start_date),
         expiry_date: new Date(existingPolicy.expiry_date),
-        vehicle_id: existingPolicy.vehicle_id || undefined,
+        vehicle_id: existingPolicy.vehicle_id || "none",
         status: existingPolicy.status as PolicyFormData["status"],
         notes: existingPolicy.notes || "",
       });
@@ -153,7 +153,7 @@ export function InsurancePolicyDialog({
         provider: data.provider || null,
         start_date: format(data.start_date, "yyyy-MM-dd"),
         expiry_date: format(data.expiry_date, "yyyy-MM-dd"),
-        vehicle_id: data.vehicle_id || null,
+        vehicle_id: data.vehicle_id === "none" ? null : data.vehicle_id || null,
         status: data.status,
         notes: data.notes || null,
       };
@@ -342,7 +342,7 @@ export function InsurancePolicyDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No vehicle assigned</SelectItem>
+                        <SelectItem value="none">No vehicle assigned</SelectItem>
                         {vehicles?.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
                             {vehicle.reg} - {vehicle.make} {vehicle.model}

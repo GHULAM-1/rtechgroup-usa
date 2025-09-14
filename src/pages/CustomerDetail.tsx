@@ -214,6 +214,7 @@ const CustomerDetail = () => {
   // Use the enhanced customer balance hook with status
   const { data: customerBalanceData } = useCustomerBalanceWithStatus(id);
 
+
   if (isLoading) {
     return <div>Loading customer details...</div>;
   }
@@ -353,6 +354,7 @@ const CustomerDetail = () => {
           <TabsTrigger value="rentals">Rentals</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="fines">Fines</TabsTrigger>
+          <TabsTrigger value="insurance">Insurance</TabsTrigger>
           <TabsTrigger value="vehicle-history">Vehicle History</TabsTrigger>
           <TabsTrigger value="documents">Documents & IDs</TabsTrigger>
         </TabsList>
@@ -521,6 +523,29 @@ const CustomerDetail = () => {
               ) : (
                 <p className="text-center py-8 text-muted-foreground">No fines found</p>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="insurance">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <CardTitle>Insurance Policies</CardTitle>
+                </div>
+                <Button onClick={() => setShowInsuranceDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Policy
+                </Button>
+              </div>
+              <CardDescription>Insurance compliance and document management</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                Insurance functionality will be available once the component is properly integrated.
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

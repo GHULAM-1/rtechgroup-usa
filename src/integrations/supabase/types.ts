@@ -304,6 +304,126 @@ export type Database = {
           },
         ]
       }
+      insurance_documents: {
+        Row: {
+          doc_type: string
+          file_name: string | null
+          file_url: string
+          id: string
+          policy_id: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          doc_type: string
+          file_name?: string | null
+          file_url: string
+          id?: string
+          policy_id: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          doc_type?: string
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          policy_id?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_documents_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "insurance_policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_policies: {
+        Row: {
+          created_at: string | null
+          customer_id: string
+          expiry_date: string
+          id: string
+          notes: string | null
+          policy_number: string
+          provider: string | null
+          start_date: string
+          status: string
+          updated_at: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id: string
+          expiry_date: string
+          id?: string
+          notes?: string | null
+          policy_number: string
+          provider?: string | null
+          start_date: string
+          status?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string
+          expiry_date?: string
+          id?: string
+          notes?: string | null
+          policy_number?: string
+          provider?: string | null
+          start_date?: string
+          status?: string
+          updated_at?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_policies_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "v_customer_credit"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "view_aging_receivables"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_policies_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
       ledger_entries: {
         Row: {
           amount: number
@@ -771,6 +891,7 @@ export type Database = {
           rental_id: string
           snoozed_until: string | null
           status: string
+          unique_key: string | null
           vehicle_id: string
         }
         Insert: {
@@ -785,6 +906,7 @@ export type Database = {
           rental_id: string
           snoozed_until?: string | null
           status?: string
+          unique_key?: string | null
           vehicle_id: string
         }
         Update: {
@@ -799,6 +921,7 @@ export type Database = {
           rental_id?: string
           snoozed_until?: string | null
           status?: string
+          unique_key?: string | null
           vehicle_id?: string
         }
         Relationships: [

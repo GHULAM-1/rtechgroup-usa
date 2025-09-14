@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { AddPaymentDialog } from "@/components/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useRentalTotals } from "@/hooks/useRentalLedgerData";
+import { useRentalInitialFee } from "@/hooks/useRentalInitialFee";
 import { RentalLedger } from "@/components/RentalLedger";
 
 interface Rental {
@@ -50,6 +51,7 @@ const RentalDetail = () => {
   });
 
   const { data: rentalTotals } = useRentalTotals(id);
+  const { data: initialFee } = useRentalInitialFee(id);
 
   if (isLoading) {
     return <div>Loading rental details...</div>;
@@ -180,7 +182,7 @@ const RentalDetail = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Customer</p>
               <p className="font-medium">{rental.customers?.name}</p>
@@ -202,6 +204,12 @@ const RentalDetail = () => {
             <div>
               <p className="text-sm text-muted-foreground">Monthly Amount</p>
               <p className="font-medium">£{Number(rental.monthly_amount).toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Initial Fee</p>
+              <p className="font-medium">
+                {initialFee ? `£${Number(initialFee.amount).toLocaleString()}` : 'No Initial Fee'}
+              </p>
             </div>
           </div>
         </CardContent>

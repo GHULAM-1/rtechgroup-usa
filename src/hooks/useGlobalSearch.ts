@@ -6,12 +6,15 @@ export const useGlobalSearch = () => {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [entityFilter, setEntityFilter] = useState<string>("all");
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Debounce search query
+  // Debounce search query (reduced to 250ms)
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
-    }, 300);
+      setSelectedIndex(-1); // Reset selection when query changes
+    }, 250);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -22,8 +25,8 @@ export const useGlobalSearch = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["global-search", debouncedQuery],
-    queryFn: () => searchService.searchAll(debouncedQuery),
+    queryKey: ["global-search", debouncedQuery, entityFilter],
+    queryFn: () => searchService.searchAll(debouncedQuery, entityFilter),
     enabled: debouncedQuery.length > 0,
     staleTime: 30000, // 30 seconds
   });
@@ -36,11 +39,14 @@ export const useGlobalSearch = () => {
     setIsOpen(false);
     setQuery("");
     setDebouncedQuery("");
+    setEntityFilter("all");
+    setSelectedIndex(-1);
   }, []);
 
   const clearSearch = useCallback(() => {
     setQuery("");
     setDebouncedQuery("");
+    setSelectedIndex(-1);
   }, []);
 
   // Get total results count
@@ -48,7 +54,7 @@ export const useGlobalSearch = () => {
     ? Object.values(results).reduce((total, categoryResults) => total + categoryResults.length, 0)
     : 0;
 
-  // Get flattened results for navigation
+  // Get flattened results for navigation (including insurance)
   const allResults = results
     ? [
         ...results.customers,
@@ -57,8 +63,22 @@ export const useGlobalSearch = () => {
         ...results.fines,
         ...results.payments,
         ...results.plates,
+        ...results.insurance,
       ]
     : [];
+
+  // Navigation helpers
+  const navigateUp = useCallback(() => {
+    setSelectedIndex(prev => prev > 0 ? prev - 1 : allResults.length - 1);
+  }, [allResults.length]);
+
+  const navigateDown = useCallback(() => {
+    setSelectedIndex(prev => prev < allResults.length - 1 ? prev + 1 : 0);
+  }, [allResults.length]);
+
+  const getSelectedResult = useCallback(() => {
+    return selectedIndex >= 0 ? allResults[selectedIndex] : null;
+  }, [allResults, selectedIndex]);
 
   return {
     query,
@@ -70,6 +90,7 @@ export const useGlobalSearch = () => {
       fines: [],
       payments: [],
       plates: [],
+      insurance: [],
     },
     isLoading,
     error,
@@ -80,5 +101,12 @@ export const useGlobalSearch = () => {
     totalResults,
     allResults,
     hasQuery: debouncedQuery.length > 0,
+    entityFilter,
+    setEntityFilter,
+    selectedIndex,
+    setSelectedIndex,
+    navigateUp,
+    navigateDown,
+    getSelectedResult,
   };
 };

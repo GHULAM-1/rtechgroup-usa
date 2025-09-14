@@ -15,8 +15,10 @@ import CustomerDetail from "@/pages/CustomerDetail";
 import RentalsList from "@/pages/RentalsList";
 import RentalDetail from "@/pages/RentalDetail";
 import PaymentsList from "@/pages/PaymentsList";
+import PaymentDetail from "@/pages/PaymentDetail";
 import ChargesList from "@/pages/ChargesList";
 import PlatesListEnhanced from "@/pages/PlatesListEnhanced";
+import PlateDetail from "@/pages/PlateDetail";
 import PLDashboard from "@/pages/PLDashboard";
 import MonthlyPLDrilldown from "@/pages/MonthlyPLDrilldown";
 import CreateRental from "@/pages/CreateRental";
@@ -73,8 +75,10 @@ function App() {
             <Route path="/rentals/new" element={<Layout><CreateRental /></Layout>} />
             <Route path="/rentals/:id" element={<Layout><RentalDetail /></Layout>} />
             <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
+            <Route path="/payments/:id" element={<Layout><PaymentDetail /></Layout>} />
             <Route path="/charges" element={<Layout><ChargesList /></Layout>} />
             <Route path="/plates" element={<Layout><PlatesListEnhanced /></Layout>} />
+            <Route path="/plates/:id" element={<Layout><PlateDetail /></Layout>} />
             <Route path="/pl-dashboard" element={<Layout><PLDashboard /></Layout>} />
             <Route path="/pl-dashboard/monthly/:month" element={<Layout><MonthlyPLDrilldown /></Layout>} />
             <Route path="/reminders-new" element={<Layout><RemindersPageNew /></Layout>} />

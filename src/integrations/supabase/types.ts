@@ -1173,6 +1173,7 @@ export type Database = {
           end_date: string | null
           id: string
           monthly_amount: number
+          rental_number: string | null
           schedule: string | null
           start_date: string
           status: string | null
@@ -1185,6 +1186,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           monthly_amount: number
+          rental_number?: string | null
           schedule?: string | null
           start_date: string
           status?: string | null
@@ -1197,6 +1199,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           monthly_amount?: number
+          rental_number?: string | null
           schedule?: string | null
           start_date?: string
           status?: string | null

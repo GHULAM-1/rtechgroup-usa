@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { format, subDays } from 'date-fns';
 import { BarChart3, Download, FileText, TrendingUp, Users, Car, Calendar, CreditCard, Clock, AlertTriangle } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,10 @@ import { FilterSidebar } from '@/components/reports/FilterSidebar';
 import { ReportCard } from '@/components/reports/ReportCard';
 import { DataTable } from '@/components/reports/DataTable';
 import { ExportButtons } from '@/components/reports/ExportButtons';
+import { ReportPreviewModal } from '@/components/reports/ReportPreviewModal';
+import { AgingReceivablesDetail } from '@/components/reports/AgingReceivablesDetail';
+import { EmptyStateIllustration } from '@/components/reports/EmptyStateIllustration';
+import { useToast } from '@/hooks/use-toast';
 
 export interface ReportFilters {
   fromDate: Date;
@@ -33,6 +37,82 @@ const Reports = () => {
   });
 
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewReportId, setPreviewReportId] = useState<string>('');
+  const [showAgingDetail, setShowAgingDetail] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const clearAllFilters = () => {
+    setFilters({
+      fromDate: subDays(new Date(), 30),
+      toDate: new Date(),
+      customers: [],
+      vehicles: [],
+      rentals: [],
+      paymentTypes: [],
+      statuses: []
+    });
+  };
+
+  const handleExport = async (reportType: string, exportFormat: 'csv' | 'xlsx' | 'pdf') => {
+    try {
+      const exportData = {
+        reportType,
+        exportType: exportFormat,
+        filters: {
+          ...filters,
+          fromDate: format(filters.fromDate, 'yyyy-MM-dd'),
+          toDate: format(filters.toDate, 'yyyy-MM-dd')
+        }
+      };
+
+      const { data, error } = await supabase.functions.invoke('generate-export', {
+        body: exportData
+      });
+
+      if (error) throw error;
+
+      // Create download with proper file naming
+      const fromDateStr = format(filters.fromDate, 'yyyy-MM-dd');
+      const toDateStr = format(filters.toDate, 'yyyy-MM-dd');
+      const filename = `${reportType}_${fromDateStr}_${toDateStr}.${exportFormat}`;
+
+      const blob = new Blob([data.content], { 
+        type: exportFormat === 'pdf' ? 'application/pdf' : 
+              exportFormat === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
+              'text/csv'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Export successful',
+        description: `${reportType.replace('-', ' ')} exported as ${exportFormat.toUpperCase()}`
+      });
+
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: 'Export failed',
+        description: 'There was an error generating the export. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const openPreviewModal = (reportId: string) => {
+    setPreviewReportId(reportId);
+    setPreviewModalOpen(true);
+  };
 
   // Fetch summary statistics for report cards
   const { data: reportStats, isLoading } = useQuery({
@@ -161,19 +241,27 @@ const Reports = () => {
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="flex items-center space-x-2 mb-6">
-          <BarChart3 className="h-6 w-6" />
-          <h1 className="text-2xl font-semibold">Reports & Exports</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center space-x-2 mb-2">
+              <BarChart3 className="h-5 w-5" />
+              <h1 className="text-xl font-semibold">Reports & Exports</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Generate detailed reports and export data across your fleet
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Card key={i} className="animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={i} className="animate-pulse h-48">
               <CardHeader>
                 <div className="h-4 bg-muted rounded w-3/4"></div>
                 <div className="h-3 bg-muted rounded w-1/2"></div>
               </CardHeader>
               <CardContent>
-                <div className="h-8 bg-muted rounded w-1/3"></div>
+                <div className="h-8 bg-muted rounded w-1/3 mb-2"></div>
+                <div className="h-3 bg-muted rounded w-2/3"></div>
               </CardContent>
             </Card>
           ))}
@@ -185,13 +273,25 @@ const Reports = () => {
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-2">
-          <BarChart3 className="h-6 w-6" />
-          <h1 className="text-2xl font-semibold">Reports & Exports</h1>
+        <div>
+          <div className="flex items-center space-x-2 mb-2">
+            <BarChart3 className="h-5 w-5" />
+            <h1 className="text-xl font-semibold">Reports & Exports</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Generate detailed reports and export data across your fleet
+          </p>
         </div>
-        <Badge variant="outline" className="text-sm">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={clearAllFilters}
+          className="text-sm cursor-pointer"
+          title="Click to modify date range"
+        >
+          <Calendar className="h-4 w-4 mr-2" />
           {format(filters.fromDate, 'dd/MM/yyyy')} - {format(filters.toDate, 'dd/MM/yyyy')}
-        </Badge>
+        </Button>
       </div>
 
       <div className="flex gap-6">
@@ -204,23 +304,52 @@ const Reports = () => {
         <div className="flex-1">
           {!selectedReport ? (
             <>
-              <div className="mb-6">
-                <h2 className="text-lg font-medium mb-2">Report Overview</h2>
-                <p className="text-muted-foreground">
-                  Select a report below to view detailed data and export options. 
-                  All amounts shown in GBP with Europe/London timezone.
-                </p>
-              </div>
+              {showAgingDetail ? (
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAgingDetail(false)}
+                    className="mb-4"
+                  >
+                    ← Back to Reports
+                  </Button>
+                  <AgingReceivablesDetail isOpen={showAgingDetail} />
+                </div>
+              ) : reportStats && (reportStats.payments.count === 0 && reportStats.rentals.count === 0) ? (
+                <EmptyStateIllustration 
+                  title="No data found"
+                  description="No reports are available for the selected date range and filters. Try adjusting your criteria to see available data."
+                  onClearFilters={clearAllFilters}
+                />
+              ) : (
+                <>
+                  <div className="mb-6">
+                    <h2 className="text-lg font-medium mb-2">Available Reports</h2>
+                    <p className="text-muted-foreground text-sm">
+                      Click on a report card to preview data or use export icons for direct downloads. 
+                      All amounts shown in GBP with Europe/London timezone.
+                    </p>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {reportCards.map((report) => (
-                  <ReportCard
-                    key={report.id}
-                    {...report}
-                    onClick={() => setSelectedReport(report.id)}
-                  />
-                ))}
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {reportCards.map((report) => (
+                      <ReportCard
+                        key={report.id}
+                        {...report}
+                        onClick={() => {
+                          if (report.id === 'aging') {
+                            setShowAgingDetail(true);
+                          } else {
+                            openPreviewModal(report.id);
+                          }
+                        }}
+                        onExport={(exportFormat) => handleExport(report.id, exportFormat)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <div>
@@ -245,6 +374,16 @@ const Reports = () => {
           )}
         </div>
       </div>
+
+      {/* Report Preview Modal */}
+      <ReportPreviewModal
+        isOpen={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        reportId={previewReportId}
+        reportTitle={reportCards.find(r => r.id === previewReportId)?.title || ''}
+        filters={filters}
+        onExport={(exportFormat) => handleExport(previewReportId, exportFormat)}
+      />
     </div>
   );
 };

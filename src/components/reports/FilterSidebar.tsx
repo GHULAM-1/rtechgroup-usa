@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { ReportFilters } from '@/pages/Reports';
 
@@ -85,18 +86,41 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     updateFilters(key, newArray);
   };
 
+  const clearAllFilters = () => {
+    onFiltersChange({
+      ...filters,
+      customers: [],
+      vehicles: [],
+      rentals: [],
+      paymentTypes: [],
+      statuses: []
+    });
+  };
+
   return (
     <Card className="sticky top-6">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Report Filters
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Report Filters
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAllFilters}
+            className="text-xs h-6 px-2"
+          >
+            Clear All
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Date Range */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Date Range</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            📅 Date Range
+          </Label>
           <div className="space-y-2">
             <div>
               <Label className="text-xs text-muted-foreground">From Date</Label>
@@ -155,7 +179,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
         {/* Customers */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Customers</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            👤 Customers
+            {filters.customers.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {filters.customers.length}
+              </Badge>
+            )}
+          </Label>
           <ScrollArea className="h-32 border rounded-md p-2">
             <div className="space-y-2">
               {customers?.map((customer) => (
@@ -179,7 +210,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
         {/* Vehicles */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Vehicles</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            🚗 Vehicles
+            {filters.vehicles.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {filters.vehicles.length}
+              </Badge>
+            )}
+          </Label>
           <ScrollArea className="h-32 border rounded-md p-2">
             <div className="space-y-2">
               {vehicles?.map((vehicle) => (
@@ -203,7 +241,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
         {/* Payment Types */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Payment Types</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            💷 Payment Types
+            {filters.paymentTypes.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {filters.paymentTypes.length}
+              </Badge>
+            )}
+          </Label>
           <div className="space-y-2">
             {paymentTypes.map((type) => (
               <div key={type} className="flex items-center space-x-2">
@@ -225,7 +270,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
         {/* Status */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Status</Label>
+          <Label className="text-sm font-medium flex items-center gap-2">
+            📊 Status
+            {filters.statuses.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {filters.statuses.length}
+              </Badge>
+            )}
+          </Label>
           <div className="space-y-2">
             {statuses.map((status) => (
               <div key={status} className="flex items-center space-x-2">
@@ -245,15 +297,6 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           </div>
         </div>
 
-        {/* Clear All */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => updateFilters('customers', [])}
-        >
-          Clear All Filters
-        </Button>
       </CardContent>
     </Card>
   );

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingDown, TrendingUp, Users, Car, DollarSign, AlertTriangle } from "lucide-react";
+import { TrendingDown, TrendingUp, Users, Car, DollarSign, AlertTriangle, Shield } from "lucide-react";
 import { format, addDays, isAfter, isBefore, isToday } from "date-fns";
 
 interface StatCardProps {
@@ -58,6 +58,35 @@ export const DashboardStats = () => {
         .from("vehicles")
         .select("*", { count: "exact", head: true });
       return count || 0;
+    },
+  });
+
+  // Fetch insurance compliance stats
+  const { data: insuranceStats } = useQuery({
+    queryKey: ["insurance-stats"],
+    queryFn: async () => {
+      const { data: policies, error } = await supabase
+        .from("insurance_policies")
+        .select("status, expiry_date")
+        .eq("status", "Active");
+
+      if (error) throw error;
+
+      const today = new Date();
+      const expiringSoon = policies?.filter(p => {
+        const daysUntil = Math.ceil((new Date(p.expiry_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return daysUntil <= 30 && daysUntil >= 0;
+      }).length || 0;
+
+      const expired = policies?.filter(p => {
+        return new Date(p.expiry_date) < today;
+      }).length || 0;
+
+      return {
+        total: policies?.length || 0,
+        expiringSoon,
+        expired
+      };
     },
   });
 
@@ -179,7 +208,7 @@ export const DashboardStats = () => {
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-8 gap-6">
       <StatCard
         title="Total Fleet"
         value={vehicleCount?.toString() || "0"}
@@ -208,6 +237,13 @@ export const DashboardStats = () => {
         value={overduePayments?.toString() || "0"}
         icon={AlertTriangle}
         variant="danger"
+      />
+      <StatCard
+        title="Insurance Status"
+        value={`${insuranceStats?.expired || 0} / ${insuranceStats?.expiringSoon || 0}`}
+        change="Expired / Expiring (30 days)"
+        icon={Shield}
+        variant={insuranceStats?.expired && insuranceStats.expired > 0 ? "danger" : insuranceStats?.expiringSoon && insuranceStats.expiringSoon > 0 ? "warning" : "default"}
       />
       <StatCard
         title="MOT Status"

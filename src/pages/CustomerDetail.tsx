@@ -11,6 +11,7 @@ import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, Al
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
+import { InsuranceTabContent } from "@/components/InsuranceTabContent";
 import { useCustomerBalanceWithStatus } from "@/hooks/useCustomerBalance";
 
 interface Customer {
@@ -528,26 +529,7 @@ const CustomerDetail = () => {
         </TabsContent>
 
         <TabsContent value="insurance">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-primary" />
-                  <CardTitle>Insurance Policies</CardTitle>
-                </div>
-                <Button onClick={() => setShowInsuranceDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Policy
-                </Button>
-              </div>
-              <CardDescription>Insurance compliance and document management</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Insurance functionality will be available once the component is properly integrated.
-              </div>
-            </CardContent>
-          </Card>
+          <InsuranceTabContent customerId={id!} />
         </TabsContent>
 
         <TabsContent value="vehicle-history">

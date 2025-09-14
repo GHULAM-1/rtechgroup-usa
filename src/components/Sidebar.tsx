@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Bookmark,
   TrendingUp,
-  Settings
+  Settings,
+  Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const navigation = [
   { name: "Rentals", href: "/rentals", icon: FileText },
   { name: "Payments", href: "/payments", icon: CreditCard },
   { name: "Fines", href: "/fines", icon: AlertCircle },
+  { name: "Insurance", href: "/insurance", icon: Shield },
   { name: "Plates", href: "/plates", icon: Bookmark },
   { name: "P&L Dashboard", href: "/pl-dashboard", icon: TrendingUp },
   { name: "Reminders", href: "/reminders", icon: Bell },

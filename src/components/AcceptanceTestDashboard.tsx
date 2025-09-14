@@ -1,5 +1,6 @@
 import { PaymentsAcceptanceTest } from './PaymentsAcceptanceTest';
 import { ComprehensiveSystemTest } from './ComprehensiveSystemTest';
+import { AcceptanceTestInsurance } from './AcceptanceTestInsurance';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export const AcceptanceTestDashboard = () => {
@@ -15,6 +16,8 @@ export const AcceptanceTestDashboard = () => {
       <ComprehensiveSystemTest />
       
       <PaymentsAcceptanceTest />
+
+      <AcceptanceTestInsurance />
 
       <Card>
         <CardHeader>

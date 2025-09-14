@@ -6,7 +6,7 @@ verify_jwt = true
 [functions.apply-payment]
 verify_jwt = false
 
-[functions.process-reminders]
+[functions.generate-insurance-reminders]
 verify_jwt = false
 
 [functions.generate-export]

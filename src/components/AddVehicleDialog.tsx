@@ -75,13 +75,13 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       make: "",
       model: "",
       colour: "",
-      purchase_price: 0,
+      purchase_price: undefined,
       acquisition_date: new Date(),
       acquisition_type: "Purchase",
-      monthly_payment: 0,
+      monthly_payment: undefined,
       initial_payment: 0,
       term_months: undefined,
-      balloon: 0,
+      balloon: undefined,
       finance_start_date: undefined,
     },
   });
@@ -319,7 +319,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         <FormControl>
                       <Input 
                         type="number" 
-                        placeholder="Balloon amount" 
+                        placeholder="Monthly payment" 
                         {...field}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         className="input-focus"
@@ -338,7 +338,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         <FormControl>
                       <Input 
                         type="number" 
-                        placeholder="Monthly payment" 
+                        placeholder="Initial payment" 
                         {...field}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         className="input-focus"
@@ -360,9 +360,9 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         <FormControl>
                           <Input 
                             type="number" 
-                            placeholder="36" 
+                            placeholder="Months" 
                             {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
                             className="input-focus"
                           />
                         </FormControl>
@@ -414,7 +414,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 {/* Contract Total Display */}
                 {form.watch("monthly_payment") && (
                   <div className="p-3 bg-primary/10 rounded border">
-                    <div className="text-sm font-medium text-primary">Contract Total (Upfront P&L Accounting)</div>
+                    <div className="text-sm font-medium text-primary">Contract Total (Upfront P&L Posting)</div>
                     <div className="text-lg font-bold">
                       £{(
                         (form.watch("initial_payment") || 0) + 
@@ -427,7 +427,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                       Monthly: £{((form.watch("monthly_payment") || 0) * (form.watch("term_months") || 0)).toLocaleString()} + 
                       Balloon: £{(form.watch("balloon") || 0).toLocaleString()}
                     </div>
-                    <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border-l-2 border-amber-300">
+                    <div className="text-xs bg-amber-50 text-amber-800 p-2 rounded border border-amber-200">
                       <strong>Note:</strong> This financed vehicle's full contract total is posted immediately as an Acquisition cost for P&L reporting. 
                       Ongoing finance payments won't affect P&L (to prevent double-counting).
                     </div>

@@ -44,7 +44,7 @@ export const RecordFinancePaymentDialog = ({
     resolver: zodResolver(financePaymentSchema),
     defaultValues: {
       payment_date: new Date(),
-      amount: 0,
+      amount: undefined,
       component: "Monthly",
       notes: "",
     },
@@ -65,9 +65,7 @@ export const RecordFinancePaymentDialog = ({
 
     try {
       const dateStr = data.payment_date.toISOString().split('T')[0];
-      // Create stable reference for idempotency
-      const reference = `FINPAY:${vehicleId}:${data.component}:${dateStr}:${data.amount}`;
-
+      
       // Check if vehicle has upfront finance P&L entry (prevents double-counting)
       const { data: upfrontEntry } = await supabase
         .from("pnl_entries")
@@ -77,7 +75,8 @@ export const RecordFinancePaymentDialog = ({
         .eq("source_ref", `FIN-UPFRONT:${vehicleId}`)
         .single();
 
-      const hasUpfrontEntry = !!upfrontEntry;
+      // Create stable reference for idempotency
+      const reference = `FINPAY:${vehicleId}:${data.component}:${dateStr}:${data.amount}`;
 
       // Insert payment record
       const { data: payment, error: paymentError } = await supabase
@@ -110,7 +109,7 @@ export const RecordFinancePaymentDialog = ({
         throw paymentError;
       }
 
-      // Insert ledger entry (Cost) - always record for cash flow tracking
+      // Insert ledger entry (Cost)
       const { error: ledgerError } = await supabase
         .from("ledger_entries")
         .insert({
@@ -129,8 +128,8 @@ export const RecordFinancePaymentDialog = ({
         throw ledgerError;
       }
 
-      // Only insert P&L entry if NO upfront entry exists (prevents double-counting)
-      if (!hasUpfrontEntry) {
+      // Only insert P&L entry if no upfront entry exists (prevent double-counting)
+      if (!upfrontEntry) {
         const { error: plError } = await supabase
           .from("pnl_entries")
           .insert({
@@ -149,10 +148,13 @@ export const RecordFinancePaymentDialog = ({
         }
       }
 
-      const plNote = hasUpfrontEntry ? " (P&L already includes upfront contract cost)" : "";
+      const message = upfrontEntry 
+        ? `${data.component} payment of £${data.amount.toLocaleString()} recorded for ${vehicleReg} (cash flow only - P&L already includes upfront contract cost).`
+        : `${data.component} payment of £${data.amount.toLocaleString()} recorded for ${vehicleReg}.`;
+        
       toast({
         title: "Finance Payment Recorded",
-        description: `${data.component} payment of £${data.amount.toLocaleString()} recorded for ${vehicleReg}.${plNote}`,
+        description: message,
       });
 
       form.reset();

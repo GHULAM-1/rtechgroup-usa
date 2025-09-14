@@ -49,13 +49,21 @@ const vehicleSchema = z.object({
     if (data.acquisition_type === 'Purchase' && !data.purchase_price) {
       return false;
     }
+    return true;
+  },
+  {
+    message: "Monthly payment is required for financed vehicles",
+    path: ["monthly_payment"],
+  }
+).refine(
+  (data) => {
     if (data.has_ghost && (!data.ghost_code || data.ghost_code.trim() === '')) {
       return false;
     }
     return true;
   },
   {
-    message: "Ghost code is required when Ghost Immobiliser is enabled",
+    message: "Ghost code is required when Ghost Immobiliser is enabled", 
     path: ["ghost_code"],
   }
 );
@@ -235,7 +243,11 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={(e) => {
+            console.log('Form onSubmit event triggered', e);
+            e.preventDefault();
+            form.handleSubmit(onSubmit)(e);
+          }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -691,10 +703,22 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
             </div>
 
             <div className="flex justify-end space-x-2 pt-4">
-              <Button variant="outline" type="button" onClick={() => handleOpenChange(false)}>
+              <Button variant="outline" type="button" onClick={() => {
+                console.log('Cancel button clicked');
+                handleOpenChange(false);
+              }}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button 
+                type="submit" 
+                disabled={loading}
+                onClick={(e) => {
+                  console.log('Update button clicked', e);
+                  console.log('Form state:', form.formState);
+                  console.log('Form values:', form.getValues());
+                  console.log('Form errors:', form.formState.errors);
+                }}
+              >
                 {loading ? "Updating..." : "Update Vehicle"}
               </Button>
             </div>

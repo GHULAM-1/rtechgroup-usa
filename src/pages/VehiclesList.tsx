@@ -236,8 +236,10 @@ export default function VehiclesListEnhanced() {
   const totalPages = Math.ceil(filteredVehicles.length / pageSize);
   const paginatedVehicles = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
-    return filteredVehicles.slice(startIndex, startIndex + pageSize);
-  }, [filteredVehicles, currentPage, pageSize]);
+    const paginated = filteredVehicles.slice(startIndex, startIndex + pageSize);
+    console.log(`Paginated vehicles (page ${currentPage}):`, paginated.map(v => ({ reg: v.reg, status: v.computed_status })));
+    return paginated;
+  }, [filteredVehicles, currentPage, pageSize, searchParams]);
 
   // Get unique makes for filter
   const uniqueMakes = useMemo(() => {
@@ -405,7 +407,7 @@ export default function VehiclesListEnhanced() {
       ) : (
         <Card>
           <CardContent className="p-0">
-            <Table>
+            <Table key={`${sortField}-${sortDirection}`}>
                <TableHeader>
                  <TableRow>
                    <TableHead>Photo</TableHead>
@@ -456,12 +458,14 @@ export default function VehiclesListEnhanced() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedVehicles.map((vehicle) => (
-                  <TableRow 
-                    key={vehicle.id}
-                    className="cursor-pointer hover:bg-muted/50"
-                     onClick={() => handleRowClick(vehicle.id)}
-                   >
+                {paginatedVehicles.map((vehicle, index) => {
+                  console.log(`Rendering vehicle ${index}:`, vehicle.reg, vehicle.computed_status);
+                  return (
+                    <TableRow 
+                      key={`${vehicle.id}-${sortField}-${sortDirection}`}
+                      className="cursor-pointer hover:bg-muted/50"
+                       onClick={() => handleRowClick(vehicle.id)}
+                     >
                      <TableCell>
                        <VehiclePhotoThumbnail
                          photoUrl={vehicle.photo_url}
@@ -528,9 +532,10 @@ export default function VehiclesListEnhanced() {
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+                   </TableRow>
+                   );
+                 })}
+               </TableBody>
             </Table>
           </CardContent>
         </Card>

@@ -42,13 +42,29 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
     const isCustomerPayment = payment.payment_type === 'Payment';
     const isInitialFee = payment.payment_type === 'InitialFee';
 
+    // Map payment_type to valid ledger category
+    const getLedgerCategory = (paymentType: string): string => {
+      switch (paymentType) {
+        case 'InitialFee':
+          return 'InitialFee';
+        case 'Payment':
+          return 'Rental';
+        case 'Fine':
+          return 'Fines';
+        default:
+          return 'Other';
+      }
+    };
+
+    const ledgerCategory = getLedgerCategory(payment.payment_type);
+
     // Determine entry date
     const entryDate = payment.payment_date || payment.paid_at || payment.created_at || new Date().toISOString().split('T')[0];
 
     console.log(`Payment ${paymentId}: ${payment.payment_type}, ${entryDate}, £${payment.amount}`);
     
     // Insert/Update Ledger entry (idempotent)
-    console.log(`Creating ledger entry for payment ${paymentId}: amount=${payment.amount}, category=${payment.payment_type}`);
+    console.log(`Creating ledger entry for payment ${paymentId}: amount=${payment.amount}, category=${ledgerCategory}`);
     
     const { error: ledgerError } = await supabase
       .from('ledger_entries')
@@ -58,7 +74,7 @@ async function applyPayment(supabase: any, paymentId: string): Promise<PaymentPr
         vehicle_id: payment.vehicle_id,
         entry_date: entryDate,
         type: 'Payment',
-        category: payment.payment_type,
+        category: ledgerCategory,
         amount: -Math.abs(payment.amount), // Ensure negative
         due_date: entryDate,
         remaining_amount: 0,

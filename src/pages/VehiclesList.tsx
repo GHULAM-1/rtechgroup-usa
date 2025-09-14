@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Car, Plus, TrendingUp, TrendingDown, Eye } from "lucide-react";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
+import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 
 interface Vehicle {
   id: string;
@@ -18,6 +19,7 @@ interface Vehicle {
   status: string;
   purchase_price: number;
   acquisition_date: string;
+  acquisition_type: string;
 }
 
 interface VehiclePL {
@@ -68,7 +70,7 @@ const VehiclesList = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vehicles")
-        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date")
+        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date, acquisition_type")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -154,8 +156,9 @@ const VehiclesList = () => {
                     <TableHead>Registration</TableHead>
                     <TableHead>Make/Model</TableHead>
                     <TableHead>Colour</TableHead>
+                    <TableHead>Acquisition</TableHead>
                     <TableHead>Status</TableHead>
-                     <TableHead className="text-right">Net P&L</TableHead>
+                    <TableHead className="text-right">Net P&L</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -170,11 +173,14 @@ const VehiclesList = () => {
                         <TableCell>{vehicle.make} {vehicle.model}</TableCell>
                         <TableCell>{vehicle.colour}</TableCell>
                         <TableCell>
+                          <AcquisitionBadge acquisitionType={vehicle.acquisition_type} />
+                        </TableCell>
+                        <TableCell>
                           <StatusBadge status={vehicle.status} />
                         </TableCell>
-                         <TableCell className="text-right">
-                           <PLPill netProfit={netProfit} />
-                         </TableCell>
+                        <TableCell className="text-right">
+                          <PLPill netProfit={netProfit} />
+                        </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="outline"

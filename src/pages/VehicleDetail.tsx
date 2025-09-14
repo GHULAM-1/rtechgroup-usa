@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
-import { RecordFinancePaymentDialog } from "@/components/RecordFinancePaymentDialog";
+import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 
 interface Vehicle {
   id: string;
@@ -243,8 +243,12 @@ export default function VehicleDetail() {
                 <div><strong>Model:</strong> {vehicle.model}</div>
                 <div><strong>Colour:</strong> {vehicle.colour}</div>
                 <div><strong>Status:</strong> <StatusBadge status={vehicle.status} /></div>
-                <div><strong>Acquisition:</strong> {vehicle.acquisition_type}</div>
-                <div><strong>Purchase Price:</strong> £{Number(vehicle.purchase_price).toLocaleString()}</div>
+                <div><strong>Acquisition:</strong> <AcquisitionBadge acquisitionType={vehicle.acquisition_type} /></div>
+                <div><strong>{vehicle.acquisition_type === 'Finance' ? 'Contract Total' : 'Purchase Price'}:</strong> £{
+                  vehicle.acquisition_type === 'Finance' && vehicle.monthly_payment && vehicle.term_months
+                    ? ((vehicle.initial_payment || 0) + (vehicle.monthly_payment * vehicle.term_months) + (vehicle.balloon || 0)).toLocaleString()
+                    : Number(vehicle.purchase_price).toLocaleString()
+                }</div>
                 <div><strong>Acquired:</strong> {format(new Date(vehicle.acquisition_date), "dd/MM/yyyy")}</div>
               </CardContent>
             </Card>
@@ -253,20 +257,17 @@ export default function VehicleDetail() {
             {vehicle.acquisition_type === 'Finance' && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      Finance Information
-                    </div>
-                    <RecordFinancePaymentDialog 
-                      vehicleId={vehicle.id} 
-                      vehicleReg={vehicle.reg}
-                    />
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Finance Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {vehicle.monthly_payment && (
                     <div><strong>Monthly Payment:</strong> £{Number(vehicle.monthly_payment).toLocaleString()}</div>
+                  )}
+                  {vehicle.initial_payment && vehicle.initial_payment > 0 && (
+                    <div><strong>Initial Payment:</strong> £{Number(vehicle.initial_payment).toLocaleString()}</div>
                   )}
                   {vehicle.term_months && (
                     <div><strong>Term:</strong> {vehicle.term_months} months</div>
@@ -286,14 +287,11 @@ export default function VehicleDetail() {
                         (vehicle.monthly_payment * vehicle.term_months) + 
                         (vehicle.balloon || 0)
                       ).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Finance costs are recorded upfront in P&L when vehicle is added
+                      </div>
                     </div>
                   )}
-                  
-                  {/* Total Finance Paid */}
-                  <div className="pt-2 border-t">
-                    <div><strong>Total Paid:</strong> £{plSummary.financeCosts.toLocaleString()}</div>
-                    <div className="text-xs text-muted-foreground">Cash-basis finance costs recorded</div>
-                  </div>
                 </CardContent>
               </Card>
             )}

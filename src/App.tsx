@@ -19,7 +19,7 @@ import PlatesListEnhanced from "@/pages/PlatesListEnhanced";
 import PLDashboard from "@/pages/PLDashboard";
 import MonthlyPLDrilldown from "@/pages/MonthlyPLDrilldown";
 import CreateRental from "@/pages/CreateRental";
-import RemindersPage from "@/pages/RemindersPage";
+import RemindersPageEnhanced from "@/pages/RemindersPageEnhanced";
 import ReminderSettings from "@/pages/ReminderSettings";
 import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
@@ -76,7 +76,7 @@ function App() {
             <Route path="/pl-dashboard" element={<Layout><PLDashboard /></Layout>} />
             <Route path="/pl-dashboard/monthly/:month" element={<Layout><MonthlyPLDrilldown /></Layout>} />
             <Route path="/reminders-new" element={<Layout><RemindersPageNew /></Layout>} />
-            <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
+            <Route path="/reminders" element={<Layout><RemindersPageEnhanced /></Layout>} />
             <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />
             <Route path="/reports" element={<Layout><Reports /></Layout>} />
             <Route path="/settings" element={<Layout><Settings /></Layout>} />

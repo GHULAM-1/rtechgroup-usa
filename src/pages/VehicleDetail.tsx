@@ -27,6 +27,7 @@ import { EnhancedVehiclePlatesPanel } from "@/components/EnhancedVehiclePlatesPa
 import { EditVehicleDialog } from "@/components/EditVehicleDialog";
 import { VehicleExpenseDialog } from "@/components/VehicleExpenseDialog";
 import { VehicleFileUpload } from "@/components/VehicleFileUpload";
+import { VehicleCompliancePanel } from "@/components/VehicleCompliancePanel";
 import { VehicleDisposalDialog } from "@/components/VehicleDisposalDialog";
 import { VehicleUndoDisposalDialog } from "@/components/VehicleUndoDisposalDialog";
 import { DateRangeFilter } from "@/components/DateRangeFilter";
@@ -388,7 +389,10 @@ export default function VehicleDetail() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Vehicle Compliance Status Panel */}
+          {vehicle && <VehicleCompliancePanel vehicle={vehicle} />}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {/* Vehicle Details */}
             <MetricCard 
               title="Vehicle Details"

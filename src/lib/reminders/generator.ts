@@ -325,7 +325,7 @@ export async function generateFineReminders(): Promise<number> {
           customer_name: fine.customers?.name,
           vehicle_id: fine.vehicle_id,
           reg: fine.vehicles?.reg,
-          amount: parseFloat(fine.amount),
+          amount: parseFloat(fine.amount.toString()),
           due_date: fine.due_date,
           days_until: rule.leadDays
         };

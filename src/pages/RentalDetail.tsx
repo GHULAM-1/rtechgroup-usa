@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRentalTotals } from "@/hooks/useRentalLedgerData";
 import { useRentalInitialFee } from "@/hooks/useRentalInitialFee";
 import { RentalLedger } from "@/components/RentalLedger";
+import { ComplianceStatusPanel } from "@/components/ComplianceStatusPanel";
 
 interface Rental {
   id: string;
@@ -217,6 +218,15 @@ const RentalDetail = () => {
 
       {/* Enhanced Ledger */}
       {id && <RentalLedger rentalId={id} />}
+
+      {/* Payment Status Compliance */}
+      {id && (
+        <ComplianceStatusPanel 
+          objectType="Rental" 
+          objectId={id} 
+          title="Payment Reminders" 
+        />
+      )}
 
       {/* Add Payment Dialog */}
       {rental && (

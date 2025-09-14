@@ -19,33 +19,26 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useReminderStats } from "@/hooks/useReminders";
+
+const navigation = [
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Vehicles", href: "/vehicles", icon: Car },
+  { name: "Customers", href: "/customers", icon: Users },
+  { name: "Rentals", href: "/rentals", icon: FileText },
+  { name: "Payments", href: "/payments", icon: CreditCard },
+  { name: "Fines", href: "/fines", icon: AlertCircle },
+  { name: "Insurance", href: "/insurance", icon: Shield },
+  { name: "Plates", href: "/plates", icon: Bookmark },
+  { name: "P&L Dashboard", href: "/pl-dashboard", icon: TrendingUp },
+  { name: "Reminders", href: "/reminders", icon: Bell },
+  { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Tests", href: "/test", icon: TestTube },
+];
 
 export const Sidebar = () => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const location = useLocation();
-  const { data: reminderStats } = useReminderStats();
-
-  const navigation = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
-    { name: "Vehicles", href: "/vehicles", icon: Car },
-    { name: "Customers", href: "/customers", icon: Users },
-    { name: "Rentals", href: "/rentals", icon: FileText },
-    { name: "Payments", href: "/payments", icon: CreditCard },
-    { name: "Fines", href: "/fines", icon: AlertCircle },
-    { name: "Insurance", href: "/insurance", icon: Shield },
-    { name: "Plates", href: "/plates", icon: Bookmark },
-    { name: "P&L Dashboard", href: "/pl-dashboard", icon: TrendingUp },
-    { 
-      name: "Reminders", 
-      href: "/reminders", 
-      icon: Bell,
-      badge: reminderStats?.due || 0
-    },
-    { name: "Reports", href: "/reports", icon: BarChart3 },
-    { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Tests", href: "/test", icon: TestTube },
-  ];
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -101,11 +94,6 @@ export const Sidebar = () => {
                 >
                   <item.icon className="h-4 w-4" />
                   {item.name}
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className="ml-auto inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-destructive rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
                 </NavLink>
               );
             })}

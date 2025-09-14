@@ -94,7 +94,7 @@ export const AddPlateDialog = ({
     try {
       const plateData: any = {
         plate_number: data.plate_number.toUpperCase(),
-        vehicle_id: data.vehicle_id || null,
+        vehicle_id: data.vehicle_id === "unassigned" ? null : data.vehicle_id || null,
         supplier: data.supplier || null,
         order_date: data.order_date || null,
         cost: data.cost ? parseFloat(data.cost) : 0,
@@ -187,7 +187,7 @@ export const AddPlateDialog = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No vehicle assigned</SelectItem>
+                        <SelectItem value="unassigned">No vehicle assigned</SelectItem>
                         {vehicles?.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
                             {vehicle.reg} - {vehicle.make} {vehicle.model}

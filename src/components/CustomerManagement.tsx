@@ -92,23 +92,35 @@ export const CustomerManagement = () => {
       
       const balanceMap: Record<string, CustomerBalance> = {};
       
-      // Get balance status for each customer using the corrected database function
+      // Get balance for each customer from ledger_entries directly
       for (const customer of customers) {
         const { data, error } = await supabase
-          .rpc('get_customer_balance_with_status', { 
-            customer_id_param: customer.id 
-          })
-          .single();
+          .from("ledger_entries")
+          .select("amount")
+          .eq("customer_id", customer.id);
         
         if (error) {
           console.error('Error fetching balance for customer:', customer.id, error);
           continue;
         }
         
+        // Calculate balance from ledger entries
+        const balance = data.reduce((sum, entry) => sum + entry.amount, 0);
+        
+        // Determine status
+        let status: 'In Credit' | 'Settled' | 'In Debt';
+        if (balance === 0) {
+          status = 'Settled';
+        } else if (balance > 0) {
+          status = 'In Debt';
+        } else {
+          status = 'In Credit';
+        }
+        
         balanceMap[customer.id] = {
           customer_id: customer.id,
-          balance: data.balance,
-          status: data.status as 'In Credit' | 'Settled' | 'In Debt',
+          balance: Math.abs(balance), // Always positive for display
+          status,
         };
       }
       

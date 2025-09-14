@@ -22,6 +22,8 @@ import { VehiclePlatesPanel } from "@/components/VehiclePlatesPanel";
 import { EditVehicleDialog } from "@/components/EditVehicleDialog";
 import { VehicleExpenseDialog } from "@/components/VehicleExpenseDialog";
 import { VehicleFileUpload } from "@/components/VehicleFileUpload";
+import { VehicleDisposalDialog } from "@/components/VehicleDisposalDialog";
+import { VehicleUndoDisposalDialog } from "@/components/VehicleUndoDisposalDialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +57,12 @@ interface Vehicle {
   has_tracker?: boolean;
   has_remote_immobiliser?: boolean;
   security_notes?: string;
+  // Disposal fields
+  is_disposed?: boolean;
+  disposal_date?: string;
+  sale_proceeds?: number;
+  disposal_buyer?: string;
+  disposal_notes?: string;
 }
 
 interface PLEntry {
@@ -81,8 +89,9 @@ interface Rental {
 const StatusBadge = ({ status }: { status: string }) => {
   const variants = {
     Available: 'default',
-    Rented: 'secondary',
+    Rented: 'secondary', 
     Maintenance: 'destructive',
+    Disposed: 'destructive',
     Sold: 'outline'
   };
 
@@ -219,6 +228,7 @@ export default function VehicleDetail() {
         acc.totalRevenue += amount;
         if (entry.category === 'Rental') acc.revenue_rental += amount;
         if (entry.category === 'Initial Fees') acc.revenue_initial_fees += amount;
+        if (entry.category === 'Disposal') acc.revenue_disposal += amount;
         if (entry.category === 'Other') acc.revenue_other += amount;
       } else if (entry.side === 'Cost') {
         acc.totalCosts += amount;
@@ -227,6 +237,8 @@ export default function VehicleDetail() {
         if (entry.category === 'Service') acc.cost_service += amount;
         if (entry.category === 'Fines') acc.cost_fines += amount;
         if (entry.category === 'Plates') acc.cost_plates += amount;
+        if (entry.category === 'Disposal') acc.cost_disposal += amount;
+        if (entry.category === 'Other') acc.cost_other += amount;
       }
       return acc;
     },
@@ -234,6 +246,7 @@ export default function VehicleDetail() {
       totalRevenue: 0,
       revenue_rental: 0,
       revenue_initial_fees: 0,
+      revenue_disposal: 0,
       revenue_other: 0,
       totalCosts: 0,
       cost_acquisition: 0,
@@ -241,12 +254,14 @@ export default function VehicleDetail() {
       cost_service: 0,
       cost_plates: 0,
       cost_fines: 0,
+      cost_disposal: 0,
       cost_other: 0,
     }
   ) || {
     totalRevenue: 0,
     revenue_rental: 0,
     revenue_initial_fees: 0,
+    revenue_disposal: 0,
     revenue_other: 0,
     totalCosts: 0,
     cost_acquisition: 0,
@@ -254,6 +269,7 @@ export default function VehicleDetail() {
     cost_service: 0,
     cost_plates: 0,
     cost_fines: 0,
+    cost_disposal: 0,
     cost_other: 0,
   };
 
@@ -421,6 +437,46 @@ export default function VehicleDetail() {
               </CardContent>
             </Card>
 
+            {/* Vehicle Actions */}
+            {vehicle && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Vehicle Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {vehicle.is_disposed ? (
+                    <div className="space-y-3">
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="text-sm text-red-800">
+                          <div className="font-medium">Vehicle Disposed</div>
+                          {vehicle.disposal_date && (
+                            <div>Date: {format(new Date(vehicle.disposal_date), "dd/MM/yyyy")}</div>
+                          )}
+                          {vehicle.sale_proceeds && (
+                            <div>Sale Proceeds: £{Number(vehicle.sale_proceeds).toLocaleString()}</div>
+                          )}
+                          {vehicle.disposal_buyer && (
+                            <div>Buyer: {vehicle.disposal_buyer}</div>
+                          )}
+                        </div>
+                      </div>
+                      <VehicleUndoDisposalDialog vehicle={vehicle} />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Administrative actions for this vehicle
+                      </p>
+                      <VehicleDisposalDialog vehicle={vehicle} />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Rental Status */}
             <Card>
               <CardHeader>
@@ -518,12 +574,24 @@ export default function VehicleDetail() {
                         -£{(plSummary.cost_fines || 0).toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Cost (Other)</span>
-                      <span className="text-sm font-medium text-red-600">
-                        -£{(plSummary.cost_other || 0).toFixed(2)}
-                      </span>
-                    </div>
+                     <div className="flex justify-between">
+                       <span className="text-sm">Cost (Disposal)</span>
+                       <span className="text-sm font-medium text-red-600">
+                         -£{(plSummary.cost_disposal || 0).toFixed(2)}
+                       </span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-sm">Revenue (Disposal)</span>
+                       <span className="text-sm font-medium">
+                         £{(plSummary.revenue_disposal || 0).toFixed(2)}
+                       </span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-sm">Cost (Other)</span>
+                       <span className="text-sm font-medium text-red-600">
+                         -£{(plSummary.cost_other || 0).toFixed(2)}
+                       </span>
+                     </div>
                   </div>
                   <hr />
                   <div className="flex justify-between font-medium">

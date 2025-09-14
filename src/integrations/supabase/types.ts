@@ -1494,12 +1494,16 @@ export type Database = {
           color: string | null
           colour: string | null
           created_at: string | null
+          disposal_buyer: string | null
+          disposal_date: string | null
+          disposal_notes: string | null
           finance_start_date: string | null
           has_ghost: boolean | null
           has_remote_immobiliser: boolean | null
           has_tracker: boolean | null
           id: string
           initial_payment: number | null
+          is_disposed: boolean | null
           last_service_date: string | null
           last_service_mileage: number | null
           make: string | null
@@ -1508,6 +1512,7 @@ export type Database = {
           mot_due_date: string | null
           purchase_price: number | null
           reg: string
+          sale_proceeds: number | null
           security_notes: string | null
           status: string | null
           tax_due_date: string | null
@@ -1521,12 +1526,16 @@ export type Database = {
           color?: string | null
           colour?: string | null
           created_at?: string | null
+          disposal_buyer?: string | null
+          disposal_date?: string | null
+          disposal_notes?: string | null
           finance_start_date?: string | null
           has_ghost?: boolean | null
           has_remote_immobiliser?: boolean | null
           has_tracker?: boolean | null
           id?: string
           initial_payment?: number | null
+          is_disposed?: boolean | null
           last_service_date?: string | null
           last_service_mileage?: number | null
           make?: string | null
@@ -1535,6 +1544,7 @@ export type Database = {
           mot_due_date?: string | null
           purchase_price?: number | null
           reg: string
+          sale_proceeds?: number | null
           security_notes?: string | null
           status?: string | null
           tax_due_date?: string | null
@@ -1548,12 +1558,16 @@ export type Database = {
           color?: string | null
           colour?: string | null
           created_at?: string | null
+          disposal_buyer?: string | null
+          disposal_date?: string | null
+          disposal_notes?: string | null
           finance_start_date?: string | null
           has_ghost?: boolean | null
           has_remote_immobiliser?: boolean | null
           has_tracker?: boolean | null
           id?: string
           initial_payment?: number | null
+          is_disposed?: boolean | null
           last_service_date?: string | null
           last_service_mileage?: number | null
           make?: string | null
@@ -1562,6 +1576,7 @@ export type Database = {
           mot_due_date?: string | null
           purchase_price?: number | null
           reg?: string
+          sale_proceeds?: number | null
           security_notes?: string | null
           status?: string | null
           tax_due_date?: string | null
@@ -1978,6 +1993,20 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      calculate_vehicle_book_cost: {
+        Args: { p_vehicle_id: string }
+        Returns: number
+      }
+      dispose_vehicle: {
+        Args: {
+          p_buyer?: string
+          p_disposal_date: string
+          p_notes?: string
+          p_sale_proceeds: number
+          p_vehicle_id: string
+        }
+        Returns: Json
+      }
       fine_void_charge: {
         Args: { f_id: string }
         Returns: undefined
@@ -2126,6 +2155,10 @@ export type Database = {
       rental_create_charge: {
         Args: { amt: number; due: string; r_id: string }
         Returns: string
+      }
+      undo_vehicle_disposal: {
+        Args: { p_vehicle_id: string }
+        Returns: Json
       }
       update_customer_balance: {
         Args: { customer_id: string }

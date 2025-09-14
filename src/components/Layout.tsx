@@ -14,15 +14,15 @@ export const Layout = ({ children }: LayoutProps) => {
       <AppSidebar />
       <SidebarInset>
         {/* Global header spanning full width */}
-        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
-          <div className="flex items-center gap-4">
-            <SidebarTrigger />
-            <HeaderSearch />
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <HeaderSearch />
+          <div className="ml-auto">
+            <ThemeToggle />
           </div>
-          <ThemeToggle />
         </header>
         
-        <main className="p-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
         </main>
       </SidebarInset>

@@ -9,11 +9,6 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* RTECHGROUP UK Layout System */
-    --header-height: 56px;
-    --sidebar-width: 264px;
-    --sidebar-collapsed-width: 72px;
-
     /* RTECHGROUP UK Color System */
     --background: 0 0% 100%;
     --foreground: 210 52% 15%;
@@ -87,11 +82,6 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Layout dimensions stay the same */
-    --header-height: 56px;
-    --sidebar-width: 264px;
-    --sidebar-collapsed-width: 72px;
-
     --background: 210 52% 4%;
     --foreground: 0 0% 98%;
 

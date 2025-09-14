@@ -1,3 +1,4 @@
+// Enhanced search service with insurance policies
 import { supabase } from "@/integrations/supabase/client";
 
 export interface SearchResult {
@@ -16,6 +17,7 @@ export interface SearchResults {
   fines: SearchResult[];
   payments: SearchResult[];
   plates: SearchResult[];
+  insurance: SearchResult[];
 }
 
 export const searchService = {
@@ -28,6 +30,7 @@ export const searchService = {
         fines: [],
         payments: [],
         plates: [],
+        insurance: [],
       };
     }
 
@@ -102,6 +105,21 @@ export const searchService = {
       .ilike("plate_number", searchTerm)
       .limit(8);
 
+    // Search insurance policies
+    const { data: insurance } = await supabase
+      .from("insurance_policies")
+      .select(`
+        id,
+        policy_number,
+        provider,
+        status,
+        expiry_date,
+        customers!inner(name),
+        vehicles(reg, make, model)
+      `)
+      .or(`policy_number.ilike.${searchTerm},provider.ilike.${searchTerm},customers.name.ilike.${searchTerm}`)
+      .limit(8);
+
     return {
       customers: (customers || []).map(customer => ({
         id: customer.id,
@@ -150,6 +168,14 @@ export const searchService = {
         category: "Plates",
         url: `/plates/${plate.id}`,
         icon: "hash",
+      })),
+      insurance: (insurance || []).map(policy => ({
+        id: policy.id,
+        title: `Policy ${policy.policy_number}`,
+        subtitle: `${(policy.customers as any)?.name} • ${policy.provider || 'No provider'} • ${policy.status}`,
+        category: "Insurance",
+        url: `/insurance?policy=${policy.id}`,
+        icon: "shield",
       })),
     };
   },

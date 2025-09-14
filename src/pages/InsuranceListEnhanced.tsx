@@ -1,3 +1,4 @@
+// Main Insurance Management Page - Complete Implementation
 import { useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +44,8 @@ import { InsuranceFilters } from "@/components/InsuranceFilters";
 import { InsurancePolicyStatusChip } from "@/components/InsurancePolicyStatusChip";
 import { InsurancePolicyDialog } from "@/components/InsurancePolicyDialog";
 import { InsurancePolicyDrawer } from "@/components/InsurancePolicyDrawer";
+import { CustomerSelectionDialog } from "@/components/CustomerSelectionDialog";
+import { DocumentUploadDialog } from "@/components/DocumentUploadDialog";
 
 // Hooks & Utils
 import { 
@@ -52,6 +55,34 @@ import {
 } from "@/hooks/useInsuranceData";
 import { exportInsuranceToCSV } from "@/utils/csvExport";
 import { type InsurancePolicyStatus } from "@/lib/insuranceUtils";
+
+type SortField = "customer" | "vehicle" | "policy_number" | "provider" | "start_date" | "expiry_date" | "status" | "docs_count";
+type SortDirection = "asc" | "desc";
+
+export default function InsuranceListEnhanced() {
+  // State
+  const [filters, setFilters] = useState<FiltersType>({
+    search: "",
+    status: "all",
+    dateRange: { from: undefined, to: undefined }
+  });
+  const [sortField, setSortField] = useState<SortField>("expiry_date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  
+  // Dialog states
+  const [customerSelectOpen, setCustomerSelectOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  
+  // Selected items
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+
+  // Data
+  const { policies, stats, isLoading, error } = useInsuranceData(filters);
+  const queryClient = useQueryClient();
 
 type SortField = "customer" | "vehicle" | "policy_number" | "provider" | "start_date" | "expiry_date" | "status" | "docs_count";
 type SortDirection = "asc" | "desc";
@@ -142,7 +173,17 @@ export default function InsuranceListEnhanced() {
   const handleAddPolicy = () => {
     setSelectedPolicyId(null);
     setSelectedCustomerId("");
+    setCustomerSelectOpen(true);
+  };
+
+  const handleCustomerSelected = (customerId: string) => {
+    setSelectedCustomerId(customerId);
     setAddDialogOpen(true);
+  };
+
+  const handleUploadDocument = (policy: InsurancePolicy) => {
+    setSelectedPolicyId(policy.id);
+    setUploadDialogOpen(true);
   };
 
   const handleDeactivatePolicy = (policyId: string) => {
@@ -455,7 +496,10 @@ export default function InsuranceListEnhanced() {
                               <Edit className="h-4 w-4 mr-2" />
                               Edit Policy
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation();
+                              handleUploadDocument(policy);
+                            }}>
                               <Upload className="h-4 w-4 mr-2" />
                               Upload Document
                             </DropdownMenuItem>
@@ -483,6 +527,12 @@ export default function InsuranceListEnhanced() {
       </Card>
 
       {/* Dialogs */}
+      <CustomerSelectionDialog
+        open={customerSelectOpen}
+        onOpenChange={setCustomerSelectOpen}
+        onCustomerSelect={handleCustomerSelected}
+      />
+
       <InsurancePolicyDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
@@ -501,6 +551,14 @@ export default function InsuranceListEnhanced() {
         onOpenChange={setDrawerOpen}
         policyId={selectedPolicyId}
       />
+
+      {selectedPolicyId && (
+        <DocumentUploadDialog
+          open={uploadDialogOpen}
+          onOpenChange={setUploadDialogOpen}
+          policyId={selectedPolicyId}
+        />
+      )}
     </div>
   );
 }

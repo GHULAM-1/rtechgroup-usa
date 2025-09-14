@@ -21,19 +21,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  FileText, 
-  User, 
-  Car, 
-  Calendar, 
-  Shield, 
   MoreVertical,
+  Eye,
   Edit,
   Upload,
   Ban,
-  Trash2,
-  ExternalLink,
-  Clock
+  Trash2
 } from "lucide-react";
+import { InsurancePolicyDrawer } from "./InsurancePolicyDrawer";
+import { DocumentUploadDialog } from "./DocumentUploadDialog";
 import { format, differenceInDays } from "date-fns";
 import { Link } from "react-router-dom";
 import { InsurancePolicyStatusChip } from "./InsurancePolicyStatusChip";
@@ -53,6 +49,7 @@ export function InsurancePolicyDrawer({
   policyId
 }: InsurancePolicyDrawerProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: policy, isLoading } = useQuery({
@@ -181,10 +178,10 @@ export function InsurancePolicyDrawer({
                       <Edit className="h-4 w-4 mr-2" />
                       Edit Policy
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Document
-                    </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setUploadDialogOpen(true)}>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Document
+                            </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       onClick={() => deactivatePolicyMutation.mutate()}
@@ -389,12 +386,20 @@ export function InsurancePolicyDrawer({
       </Sheet>
 
       {policy && (
-        <InsurancePolicyDialog
-          open={editDialogOpen}
-          onOpenChange={setEditDialogOpen}
-          customerId={policy.customer_id}
-          policyId={policy.id}
-        />
+        <>
+          <InsurancePolicyDialog
+            open={editDialogOpen}
+            onOpenChange={setEditDialogOpen}
+            customerId={policy.customer_id}
+            policyId={policy.id}
+          />
+          
+          <DocumentUploadDialog
+            open={uploadDialogOpen}
+            onOpenChange={setUploadDialogOpen}
+            policyId={policy.id}
+          />
+        </>
       )}
     </>
   );

@@ -2,10 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Car, Plus, TrendingUp, TrendingDown } from "lucide-react";
-import { AddVehicleDialog } from "./AddVehicleDialog";
-import { useState } from "react";
+import { Car, TrendingUp, TrendingDown } from "lucide-react";
 
 interface Vehicle {
   id: string;
@@ -90,8 +87,6 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
 };
 
 export const FleetOverview = () => {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ["vehicles"],
     queryFn: async () => {
@@ -152,18 +147,9 @@ export const FleetOverview = () => {
   return (
     <Card className="shadow-card rounded-lg">
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-semibold">Fleet Overview</CardTitle>
-            <CardDescription>Monitor vehicle performance and P&L</CardDescription>
-          </div>
-          <Button 
-            onClick={() => setShowAddDialog(true)}
-            className="bg-gradient-primary hover:opacity-90 transition-opacity rounded-lg"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Vehicle
-          </Button>
+        <div>
+          <CardTitle className="text-xl font-semibold">Fleet Overview</CardTitle>
+          <CardDescription>Monitor vehicle performance and P&L</CardDescription>
         </div>
       </CardHeader>
       <CardContent>
@@ -182,15 +168,9 @@ export const FleetOverview = () => {
             <Car className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-2">No vehicles in fleet</h3>
             <p className="text-muted-foreground mb-4">Add your first vehicle to get started</p>
-            <Button onClick={() => setShowAddDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Vehicle
-            </Button>
           </div>
         )}
       </CardContent>
-      
-      <AddVehicleDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
     </Card>
   );
 };

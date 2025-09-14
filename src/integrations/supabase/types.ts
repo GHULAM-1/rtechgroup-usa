@@ -2437,6 +2437,10 @@ export type Database = {
         Args: { r_id: string }
         Returns: undefined
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_customer_balance_with_status: {
         Args: { customer_id_param: string }
         Returns: {
@@ -2515,6 +2519,10 @@ export type Database = {
       hash_password: {
         Args: { password: string }
         Returns: string
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       payment_apply_fifo: {
         Args: { p_id: string }

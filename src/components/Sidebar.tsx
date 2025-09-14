@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  TestTube,
   Bell,
   BarChart3,
   AlertCircle,
@@ -44,8 +43,13 @@ export const Sidebar = () => {
     },
     { name: "Reports", href: "/reports", icon: BarChart3 },
     { name: "Settings", href: "/settings", icon: Settings },
-    { name: "Tests", href: "/test", icon: TestTube },
   ];
+
+  // Helper function to determine if item should have spacing after it
+  const getSectionSpacing = (index: number) => {
+    // Add spacing after Fines (index 5) and Reports (index 10) for section grouping
+    return index === 5 || index === 10 ? "mb-2" : "";
+  };
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -85,7 +89,7 @@ export const Sidebar = () => {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-4">
-            {navigation.map((item) => {
+            {navigation.map((item, index) => {
               const active = isActive(item.href);
               return (
                 <NavLink
@@ -96,7 +100,8 @@ export const Sidebar = () => {
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
                     active
                       ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    getSectionSpacing(index)
                   )}
                 >
                   <item.icon className="h-4 w-4" />

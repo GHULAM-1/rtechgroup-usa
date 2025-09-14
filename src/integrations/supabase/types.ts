@@ -1788,6 +1788,7 @@ export type Database = {
           disposal_date: string | null
           disposal_notes: string | null
           finance_start_date: string | null
+          ghost_code: string | null
           has_ghost: boolean | null
           has_remote_immobiliser: boolean | null
           has_tracker: boolean | null
@@ -1820,6 +1821,7 @@ export type Database = {
           disposal_date?: string | null
           disposal_notes?: string | null
           finance_start_date?: string | null
+          ghost_code?: string | null
           has_ghost?: boolean | null
           has_remote_immobiliser?: boolean | null
           has_tracker?: boolean | null
@@ -1852,6 +1854,7 @@ export type Database = {
           disposal_date?: string | null
           disposal_notes?: string | null
           finance_start_date?: string | null
+          ghost_code?: string | null
           has_ghost?: boolean | null
           has_remote_immobiliser?: boolean | null
           has_tracker?: boolean | null

@@ -37,6 +37,7 @@ const vehicleSchema = z.object({
   tax_due_date: z.date().optional(),
   // Security fields
   has_ghost: z.boolean().default(false),
+  ghost_code: z.string().optional(),
   has_tracker: z.boolean().default(false),
   has_remote_immobiliser: z.boolean().default(false),
   security_notes: z.string().optional(),
@@ -48,11 +49,14 @@ const vehicleSchema = z.object({
     if (data.acquisition_type === 'Purchase' && !data.purchase_price) {
       return false;
     }
+    if (data.has_ghost && (!data.ghost_code || data.ghost_code.trim() === '')) {
+      return false;
+    }
     return true;
   },
   {
-    message: "Monthly payment is required for financed vehicles",
-    path: ["monthly_payment"],
+    message: "Ghost code is required when Ghost Immobiliser is enabled",
+    path: ["ghost_code"],
   }
 );
 
@@ -75,6 +79,7 @@ interface Vehicle {
   mot_due_date?: string;
   tax_due_date?: string;
   has_ghost?: boolean;
+  ghost_code?: string;
   has_tracker?: boolean;
   has_remote_immobiliser?: boolean;
   security_notes?: string;
@@ -110,6 +115,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
       mot_due_date: vehicle.mot_due_date ? new Date(vehicle.mot_due_date) : undefined,
       tax_due_date: vehicle.tax_due_date ? new Date(vehicle.tax_due_date) : undefined,
       has_ghost: vehicle.has_ghost || false,
+      ghost_code: vehicle.ghost_code || "",
       has_tracker: vehicle.has_tracker || false,
       has_remote_immobiliser: vehicle.has_remote_immobiliser || false,
       security_notes: vehicle.security_notes || "",
@@ -127,9 +133,11 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
   const currentOpen = open !== undefined ? open : isOpen;
 
   const onSubmit = async (data: VehicleFormData) => {
+    console.log('Form submission started', data);
     setLoading(true);
 
     try {
+      console.log('Sending update to Supabase...');
       const { error } = await supabase
         .from("vehicles")
         .update({
@@ -154,12 +162,14 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
           tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
           // Security fields
           has_ghost: data.has_ghost,
+          ghost_code: data.ghost_code || null,
           has_tracker: data.has_tracker,
           has_remote_immobiliser: data.has_remote_immobiliser,
           security_notes: data.security_notes || null,
         })
         .eq('id', vehicle.id);
 
+      console.log('Supabase response:', { error });
       if (error) throw error;
 
       toast({
@@ -566,6 +576,25 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                     </FormItem>
                   )}
                 />
+
+                {form.watch("has_ghost") && (
+                  <FormField
+                    control={form.control}
+                    name="ghost_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ghost Immobiliser Code *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter ghost immobiliser code" 
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}

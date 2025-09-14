@@ -21,7 +21,7 @@ const vehicleSchema = z.object({
   colour: z.string().min(1, "Colour is required"),
   purchase_price: z.number().min(0, "Price must be positive"),
   acquisition_date: z.date(),
-  acquisition_type: z.enum(['Purchase', 'Finance', 'Lease', 'Other']),
+  acquisition_type: z.enum(['Purchase', 'Finance']),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -247,8 +247,6 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                     <SelectContent>
                       <SelectItem value="Purchase">Purchase</SelectItem>
                       <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="Lease">Lease</SelectItem>
-                      <SelectItem value="Other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

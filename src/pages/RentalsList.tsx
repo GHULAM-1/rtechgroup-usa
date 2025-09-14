@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { FileText, Plus, Eye, CreditCard, XCircle, Download } from "lucide-react";
 import { useEnhancedRentals, RentalFilters } from "@/hooks/useEnhancedRentals";
 import { RentalsFilters } from "@/components/RentalsFilters";
+import { AddPaymentDialog } from "@/components/AddPaymentDialog";
+import { CloseRentalDialog } from "@/components/CloseRentalDialog";
 import { formatDuration } from "@/lib/rentalUtils";
 import {
   Pagination,
@@ -20,6 +22,9 @@ import {
 const RentalsList = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [closeRentalDialogOpen, setCloseRentalDialogOpen] = useState(false);
+  const [selectedRental, setSelectedRental] = useState<any>(null);
 
   // Parse filters from URL
   const filters: RentalFilters = useMemo(() => ({
@@ -84,6 +89,16 @@ const RentalsList = () => {
     link.download = 'rentals-export.csv';
     link.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const handleMakePayment = (rental: any) => {
+    setSelectedRental(rental);
+    setPaymentDialogOpen(true);
+  };
+
+  const handleCloseRental = (rental: any) => {
+    setSelectedRental(rental);
+    setCloseRentalDialogOpen(true);
   };
 
   if (isLoading) {
@@ -260,14 +275,14 @@ const RentalsList = () => {
                                 <Button
                                   variant="outline" 
                                   size="sm"
-                                  onClick={() => navigate(`/payments/new?rental=${rental.id}`)}
+                                  onClick={() => handleMakePayment(rental)}
                                 >
                                   <CreditCard className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm" 
-                                  onClick={() => {/* TODO: Close rental handler */}}
+                                  onClick={() => handleCloseRental(rental)}
                                 >
                                   <XCircle className="h-4 w-4" />
                                 </Button>
@@ -333,6 +348,21 @@ const RentalsList = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Dialog */}
+      <AddPaymentDialog
+        open={paymentDialogOpen}
+        onOpenChange={setPaymentDialogOpen}
+        customer_id={selectedRental?.customer?.id}
+        vehicle_id={selectedRental?.vehicle?.id}
+      />
+
+      {/* Close Rental Dialog */}
+      <CloseRentalDialog
+        open={closeRentalDialogOpen}
+        onOpenChange={setCloseRentalDialogOpen}
+        rental={selectedRental}
+      />
     </div>
   );
 };

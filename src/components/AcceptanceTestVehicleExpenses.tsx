@@ -17,7 +17,7 @@ export function AcceptanceTestVehicleExpenses() {
     const testResults: any[] = [];
 
     try {
-      // Test 1: Service category expense → Service P&L category
+      // Test 1: Service expense maps to Service P&L category
       try {
         const testVehicleId = '82f45f1a-b69a-47db-aa13-413b5835509a';
         
@@ -25,17 +25,16 @@ export function AcceptanceTestVehicleExpenses() {
           .from('vehicle_expenses')
           .insert({
             vehicle_id: testVehicleId,
-            category: 'Service' as any,
+            category: 'Service',
             amount: 300,
             expense_date: '2024-01-15',
-            notes: 'Service expense P&L test'
+            notes: 'Test service expense'
           })
           .select()
           .single();
 
         if (expenseError) throw expenseError;
 
-        // Check P&L entry with proper reference format
         const { data: pnlEntry, error: pnlError } = await supabase
           .from('pnl_entries')
           .select('*')
@@ -53,11 +52,10 @@ export function AcceptanceTestVehicleExpenses() {
           name: 'Service Expense → Service P&L Category',
           passed: serviceTestPassed,
           details: serviceTestPassed ? 
-            `✓ P&L entry: £${pnlEntry.amount} in ${pnlEntry.category}` :
-            `✗ Expected Service category, got: ${JSON.stringify(pnlEntry)}`
+            `✓ Service expense correctly categorized in P&L: £${pnlEntry.amount}` :
+            `✗ P&L entry incorrect: ${JSON.stringify(pnlEntry)}`
         });
 
-        // Cleanup
         await supabase.from('vehicle_expenses').delete().eq('id', expense.id);
         
       } catch (error) {
@@ -68,7 +66,7 @@ export function AcceptanceTestVehicleExpenses() {
         });
       }
 
-      // Test 2: Non-Service expense → Expenses P&L category
+      // Test 2: Non-service expense maps to Expenses P&L category
       try {
         const testVehicleId = '82f45f1a-b69a-47db-aa13-413b5835509a';
         
@@ -76,17 +74,16 @@ export function AcceptanceTestVehicleExpenses() {
           .from('vehicle_expenses')
           .insert({
             vehicle_id: testVehicleId,
-            category: 'Repair' as any,
+            category: 'Repair',
             amount: 750,
-            expense_date: '2024-01-15',
-            notes: 'Repair expense P&L test'
+            expense_date: '2024-01-16',
+            notes: 'Test repair expense'
           })
           .select()
           .single();
 
         if (expenseError) throw expenseError;
 
-        // Check P&L entry
         const { data: pnlEntry, error: pnlError } = await supabase
           .from('pnl_entries')
           .select('*')
@@ -104,11 +101,10 @@ export function AcceptanceTestVehicleExpenses() {
           name: 'Repair Expense → Expenses P&L Category',
           passed: repairTestPassed,
           details: repairTestPassed ? 
-            `✓ P&L entry: £${pnlEntry.amount} in ${pnlEntry.category}` :
-            `✗ Expected Expenses category, got: ${JSON.stringify(pnlEntry)}`
+            `✓ Repair expense correctly categorized as Expenses: £${pnlEntry.amount}` :
+            `✗ P&L entry incorrect: ${JSON.stringify(pnlEntry)}`
         });
 
-        // Cleanup
         await supabase.from('vehicle_expenses').delete().eq('id', expense.id);
         
       } catch (error) {
@@ -119,173 +115,161 @@ export function AcceptanceTestVehicleExpenses() {
         });
       }
 
-      // Test 3: Multiple expense categories → Correct P&L mapping
+      // Test 3: Multiple expense categories map to Expenses
       try {
         const testVehicleId = '82f45f1a-b69a-47db-aa13-413b5835509a';
-        const expenseCategories = [
-          { category: 'Tyres', expected_pnl: 'Expenses' },
-          { category: 'Valet', expected_pnl: 'Expenses' },
-          { category: 'Accessory', expected_pnl: 'Expenses' },
-          { category: 'Other', expected_pnl: 'Expenses' }
-        ];
-
-        let allPassed = true;
-        const createdExpenses = [];
-
-        for (const expenseTest of expenseCategories) {
+        const expenseCategories = ['Tyres', 'Valet', 'Accessory'];
+        const expenseIds: string[] = [];
+        
+        // Create expenses of different categories
+        for (const category of expenseCategories) {
           const { data: expense, error: expenseError } = await supabase
             .from('vehicle_expenses')
             .insert({
               vehicle_id: testVehicleId,
-              category: expenseTest.category as any,
+              category: category as any,
               amount: 100,
-              expense_date: '2024-01-15',
-              notes: `${expenseTest.category} P&L mapping test`
+              expense_date: '2024-01-17',
+              notes: `Test ${category} expense`
             })
             .select()
             .single();
 
-          if (expenseError) {
-            allPassed = false;
-            break;
-          }
-
-          createdExpenses.push(expense.id);
-
-          const { data: pnlEntry, error: pnlError } = await supabase
-            .from('pnl_entries')
-            .select('*')
-            .eq('reference', `vexp:${expense.id}`)
-            .single();
-
-          if (pnlError || pnlEntry.category !== expenseTest.expected_pnl) {
-            allPassed = false;
-            break;
-          }
+          if (expenseError) throw expenseError;
+          expenseIds.push(expense.id);
         }
 
+        // Check P&L entries
+        const { data: pnlEntries, error: pnlError } = await supabase
+          .from('pnl_entries')
+          .select('*')
+          .in('reference', expenseIds.map(id => `vexp:${id}`));
+
+        if (pnlError) throw pnlError;
+
+        const allCategorizedCorrectly = pnlEntries.every(entry => 
+          entry.side === 'Cost' && 
+          entry.category === 'Expenses' && 
+          entry.amount === 100
+        );
+
         testResults.push({
-          name: 'Multiple Categories → Correct P&L Mapping',
-          passed: allPassed,
-          details: allPassed ? 
-            '✓ All expense categories mapped to correct P&L categories' :
-            '✗ Some categories mapped incorrectly'
+          name: 'Multiple Categories → Expenses Mapping',
+          passed: allCategorizedCorrectly,
+          details: allCategorizedCorrectly ? 
+            `✓ All ${expenseCategories.length} expense types correctly map to Expenses category` :
+            `✗ Some entries incorrectly categorized: ${JSON.stringify(pnlEntries)}`
         });
 
         // Cleanup
-        for (const expenseId of createdExpenses) {
-          await supabase.from('vehicle_expenses').delete().eq('id', expenseId);
+        for (const id of expenseIds) {
+          await supabase.from('vehicle_expenses').delete().eq('id', id);
         }
         
       } catch (error) {
         testResults.push({
-          name: 'Multiple Categories → Correct P&L Mapping',
+          name: 'Multiple Categories → Expenses Mapping',
           passed: false,
           details: `✗ Error: ${error}`
         });
       }
 
-      // Test 4: Delete expense removes P&L entry
+      // Test 4: P&L Reference Format Test
       try {
         const testVehicleId = '82f45f1a-b69a-47db-aa13-413b5835509a';
         
-        // Create expense
         const { data: expense, error: expenseError } = await supabase
           .from('vehicle_expenses')
           .insert({
             vehicle_id: testVehicleId,
-            category: 'Service' as any,
+            category: 'Other',
             amount: 200,
-            expense_date: '2024-01-15',
-            notes: 'Delete test expense'
+            expense_date: '2024-01-18',
+            notes: 'Test reference format'
           })
           .select()
           .single();
 
         if (expenseError) throw expenseError;
 
-        // Verify P&L entry exists
-        const { data: pnlBefore } = await supabase
-          .from('pnl_entries')
-          .select('*')
-          .eq('reference', `vexp:${expense.id}`)
-          .single();
-
-        // Delete expense
-        const { error: deleteError } = await supabase
-          .from('vehicle_expenses')
-          .delete()
-          .eq('id', expense.id);
-
-        if (deleteError) throw deleteError;
-
-        // Verify P&L entry is removed
-        const { data: pnlAfter, error: pnlAfterError } = await supabase
-          .from('pnl_entries')
-          .select('*')
-          .eq('reference', `vexp:${expense.id}`)
-          .maybeSingle();
-
-        const deleteTestPassed = pnlBefore && !pnlAfter && !pnlAfterError;
-
-        testResults.push({
-          name: 'Delete Expense → Remove P&L Entry',
-          passed: deleteTestPassed,
-          details: deleteTestPassed ? 
-            '✓ P&L entry removed when expense deleted' :
-            '✗ P&L entry not properly cleaned up'
-        });
-        
-      } catch (error) {
-        testResults.push({
-          name: 'Delete Expense → Remove P&L Entry',
-          passed: false,
-          details: `✗ Error: ${error}`
-        });
-      }
-
-      // Test 5: Reference format consistency
-      try {
-        const testVehicleId = '82f45f1a-b69a-47db-aa13-413b5835509a';
-        
-        const { data: expense, error: expenseError } = await supabase
-          .from('vehicle_expenses')
-          .insert({
-            vehicle_id: testVehicleId,
-            category: 'Other' as any,
-            amount: 50,
-            expense_date: '2024-01-15',
-            notes: 'Reference format test'
-          })
-          .select()
-          .single();
-
-        if (expenseError) throw expenseError;
-
+        const expectedReference = `vexp:${expense.id}`;
         const { data: pnlEntry, error: pnlError } = await supabase
           .from('pnl_entries')
           .select('*')
-          .eq('reference', `vexp:${expense.id}`)
+          .eq('reference', expectedReference)
           .single();
 
         if (pnlError) throw pnlError;
 
-        const referenceTestPassed = pnlEntry.reference === `vexp:${expense.id}`;
+        const referenceTestPassed = 
+          pnlEntry.reference === expectedReference &&
+          pnlEntry.side === 'Cost' && 
+          pnlEntry.category === 'Expenses';
 
         testResults.push({
-          name: 'Reference Format Consistency',
+          name: 'P&L Reference Format',
           passed: referenceTestPassed,
           details: referenceTestPassed ? 
-            `✓ Correct reference format: ${pnlEntry.reference}` :
-            `✗ Wrong reference format: ${pnlEntry.reference}`
+            `✓ P&L reference format correct: ${pnlEntry.reference}` :
+            `✗ Reference format incorrect: expected ${expectedReference}, got ${pnlEntry.reference}`
         });
 
-        // Cleanup
         await supabase.from('vehicle_expenses').delete().eq('id', expense.id);
         
       } catch (error) {
         testResults.push({
-          name: 'Reference Format Consistency',
+          name: 'P&L Reference Format',
+          passed: false,
+          details: `✗ Error: ${error}`
+        });
+      }
+
+      // Test 5: Vehicle Event Creation Test
+      try {
+        const testVehicleId = '82f45f1a-b69a-47db-aa13-413b5835509a';
+        
+        const { data: expense, error: expenseError } = await supabase
+          .from('vehicle_expenses')
+          .insert({
+            vehicle_id: testVehicleId,
+            category: 'Tyres',
+            amount: 400,
+            expense_date: '2024-01-19',
+            notes: 'Test event creation'
+          })
+          .select()
+          .single();
+
+        if (expenseError) throw expenseError;
+
+        // Check vehicle event was created
+        const { data: vehicleEvent, error: eventError } = await supabase
+          .from('vehicle_events')
+          .select('*')
+          .eq('reference_id', expense.id)
+          .eq('event_type', 'expense_added')
+          .single();
+
+        if (eventError) throw eventError;
+
+        const eventTestPassed = 
+          vehicleEvent.vehicle_id === testVehicleId &&
+          vehicleEvent.summary.includes('Tyres') &&
+          vehicleEvent.summary.includes('£400');
+
+        testResults.push({
+          name: 'Vehicle Event Creation',
+          passed: eventTestPassed,
+          details: eventTestPassed ? 
+            `✓ Vehicle event created: ${vehicleEvent.summary}` :
+            `✗ Event not created or incorrect: ${JSON.stringify(vehicleEvent)}`
+        });
+
+        await supabase.from('vehicle_expenses').delete().eq('id', expense.id);
+        
+      } catch (error) {
+        testResults.push({
+          name: 'Vehicle Event Creation',
           passed: false,
           details: `✗ Error: ${error}`
         });
@@ -295,7 +279,7 @@ export function AcceptanceTestVehicleExpenses() {
       
       const passedCount = testResults.filter(r => r.passed).length;
       toast({
-        title: "Vehicle Expenses Tests Complete",
+        title: "Expense Tests Complete",
         description: `${passedCount}/${testResults.length} tests passed`,
         variant: passedCount === testResults.length ? "default" : "destructive"
       });

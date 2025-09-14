@@ -318,15 +318,21 @@ const PaymentsList = () => {
                             </FormControl>
                             <SelectContent>
                               {selectedCustomerId ? (
-                                customerVehicles?.map((vehicle) => (
-                                  <SelectItem key={vehicle.id} value={vehicle.id}>
-                                    {vehicle.reg}
-                                  </SelectItem>
-                                ))
+                                customerVehicles?.length > 0 ? (
+                                  customerVehicles.map((vehicle) => (
+                                    <SelectItem key={vehicle.id} value={vehicle.id}>
+                                      {vehicle.reg}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <div className="px-3 py-2 text-sm text-muted-foreground">
+                                    No vehicles found for this customer
+                                  </div>
+                                )
                               ) : (
-                                <SelectItem value="" disabled>
+                                <div className="px-3 py-2 text-sm text-muted-foreground">
                                   Select customer first
-                                </SelectItem>
+                                </div>
                               )}
                             </SelectContent>
                           </Select>

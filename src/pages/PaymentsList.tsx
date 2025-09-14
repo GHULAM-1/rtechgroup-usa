@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { formatInTimeZone, toZonedTime } from "date-fns-tz";
-import { PAYMENT_TYPES } from "@/lib/constants";
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -34,10 +34,8 @@ interface PaymentEntry {
 
 const paymentSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
-  rental_id: z.string().optional(),
   vehicle_id: z.string().min(1, "Vehicle is required"),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
-  payment_type: z.enum(['Rental', 'InitialFee', 'Fine', 'Other']),
   method: z.string().optional(),
   payment_date: z.date(),
 });
@@ -57,10 +55,8 @@ const PaymentsList = () => {
     resolver: zodResolver(paymentSchema),
     defaultValues: {
       customer_id: "",
-      rental_id: "",
       vehicle_id: "",
       amount: 0,
-      payment_type: "Rental",
       method: "",
       payment_date: toZonedTime(new Date(), 'Europe/London'),
     },
@@ -107,21 +103,6 @@ const PaymentsList = () => {
     enabled: !!selectedCustomerId,
   });
 
-  const { data: customerRentals } = useQuery({
-    queryKey: ["customer-rentals", selectedCustomerId],
-    queryFn: async () => {
-      if (!selectedCustomerId) return [];
-      
-      const { data, error } = await supabase
-        .from("rentals")
-        .select("id, start_date, vehicles(reg)")
-        .eq("status", "Active")
-        .eq("customer_id", selectedCustomerId);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!selectedCustomerId,
-  });
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ["payments-list", filter],
@@ -147,7 +128,7 @@ const PaymentsList = () => {
         id: payment.id,
         amount: payment.amount,
         entry_date: payment.payment_date,
-        category: payment.payment_type,
+        category: 'Customer Payment', // Show all as generic customer payments
         customers: payment.customers,
         vehicles: payment.vehicles,
         rentals: payment.rentals
@@ -158,45 +139,16 @@ const PaymentsList = () => {
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
-      // For Rental payments, validate rental context
-      if (data.payment_type === 'Rental') {
-        if (!data.rental_id && customerRentals && customerRentals.length > 1) {
-          toast({
-            title: "Error",
-            description: "Customer has multiple active rentals. Please select a rental.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-        
-        if (!data.rental_id && customerRentals && customerRentals.length === 0) {
-          toast({
-            title: "Error",
-            description: "No active rental found for this customer.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
-        
-        // Auto-assign rental if customer has exactly one
-        if (!data.rental_id && customerRentals && customerRentals.length === 1) {
-          data.rental_id = customerRentals[0].id;
-        }
-      }
-
-      // Insert payment - application will be handled by centralized service
+      // Insert generic payment - FIFO allocation will be handled by edge function
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
           customer_id: data.customer_id,
-          rental_id: data.rental_id || null,
           vehicle_id: data.vehicle_id,
           amount: data.amount,
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method || null,
-          payment_type: data.payment_type,
+          payment_type: 'Payment', // All customer payments are generic
         })
         .select()
         .single();
@@ -224,10 +176,8 @@ const PaymentsList = () => {
 
       form.reset({
         customer_id: "",
-        rental_id: "",
         vehicle_id: "",
         amount: 0,
-        payment_type: "Rental",
         method: "",
         payment_date: toZonedTime(new Date(), 'Europe/London'),
       });
@@ -254,8 +204,8 @@ const PaymentsList = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Payments</h1>
-          <p className="text-muted-foreground">
-            Track all payments and process new transactions
+                          <p className="text-muted-foreground">
+            Record customer payments - automatically allocated to outstanding charges using FIFO
             {filter && ` - ${filter.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}`}
           </p>
         </div>
@@ -342,32 +292,6 @@ const PaymentsList = () => {
                     />
                   </div>
 
-                  {customerRentals && customerRentals.length > 1 && (
-                    <FormField
-                      control={form.control}
-                      name="rental_id"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Rental Agreement *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select rental" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {customerRentals?.map((rental) => (
-                                <SelectItem key={rental.id} value={rental.id}>
-                                  {rental.vehicles?.reg} - {formatInTimeZone(new Date(rental.start_date), 'Europe/London', 'dd/MM/yyyy')}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -385,29 +309,6 @@ const PaymentsList = () => {
                               onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                             />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="payment_type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Payment Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Rental">Rental Payment</SelectItem>
-                              <SelectItem value="InitialFee">Initial Fee</SelectItem>
-                              <SelectItem value="Fine">Fine</SelectItem>
-                              <SelectItem value="Other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -531,19 +432,13 @@ const PaymentsList = () => {
                            '-'
                          )}
                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                             <Badge 
-                               variant={
-                                 payment.category === 'Rental' ? 'default' :
-                                 payment.category === 'Initial Fees' ? 'secondary' :
-                                 payment.category === 'Fine' ? 'destructive' : 'outline'
-                               }
-                             >
-                               {payment.category === 'Initial Fees' ? 'Initial Fee' : payment.category}
-                             </Badge>
-                           </div>
-                         </TableCell>
+                         <TableCell>
+                           <div className="flex gap-1">
+                              <Badge variant="default">
+                                {payment.category}
+                              </Badge>
+                            </div>
+                          </TableCell>
                           <TableCell>Cash</TableCell>
                         <TableCell className="text-right font-medium">
                           £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

@@ -29,14 +29,16 @@ interface PaymentEntry {
 }
 
 const PaymentTypeBadge = ({ payment_type }: { payment_type: string }) => {
+  // Show simplified payment types for customer payments
+  const displayType = payment_type === 'Payment' ? 'Customer Payment' : 
+                      payment_type === 'InitialFee' ? 'Initial Fee' : payment_type;
+
   const getVariant = () => {
     switch (payment_type) {
       case 'InitialFee':
         return 'secondary';
-      case 'Rental':
+      case 'Payment':
         return 'default';
-      case 'Fine':
-        return 'destructive';
       default:
         return 'outline';
     }
@@ -44,7 +46,7 @@ const PaymentTypeBadge = ({ payment_type }: { payment_type: string }) => {
 
   return (
     <Badge variant={getVariant() as any} className="badge-status">
-      {payment_type === 'InitialFee' ? 'Initial Fee' : payment_type}
+      {displayType}
     </Badge>
   );
 };
@@ -168,9 +170,6 @@ export const PaymentManagement = () => {
       <AddPaymentDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
-        rental_id=""
-        customer_id=""
-        vehicle_id=""
       />
     </Card>
   );

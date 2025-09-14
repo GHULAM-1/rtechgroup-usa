@@ -329,7 +329,6 @@ const RentalDetail = () => {
         <AddPaymentDialog
           open={showAddPayment}
           onOpenChange={setShowAddPayment}
-          rental_id={rental.id}
           customer_id={rental.customers?.id}
           vehicle_id={rental.vehicles?.id}
         />

@@ -547,7 +547,7 @@ export type Database = {
           is_early?: boolean
           method?: string | null
           payment_date?: string
-          payment_type: string
+          payment_type?: string
           remaining_amount?: number | null
           rental_id?: string | null
           status?: string | null

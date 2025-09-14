@@ -15,18 +15,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { PAYMENT_TYPES } from "@/lib/constants";
+
 
 const paymentSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
   vehicle_id: z.string().min(1, "Vehicle is required"),
-  rental_id: z.string().optional(),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_date: z.date({
     required_error: "Payment date is required",
   }),
   method: z.string().min(1, "Payment method is required"),
-  payment_type: z.enum(['Rental', 'InitialFee', 'Fine', 'Other']).default('Rental'),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -34,7 +32,6 @@ type PaymentFormData = z.infer<typeof paymentSchema>;
 interface AddPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  rental_id?: string;
   customer_id?: string;
   vehicle_id?: string;
 }
@@ -42,7 +39,6 @@ interface AddPaymentDialogProps {
 export const AddPaymentDialog = ({ 
   open, 
   onOpenChange, 
-  rental_id, 
   customer_id, 
   vehicle_id 
 }: AddPaymentDialogProps) => {
@@ -55,17 +51,16 @@ export const AddPaymentDialog = ({
     defaultValues: {
       customer_id: customer_id || "",
       vehicle_id: vehicle_id || "",
-      rental_id: rental_id || "",
       amount: 0,
       payment_date: toZonedTime(new Date(), 'Europe/London'),
       method: "Card",
-      payment_type: "Rental",
     },
   });
 
   const selectedCustomerId = form.watch("customer_id") || customer_id;
   const selectedVehicleId = form.watch("vehicle_id") || vehicle_id;
 
+  // Simplified vehicle lookup for the selected customer
   const { data: activeRentals } = useQuery({
     queryKey: ["active-rentals", selectedCustomerId],
     queryFn: async () => {
@@ -73,22 +68,12 @@ export const AddPaymentDialog = ({
       
       const { data, error } = await supabase
         .from("rentals")
-        .select(`
-          id,
-          customer_id,
-          vehicle_id,
-          start_date,
-          end_date,
-          monthly_amount,
-          customers(name),
-          vehicles(reg)
-        `)
+        .select("vehicle_id, vehicles(id, reg)")
         .eq("status", "Active")
-        .eq("customer_id", selectedCustomerId)
-        .order("start_date", { ascending: false });
+        .eq("customer_id", selectedCustomerId);
       
       if (error) throw error;
-      return data;
+      return data?.map(r => r.vehicles).filter(Boolean) || [];
     },
     enabled: !!selectedCustomerId,
   });
@@ -102,87 +87,25 @@ export const AddPaymentDialog = ({
     },
   });
 
-  const { data: customerVehicles } = useQuery({
-    queryKey: ["customer-vehicles", selectedCustomerId],
-    queryFn: async () => {
-      if (!selectedCustomerId) return [];
-      
-      const { data, error } = await supabase
-        .from("rentals")
-        .select("vehicles(id, reg)")
-        .eq("customer_id", selectedCustomerId);
-      
-      if (error) throw error;
-      
-      // Extract unique vehicles and flatten the structure
-      const vehicles = data
-        ?.map(rental => rental.vehicles)
-        .filter(Boolean)
-        .reduce((unique, vehicle) => {
-          if (!unique.find(v => v.id === vehicle.id)) {
-            unique.push(vehicle);
-          }
-          return unique;
-        }, [])
-        .sort((a, b) => a.reg.localeCompare(b.reg));
-      
-      return vehicles || [];
-    },
-    enabled: !!selectedCustomerId,
-  });
+  // Auto-infer vehicle from active rental when customer is selected
+  const customerVehicles = activeRentals || [];
 
   const onSubmit = async (data: PaymentFormData) => {
     setLoading(true);
     try {
       const finalCustomerId = data.customer_id || customer_id;
       const finalVehicleId = data.vehicle_id || vehicle_id;
-      let finalRentalId = data.rental_id || rental_id;
 
-      // For Rental payments, ensure rental context is resolved
-      if (data.payment_type === 'Rental') {
-        if (!finalRentalId && finalCustomerId) {
-          const customerRentals = activeRentals?.filter(r => r.customer_id === finalCustomerId);
-          
-          if (customerRentals?.length === 1) {
-            finalRentalId = customerRentals[0].id;
-          } else if (customerRentals?.length === 0) {
-            toast({
-              title: "Error",
-              description: "No active rental found for this customer.",
-              variant: "destructive",
-            });
-            return;
-          } else if (customerRentals && customerRentals.length > 1) {
-            toast({
-              title: "Error", 
-              description: "Customer has multiple active rentals. Please select a rental.",
-              variant: "destructive",
-            });
-            return;
-          }
-        }
-
-        if (!finalRentalId) {
-          toast({
-            title: "Error",
-            description: "Rental must be specified for rental payments.",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      // Create payment record - auto-application will be handled by centralized service
+      // Create generic payment record - FIFO allocation will be handled by edge function
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
         .insert({
           customer_id: finalCustomerId,
-          rental_id: finalRentalId || null,
           vehicle_id: finalVehicleId,
           amount: data.amount,
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,
-          payment_type: data.payment_type,
+          payment_type: 'Payment', // All customer payments are generic
         })
         .select()
         .single();
@@ -217,12 +140,6 @@ export const AddPaymentDialog = ({
       queryClient.invalidateQueries({ queryKey: ['pnl'] });
       
       // Additional specific queries  
-      if (finalRentalId) {
-        queryClient.invalidateQueries({ queryKey: ["rental-ledger", finalRentalId] });
-        queryClient.invalidateQueries({ queryKey: ["rental-payment-applications", finalRentalId] });
-        queryClient.invalidateQueries({ queryKey: ["rental", finalRentalId] });
-        queryClient.invalidateQueries({ queryKey: ["rental-balance", finalRentalId] });
-      }
       if (finalCustomerId) {
         queryClient.invalidateQueries({ queryKey: ["customer-balance", finalCustomerId] });
       }
@@ -286,25 +203,25 @@ export const AddPaymentDialog = ({
                           <SelectValue placeholder="Select vehicle" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {selectedCustomerId ? (
-                          customerVehicles?.length > 0 ? (
-                            customerVehicles.map((vehicle) => (
-                              <SelectItem key={vehicle.id} value={vehicle.id}>
-                                {vehicle.reg}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <div className="px-3 py-2 text-sm text-muted-foreground">
-                              No vehicles found for this customer
-                            </div>
-                          )
-                        ) : (
-                          <div className="px-3 py-2 text-sm text-muted-foreground">
-                            Select customer first
-                          </div>
-                        )}
-                      </SelectContent>
+                       <SelectContent>
+                         {selectedCustomerId ? (
+                           customerVehicles?.length > 0 ? (
+                             customerVehicles.map((vehicle) => (
+                               <SelectItem key={vehicle.id} value={vehicle.id}>
+                                 {vehicle.reg}
+                               </SelectItem>
+                             ))
+                           ) : (
+                             <div className="px-3 py-2 text-sm text-muted-foreground">
+                               No vehicles found for this customer
+                             </div>
+                           )
+                         ) : (
+                           <div className="px-3 py-2 text-sm text-muted-foreground">
+                             Select customer first
+                           </div>
+                         )}
+                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
@@ -312,32 +229,6 @@ export const AddPaymentDialog = ({
               />
             )}
 
-            {activeRentals && activeRentals.length > 1 && (
-              <FormField
-                control={form.control}
-                name="rental_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rental Agreement *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value || rental_id}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rental" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {activeRentals?.map((rental) => (
-                          <SelectItem key={rental.id} value={rental.id}>
-                            {rental.vehicles?.reg} - {formatInTimeZone(new Date(rental.start_date), 'Europe/London', 'dd/MM/yyyy')}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <FormField
               control={form.control}
@@ -398,7 +289,7 @@ export const AddPaymentDialog = ({
                     </PopoverContent>
                   </Popover>
                   <FormDescription className="text-sm text-muted-foreground">
-                    Payments are automatically applied to outstanding charges. Future payments apply to next due charges.
+                    Payments are automatically applied to outstanding charges using FIFO allocation.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -429,29 +320,6 @@ export const AddPaymentDialog = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="payment_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Payment Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
-                      </SelectTrigger>
-                    </FormControl>
-                     <SelectContent>
-                       <SelectItem value="Rental">Rental Payment</SelectItem>
-                       <SelectItem value="InitialFee">Initial Fee</SelectItem>
-                       <SelectItem value="Fine">Fine Payment</SelectItem>
-                       <SelectItem value="Other">Other</SelectItem>
-                     </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

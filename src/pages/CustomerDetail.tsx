@@ -7,7 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, CreditCard, FileText, Plus, Upload, Car, AlertTriangle, Eye, Download, Edit, Trash2, User, Mail, Phone, CalendarPlus, DollarSign, FolderOpen } from "lucide-react";
+import { ArrowLeft, CreditCard, FileText, Plus, Upload, Car, AlertTriangle, Eye, Download, Edit, Trash2, User, Mail, Phone, CalendarPlus, DollarSign, FolderOpen, Receipt, CreditCard as PaymentIcon } from "lucide-react";
+import { TruncatedCell } from "@/components/TruncatedCell";
+import { EmptyState } from "@/components/EmptyState";
 import { useNavigate } from "react-router-dom";
 import { useCustomerDocuments, useDeleteCustomerDocument, useDownloadDocument } from "@/hooks/useCustomerDocuments";
 import { useCustomerBalanceWithStatus } from "@/hooks/useCustomerBalance";
@@ -135,26 +137,26 @@ const CustomerDetail = () => {
       </div>
 
       {/* Customer Info Cards */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-4 w-4" />
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <Card className="min-h-[140px] flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <User className="h-4 w-4 text-primary" />
               Contact Info
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="flex-1 space-y-2">
             {customer.email && (
               <div className="flex items-center gap-2 text-sm">
-                <Mail className="h-4 w-4" />
-                <a href={`mailto:${customer.email}`} className="hover:underline">
+                <Mail className="h-3 w-3 text-muted-foreground" />
+                <a href={`mailto:${customer.email}`} className="hover:underline truncate">
                   {customer.email}
                 </a>
               </div>
             )}
             {customer.phone && (
               <div className="flex items-center gap-2 text-sm">
-                <Phone className="h-4 w-4" />
+                <Phone className="h-3 w-3 text-muted-foreground" />
                 <a href={`tel:${customer.phone}`} className="hover:underline">
                   {customer.phone}
                 </a>
@@ -163,13 +165,16 @@ const CustomerDetail = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Account Status</CardTitle>
+        <Card className="min-h-[140px] flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <DollarSign className="h-4 w-4 text-primary" />
+              Account Status
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="flex-1">
             {customerBalanceData ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Badge 
                   variant={
                     customerBalanceData.status === 'In Credit' ? 'default' : 
@@ -180,7 +185,7 @@ const CustomerDetail = () => {
                   {customerBalanceData.status}
                 </Badge>
                 {customerBalanceData.balance > 0 && (
-                  <p className="text-2xl font-bold">
+                  <p className="text-xl font-bold text-foreground">
                     £{customerBalanceData.balance.toLocaleString()}
                   </p>
                 )}
@@ -191,52 +196,64 @@ const CustomerDetail = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Active Rentals</CardTitle>
+        <Card className="min-h-[140px] flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Car className="h-4 w-4 text-primary" />
+              Active Rentals
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold">{activeRentalsCount || 0}</div>
-            <p className="text-xs text-muted-foreground">Current Active</p>
+          <CardContent className="flex-1 space-y-2">
+            <div className="text-2xl font-bold text-foreground">{activeRentalsCount || 0}</div>
+            <p className="text-xs text-muted-foreground">Currently Active</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Payment Stats</CardTitle>
+        <Card className="min-h-[140px] flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <PaymentIcon className="h-4 w-4 text-primary" />
+              Payment Stats
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold">{paymentStats?.paymentCount || 0}</div>
+          <CardContent className="flex-1 space-y-2">
+            <div className="text-2xl font-bold text-foreground">{paymentStats?.paymentCount || 0}</div>
             <p className="text-xs text-muted-foreground">Total Payments</p>
             {paymentStats?.totalPayments && paymentStats.totalPayments > 0 && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm font-medium text-muted-foreground">
                 £{paymentStats.totalPayments.toLocaleString()}
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Fine Stats</CardTitle>
+        <Card className="min-h-[140px] flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <AlertTriangle className="h-4 w-4 text-primary" />
+              Fine Stats
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold">{fineStats?.openFines || 0}</div>
+          <CardContent className="flex-1 space-y-2">
+            <div className="text-2xl font-bold text-foreground">{fineStats?.openFines || 0}</div>
             <p className="text-xs text-muted-foreground">Open Fines</p>
             {fineStats?.openFineAmount && fineStats.openFineAmount > 0 && (
-              <p className="text-sm text-destructive">
+              <p className="text-sm font-medium text-destructive">
                 £{fineStats.openFineAmount.toLocaleString()}
               </p>
             )}
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
+        <Card className="min-h-[140px] flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <FolderOpen className="h-4 w-4 text-primary" />
+              Documents
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="text-2xl font-bold">{documents?.length || 0}</div>
+          <CardContent className="flex-1 space-y-2">
+            <div className="text-2xl font-bold text-foreground">{documents?.length || 0}</div>
             <p className="text-xs text-muted-foreground">Total Documents</p>
           </CardContent>
         </Card>
@@ -252,193 +269,300 @@ const CustomerDetail = () => {
       </div>
 
       {/* Complete Tabbed Interface */}
-      <Tabs defaultValue="rentals">
-        <TabsList>
-          <TabsTrigger value="rentals">Rentals</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="fines">Fines</TabsTrigger>
-          <TabsTrigger value="vehicles">Vehicle History</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-        </TabsList>
+      <div className="relative">
+        <Tabs defaultValue="rentals" className="space-y-4">
+          <div className="overflow-x-auto scrollbar-hide">
+            <TabsList variant="sticky-evenly-spaced" className="min-w-full">
+              <TabsTrigger value="rentals" variant="evenly-spaced" className="min-w-0">
+                <Car className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline sm:hidden">Rentals</span>
+                <span className="xs:hidden sm:inline">Rentals</span>
+                <span className="sm:hidden">R</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" variant="evenly-spaced" className="min-w-0">
+                <PaymentIcon className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline sm:hidden">Payments</span>
+                <span className="xs:hidden sm:inline">Payments</span>
+                <span className="sm:hidden">P</span>
+              </TabsTrigger>
+              <TabsTrigger value="fines" variant="evenly-spaced" className="min-w-0">
+                <AlertTriangle className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline sm:hidden">Fines</span>
+                <span className="xs:hidden sm:inline">Fines</span>
+                <span className="sm:hidden">F</span>
+              </TabsTrigger>
+              <TabsTrigger value="vehicles" variant="evenly-spaced" className="min-w-0">
+                <Car className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline sm:hidden">History</span>
+                <span className="xs:hidden sm:inline">Vehicle History</span>
+                <span className="sm:hidden">H</span>
+              </TabsTrigger>
+              <TabsTrigger value="documents" variant="evenly-spaced" className="min-w-0">
+                <FileText className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline sm:hidden">Documents</span>
+                <span className="xs:hidden sm:inline">Documents</span>
+                <span className="sm:hidden">D</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-        <TabsContent value="rentals">
+        <TabsContent value="rentals" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Customer Rentals</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Customer Rentals</span>
+                <Button onClick={() => navigate(`/rentals/new?customer=${id}`)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Rental
+                </Button>
+              </CardTitle>
               <CardDescription>All rental agreements for this customer</CardDescription>
             </CardHeader>
             <CardContent>
               {rentals && rentals.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Monthly Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rentals.map((rental) => (
-                      <TableRow key={rental.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{rental.vehicle.reg}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {rental.vehicle.make} {rental.vehicle.model}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{format(new Date(rental.start_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          {rental.end_date ? format(new Date(rental.end_date), "dd/MM/yyyy") : "Ongoing"}
-                        </TableCell>
-                        <TableCell>£{rental.monthly_amount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'}>
-                            {rental.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => navigate(`/rentals/${rental.id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="font-semibold">Vehicle</TableHead>
+                        <TableHead className="font-semibold">Start Date</TableHead>
+                        <TableHead className="font-semibold">End Date</TableHead>
+                        <TableHead className="font-semibold text-right">Monthly Amount</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No rentals found for this customer
+                    </TableHeader>
+                    <TableBody>
+                      {rentals.map((rental) => (
+                        <TableRow key={rental.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="font-medium">
+                            <div>
+                              <div className="font-semibold text-foreground">{rental.vehicle.reg}</div>
+                              <TruncatedCell 
+                                content={`${rental.vehicle.make} ${rental.vehicle.model}`}
+                                maxLength={25}
+                                className="text-sm text-muted-foreground"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(rental.start_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {rental.end_date ? format(new Date(rental.end_date), "dd/MM/yyyy") : "Ongoing"}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{rental.monthly_amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'}>
+                              {rental.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/rentals/${rental.id}`)}
+                              className="hover:bg-primary hover:text-primary-foreground"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
+              ) : (
+                <EmptyState
+                  icon={Car}
+                  title="No rentals found"
+                  description="This customer doesn't have any rental agreements yet."
+                  actionLabel="Add First Rental"
+                  onAction={() => navigate(`/rentals/new?customer=${id}`)}
+                />
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="payments">
+        <TabsContent value="payments" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Payment History</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Payment History</span>
+                <Button onClick={() => setPaymentDialogOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Payment
+                </Button>
+              </CardTitle>
               <CardDescription>All payments made by this customer</CardDescription>
             </CardHeader>
             <CardContent>
               {payments && payments.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Remaining</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell>{format(new Date(payment.payment_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>£{payment.amount.toLocaleString()}</TableCell>
-                        <TableCell>{payment.method}</TableCell>
-                        <TableCell>{payment.vehicle?.reg || "-"}</TableCell>
-                        <TableCell>
-                          <PaymentStatusBadge 
-                            applied={payment.amount - payment.remaining_amount} 
-                            amount={payment.amount} 
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {payment.remaining_amount > 0 ? (
-                            <span className="text-orange-600">£{payment.remaining_amount.toLocaleString()}</span>
-                          ) : (
-                            <span className="text-green-600">Fully Applied</span>
-                          )}
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="font-semibold">Date</TableHead>
+                        <TableHead className="font-semibold text-right">Amount</TableHead>
+                        <TableHead className="font-semibold">Method</TableHead>
+                        <TableHead className="font-semibold">Vehicle</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold text-right">Remaining</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No payments found for this customer
+                    </TableHeader>
+                    <TableBody>
+                      {payments.map((payment) => (
+                        <TableRow key={payment.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(payment.payment_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{payment.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{payment.method}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {payment.vehicle?.reg ? (
+                              <TruncatedCell 
+                                content={payment.vehicle.reg}
+                                maxLength={15}
+                                className="font-medium"
+                              />
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <PaymentStatusBadge 
+                              applied={payment.amount - payment.remaining_amount} 
+                              amount={payment.amount} 
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {payment.remaining_amount > 0 ? (
+                              <span className="text-orange-600 font-medium">
+                                £{payment.remaining_amount.toLocaleString()}
+                              </span>
+                            ) : (
+                              <span className="text-green-600 font-medium">Fully Applied</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
+              ) : (
+                <EmptyState
+                  icon={Receipt}
+                  title="No payments found"
+                  description="This customer hasn't made any payments yet."
+                  actionLabel="Add First Payment"
+                  onAction={() => setPaymentDialogOpen(true)}
+                />
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="fines">
+        <TabsContent value="fines" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Customer Fines</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span>Customer Fines</span>
+                <Button onClick={() => setFineDialogOpen(true)} size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Upload Fine
+                </Button>
+              </CardTitle>
               <CardDescription>All fines associated with this customer</CardDescription>
             </CardHeader>
             <CardContent>
               {fines && fines.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Issue Date</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Liability</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {fines.map((fine) => (
-                      <TableRow key={fine.id}>
-                        <TableCell>{fine.type}</TableCell>
-                        <TableCell>{fine.reference_no || "-"}</TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{fine.vehicle.reg}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {fine.vehicle.make} {fine.vehicle.model}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>£{fine.amount.toLocaleString()}</TableCell>
-                        <TableCell>{format(new Date(fine.issue_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>{format(new Date(fine.due_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          <FineStatusBadge 
-                            status={fine.status}
-                            dueDate={fine.due_date}
-                            remainingAmount={fine.amount}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={fine.liability === 'Customer' ? 'default' : 'secondary'}>
-                            {fine.liability}
-                          </Badge>
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="font-semibold">Type</TableHead>
+                        <TableHead className="font-semibold">Reference</TableHead>
+                        <TableHead className="font-semibold">Vehicle</TableHead>
+                        <TableHead className="font-semibold text-right">Amount</TableHead>
+                        <TableHead className="font-semibold">Issue Date</TableHead>
+                        <TableHead className="font-semibold">Due Date</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold">Liability</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No fines found for this customer
+                    </TableHeader>
+                    <TableBody>
+                      {fines.map((fine) => (
+                        <TableRow key={fine.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell className="font-medium">{fine.type}</TableCell>
+                          <TableCell>
+                            {fine.reference_no ? (
+                              <TruncatedCell 
+                                content={fine.reference_no}
+                                maxLength={12}
+                                className="font-mono text-sm"
+                              />
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-semibold text-foreground">{fine.vehicle.reg}</div>
+                              <TruncatedCell 
+                                content={`${fine.vehicle.make} ${fine.vehicle.model}`}
+                                maxLength={20}
+                                className="text-sm text-muted-foreground"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{fine.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(fine.issue_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(fine.due_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <FineStatusBadge 
+                              status={fine.status}
+                              dueDate={fine.due_date}
+                              remainingAmount={fine.amount}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={fine.liability === 'Customer' ? 'default' : 'secondary'}>
+                              {fine.liability}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
+              ) : (
+                <EmptyState
+                  icon={AlertTriangle}
+                  title="No fines found"
+                  description="This customer doesn't have any fines associated with their account."
+                  actionLabel="Upload Fine"
+                  onAction={() => setFineDialogOpen(true)}
+                />
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="vehicles">
+        <TabsContent value="vehicles" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle>Vehicle History</CardTitle>
@@ -446,67 +570,80 @@ const CustomerDetail = () => {
             </CardHeader>
             <CardContent>
               {vehicleHistory && vehicleHistory.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Monthly Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {vehicleHistory.map((history) => (
-                      <TableRow key={history.rental_id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{history.vehicle_reg}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {history.vehicle_make} {history.vehicle_model}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{format(new Date(history.start_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          {history.end_date ? format(new Date(history.end_date), "dd/MM/yyyy") : "Ongoing"}
-                        </TableCell>
-                        <TableCell>£{history.monthly_amount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge variant={history.status === 'Active' ? 'default' : 'secondary'}>
-                            {history.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => navigate(`/vehicles/${history.vehicle_id}`)}
-                          >
-                            <Car className="h-4 w-4 mr-1" />
-                            View Vehicle
-                          </Button>
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="font-semibold">Vehicle</TableHead>
+                        <TableHead className="font-semibold">Start Date</TableHead>
+                        <TableHead className="font-semibold">End Date</TableHead>
+                        <TableHead className="font-semibold text-right">Monthly Amount</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No vehicle history found for this customer
+                    </TableHeader>
+                    <TableBody>
+                      {vehicleHistory.map((history) => (
+                        <TableRow key={history.rental_id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell>
+                            <div>
+                              <div className="font-semibold text-foreground">{history.vehicle_reg}</div>
+                              <TruncatedCell 
+                                content={`${history.vehicle_make} ${history.vehicle_model}`}
+                                maxLength={25}
+                                className="text-sm text-muted-foreground"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(history.start_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {history.end_date ? format(new Date(history.end_date), "dd/MM/yyyy") : "Ongoing"}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{history.monthly_amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={history.status === 'Active' ? 'default' : 'secondary'}>
+                              {history.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => navigate(`/vehicles/${history.vehicle_id}`)}
+                              className="hover:bg-primary hover:text-primary-foreground"
+                            >
+                              <Car className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
+              ) : (
+                <EmptyState
+                  icon={Car}
+                  title="No vehicle history"
+                  description="This customer hasn't rented any vehicles yet."
+                  actionLabel="Add First Rental"
+                  onAction={() => navigate(`/rentals/new?customer=${id}`)}
+                />
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="documents">
+        <TabsContent value="documents" className="mt-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Customer Documents</span>
-                <Button onClick={() => setDocumentDialogOpen(true)}>
+                <Button onClick={() => setDocumentDialogOpen(true)} size="sm">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Document
                 </Button>
@@ -515,58 +652,77 @@ const CustomerDetail = () => {
             </CardHeader>
             <CardContent>
               {documents && documents.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Document</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Uploaded</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {documents.map((doc) => (
-                      <TableRow key={doc.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{doc.document_name}</div>
-                            {doc.file_name && (
-                              <div className="text-sm text-muted-foreground">{doc.file_name}</div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>{doc.document_type}</TableCell>
-                        <TableCell>
-                          <DocumentStatusBadge endDate={doc.end_date} />
-                        </TableCell>
-                        <TableCell>{format(new Date(doc.created_at), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="font-semibold">Document</TableHead>
+                        <TableHead className="font-semibold">Type</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold">Uploaded</TableHead>
+                        <TableHead className="font-semibold text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No documents found for this customer
+                    </TableHeader>
+                    <TableBody>
+                      {documents.map((doc) => (
+                        <TableRow key={doc.id} className="hover:bg-muted/50 transition-colors">
+                          <TableCell>
+                            <div>
+                              <TruncatedCell 
+                                content={doc.document_name}
+                                maxLength={30}
+                                className="font-semibold text-foreground"
+                              />
+                              {doc.file_name && (
+                                <TruncatedCell 
+                                  content={doc.file_name}
+                                  maxLength={35}
+                                  className="text-sm text-muted-foreground"
+                                />
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{doc.document_type}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <DocumentStatusBadge endDate={doc.end_date} />
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(doc.created_at), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <Download className="h-3 w-3" />
+                              </Button>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
+              ) : (
+                <EmptyState
+                  icon={FileText}
+                  title="No documents found"
+                  description="This customer doesn't have any documents uploaded yet."
+                  actionLabel="Add First Document"
+                  onAction={() => setDocumentDialogOpen(true)}
+                />
               )}
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
+      </div>
 
       {/* Dialogs */}
       <AddPaymentDialog

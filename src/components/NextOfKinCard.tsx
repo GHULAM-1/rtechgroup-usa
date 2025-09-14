@@ -23,42 +23,43 @@ export const NextOfKinCard = ({
 
   if (!hasNextOfKin) {
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Next of Kin / Emergency Contact
+      <Card className="min-h-[140px] flex flex-col">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <User className="h-4 w-4 text-primary" />
+            Emergency Contact
           </CardTitle>
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-1" />
-            Add
-          </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col justify-between">
           <p className="text-sm text-muted-foreground">No emergency contact information on file.</p>
+          <Button variant="outline" size="sm" onClick={onEdit} className="self-start mt-3">
+            <Edit className="h-3 w-3 mr-2" />
+            Add Contact
+          </Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <User className="h-4 w-4" />
-          Next of Kin / Emergency Contact
+    <Card className="min-h-[140px] flex flex-col">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-sm font-semibold">
+          <div className="flex items-center gap-2">
+            <User className="h-4 w-4 text-primary" />
+            Emergency Contact
+          </div>
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            <Edit className="h-3 w-3" />
+          </Button>
         </CardTitle>
-        <Button variant="outline" size="sm" onClick={onEdit}>
-          <Edit className="h-4 w-4 mr-1" />
-          Edit
-        </Button>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex-1 space-y-3">
         {nokFullName && (
           <div>
-            <p className="font-medium">{nokFullName}</p>
+            <p className="font-semibold text-foreground">{nokFullName}</p>
             {nokRelationship && (
-              <p className="text-sm text-muted-foreground">{nokRelationship}</p>
+              <p className="text-xs text-muted-foreground">{nokRelationship}</p>
             )}
           </div>
         )}
@@ -69,7 +70,7 @@ export const NextOfKinCard = ({
               href={`tel:${nokPhone}`}
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Phone className="h-4 w-4" />
+              <Phone className="h-3 w-3" />
               {nokPhone}
             </a>
           )}
@@ -77,17 +78,17 @@ export const NextOfKinCard = ({
           {nokEmail && (
             <a
               href={`mailto:${nokEmail}`}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors truncate"
             >
-              <Mail className="h-4 w-4" />
-              {nokEmail}
+              <Mail className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{nokEmail}</span>
             </a>
           )}
           
           {nokAddress && (
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
-              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <div className="whitespace-pre-line">{nokAddress}</div>
+              <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+              <div className="text-xs leading-relaxed">{nokAddress}</div>
             </div>
           )}
         </div>

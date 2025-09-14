@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Car, AlertTriangle, Wrench, X, Archive } from "lucide-react";
+import { Car, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 
 interface VehicleStatusBadgeProps {
   status: string;
@@ -9,47 +9,33 @@ interface VehicleStatusBadgeProps {
 }
 
 const getStatusConfig = (status: string) => {
-  switch (status.toLowerCase()) {
+  switch (status?.toLowerCase()) {
     case 'available':
       return {
-        variant: 'default' as const,
-        icon: Car,
-        color: 'text-success',
+        variant: 'secondary' as const,
+        icon: CheckCircle,
+        className: 'bg-pink-100 text-pink-700 hover:bg-pink-200',
         tooltip: 'Vehicle is available for rental'
       };
     case 'rented':
       return {
-        variant: 'secondary' as const,
+        variant: 'default' as const,
         icon: Car,
-        color: 'text-primary',
+        className: 'bg-slate-800 text-slate-100 hover:bg-slate-700',
         tooltip: 'Vehicle is currently rented out'
-      };
-    case 'maintenance':
-      return {
-        variant: 'destructive' as const,
-        icon: Wrench,
-        color: 'text-warning',
-        tooltip: 'Vehicle is in maintenance'
       };
     case 'disposed':
       return {
-        variant: 'destructive' as const,
-        icon: Archive,
-        color: 'text-destructive',
-        tooltip: 'Vehicle has been disposed of'
-      };
-    case 'sold':
-      return {
         variant: 'outline' as const,
-        icon: X,
-        color: 'text-muted-foreground',
-        tooltip: 'Vehicle has been sold'
+        icon: XCircle,
+        className: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
+        tooltip: 'Vehicle has been disposed of'
       };
     default:
       return {
         variant: 'outline' as const,
         icon: AlertTriangle,
-        color: 'text-muted-foreground',
+        className: 'bg-gray-100 text-gray-700 hover:bg-gray-200',
         tooltip: `Status: ${status}`
       };
   }
@@ -60,7 +46,7 @@ export function VehicleStatusBadge({ status, showTooltip = true, compact = false
   const Icon = config.icon;
 
   const badge = (
-    <Badge variant={config.variant} className="flex items-center gap-1">
+    <Badge variant={config.variant} className={`flex items-center gap-1 ${config.className} ${compact ? 'text-xs px-2 py-0.5' : ''}`}>
       <Icon className="h-3 w-3" />
       {!compact && <span className="capitalize">{status}</span>}
     </Badge>

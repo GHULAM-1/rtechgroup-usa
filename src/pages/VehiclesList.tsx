@@ -1,16 +1,23 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Car, Plus, TrendingUp, TrendingDown, Eye, Filter, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Eye, Plus, Search, ArrowUpDown, ChevronUp, ChevronDown, RefreshCw } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
+import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
+import { NetPLChip } from "@/components/NetPLChip";
+import { computeVehicleStatus, VehicleStatus, VehiclePLData, formatCurrency } from "@/lib/vehicleUtils";
+import { useActiveRentals } from "@/hooks/useActiveRentals";
 
 interface Vehicle {
   id: string;
@@ -18,383 +25,547 @@ interface Vehicle {
   make: string;
   model: string;
   colour: string;
-  status: string;
-  purchase_price: number;
-  acquisition_date: string;
   acquisition_type: string;
+  purchase_price?: number;
   mot_due_date?: string;
   tax_due_date?: string;
-  last_service_date?: string;
-  last_service_mileage?: number;
+  is_disposed: boolean;
+  disposal_date?: string;
+  status: string;
 }
 
-interface VehiclePL {
-  vehicle_id: string;
-  total_revenue: number;
-  total_costs: number;
-  net_profit: number;
+type SortField = 'reg' | 'make_model' | 'acquisition_type' | 'status' | 'mot_due_date' | 'tax_due_date' | 'net_profit';
+type SortDirection = 'asc' | 'desc';
+type PerformanceFilter = 'all' | 'profitable' | 'loss';
+
+interface FiltersState {
+  search: string;
+  status: string;
+  make: string;
+  performance: PerformanceFilter;
 }
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const variants = {
-    Available: 'default',
-    Rented: 'secondary',
-    Maintenance: 'destructive',
-    Sold: 'outline'
+export default function VehiclesListEnhanced() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+
+  // State from URL params
+  const [filters, setFilters] = useState<FiltersState>({
+    search: searchParams.get('search') || '',
+    status: searchParams.get('status') || 'all',
+    make: searchParams.get('make') || 'all',
+    performance: (searchParams.get('performance') as PerformanceFilter) || 'all',
+  });
+
+  const [sortField, setSortField] = useState<SortField>((searchParams.get('sort') as SortField) || 'reg');
+  const [sortDirection, setSortDirection] = useState<SortDirection>((searchParams.get('dir') as SortDirection) || 'asc');
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
+  const [pageSize, setPageSize] = useState(parseInt(searchParams.get('limit') || '25'));
+
+  // Update URL params when filters change
+  const updateFilters = (newFilters: Partial<FiltersState>) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+    
+    const params = new URLSearchParams();
+    Object.entries(updatedFilters).forEach(([key, value]) => {
+      if (value && value !== 'all') params.set(key, value);
+    });
+    if (sortField !== 'reg') params.set('sort', sortField);
+    if (sortDirection !== 'asc') params.set('dir', sortDirection);
+    if (currentPage !== 1) params.set('page', currentPage.toString());
+    if (pageSize !== 25) params.set('limit', pageSize.toString());
+    
+    setSearchParams(params);
   };
 
-  return (
-    <Badge variant={variants[status as keyof typeof variants] as any} className="badge-status">
-      {status}
-    </Badge>
-  );
-};
-
-const PLPill = ({ netProfit }: { netProfit: number }) => {
-  const isPositive = netProfit >= 0;
-  
-  return (
-    <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
-      isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-    }`}>
-      {isPositive ? (
-        <TrendingUp className="h-3 w-3" />
-      ) : (
-        <TrendingDown className="h-3 w-3" />
-      )}
-      £{Math.abs(netProfit).toLocaleString()}
-    </div>
-  );
-};
-
-const VehiclesList = () => {
-  const navigate = useNavigate();
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  
-  // Filter states
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [makeFilter, setMakeFilter] = useState<string>("all");
-  const [acquisitionFilter, setAcquisitionFilter] = useState<string>("all");
-  const [plFilter, setPlFilter] = useState<string>("all");
-
-  const { data: vehicles, isLoading } = useQuery({
+  // Data fetching
+  const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery({
     queryKey: ["vehicles-list"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vehicles")
-        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date, acquisition_type, mot_due_date, tax_due_date, last_service_date, last_service_mileage")
-        .order("created_at", { ascending: false });
+        .select("*")
+        .order("reg");
       
       if (error) throw error;
       return data as Vehicle[];
     },
   });
 
-  const { data: vehiclePL } = useQuery({
+  const { data: plData = [], isLoading: plLoading } = useQuery({
     queryKey: ["vehicles-pl"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("pnl_entries")
-        .select("vehicle_id, side, amount");
+        .from("view_pl_by_vehicle")
+        .select("*");
       
       if (error) throw error;
-      
-      const plByVehicle: Record<string, VehiclePL> = {};
-      
-      data?.forEach((entry) => {
-        if (!plByVehicle[entry.vehicle_id]) {
-          plByVehicle[entry.vehicle_id] = {
-            vehicle_id: entry.vehicle_id,
-            total_revenue: 0,
-            total_costs: 0,
-            net_profit: 0,
-          };
-        }
-        
-        const amount = Number(entry.amount);
-        if (entry.side === 'Revenue') {
-          plByVehicle[entry.vehicle_id].total_revenue += amount;
-        } else if (entry.side === 'Cost') {
-          plByVehicle[entry.vehicle_id].total_costs += amount;
-        }
-      });
-      
-      Object.values(plByVehicle).forEach((pl) => {
-        pl.net_profit = pl.total_revenue - pl.total_costs;
-      });
-      
-      return plByVehicle;
+      return data as VehiclePLData[];
     },
   });
 
-  // Clear all filters function
-  const clearFilters = () => {
-    setStatusFilter("all");
-    setMakeFilter("all");
-    setAcquisitionFilter("all");
-    setPlFilter("all");
+  const { data: activeRentals = [] } = useActiveRentals();
+
+  const isLoading = vehiclesLoading || plLoading;
+
+  // Combine vehicle data with P&L and status
+  const enhancedVehicles = useMemo(() => {
+    return vehicles.map(vehicle => {
+      const plEntry = plData.find(pl => pl.vehicle_id === vehicle.id);
+      const computedStatus = computeVehicleStatus(vehicle, activeRentals);
+      
+      return {
+        ...vehicle,
+        computed_status: computedStatus,
+        pl_data: plEntry || {
+          total_revenue: 0,
+          total_costs: 0,
+          net_profit: 0,
+          revenue_rental: 0,
+          revenue_fees: 0,
+          cost_acquisition: 0,
+          cost_service: 0,
+          cost_fines: 0,
+        },
+      };
+    });
+  }, [vehicles, plData, activeRentals]);
+
+  // Filter and sort vehicles
+  const filteredVehicles = useMemo(() => {
+    let filtered = enhancedVehicles;
+
+    // Search filter
+    if (filters.search) {
+      const search = filters.search.toLowerCase();
+      filtered = filtered.filter(vehicle => 
+        vehicle.reg.toLowerCase().includes(search) ||
+        vehicle.make?.toLowerCase().includes(search) ||
+        vehicle.model?.toLowerCase().includes(search)
+      );
+    }
+
+    // Status filter
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(vehicle => 
+        vehicle.computed_status.toLowerCase() === filters.status.toLowerCase()
+      );
+    }
+
+    // Make filter
+    if (filters.make !== 'all') {
+      filtered = filtered.filter(vehicle => vehicle.make === filters.make);
+    }
+
+    // Performance filter
+    if (filters.performance !== 'all') {
+      filtered = filtered.filter(vehicle => {
+        const net = vehicle.pl_data.net_profit;
+        return filters.performance === 'profitable' ? net > 0 : net < 0;
+      });
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any = '';
+      let bVal: any = '';
+
+      switch (sortField) {
+        case 'reg':
+          aVal = a.reg;
+          bVal = b.reg;
+          break;
+        case 'make_model':
+          aVal = `${a.make} ${a.model}`;
+          bVal = `${b.make} ${b.model}`;
+          break;
+        case 'acquisition_type':
+          aVal = a.acquisition_type;
+          bVal = b.acquisition_type;
+          break;
+        case 'status':
+          aVal = a.computed_status;
+          bVal = b.computed_status;
+          break;
+        case 'mot_due_date':
+          aVal = a.mot_due_date || '9999-12-31';
+          bVal = b.mot_due_date || '9999-12-31';
+          break;
+        case 'tax_due_date':
+          aVal = a.tax_due_date || '9999-12-31';
+          bVal = b.tax_due_date || '9999-12-31';
+          break;
+        case 'net_profit':
+          aVal = a.pl_data.net_profit;
+          bVal = b.pl_data.net_profit;
+          break;
+        default:
+          aVal = a.reg;
+          bVal = b.reg;
+      }
+
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc' 
+          ? aVal.localeCompare(bVal)
+          : bVal.localeCompare(aVal);
+      } else {
+        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+    });
+
+    return filtered;
+  }, [enhancedVehicles, filters, sortField, sortDirection]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredVehicles.length / pageSize);
+  const paginatedVehicles = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredVehicles.slice(startIndex, startIndex + pageSize);
+  }, [filteredVehicles, currentPage, pageSize]);
+
+  // Get unique makes for filter
+  const uniqueMakes = useMemo(() => {
+    const makes = [...new Set(vehicles.map(v => v.make).filter(Boolean))];
+    return makes.sort();
+  }, [vehicles]);
+
+  const handleSort = (field: SortField) => {
+    const newDirection = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortField(field);
+    setSortDirection(newDirection);
+    
+    const params = new URLSearchParams(searchParams);
+    params.set('sort', field);
+    params.set('dir', newDirection);
+    setSearchParams(params);
   };
 
-  // Filter vehicles based on current filter values
-  const filteredVehicles = useMemo(() => {
-    if (!vehicles) return [];
+  const handleRowClick = (vehicleId: string) => {
+    navigate(`/vehicle/${vehicleId}`);
+  };
 
-    return vehicles.filter((vehicle) => {
-      // Status filter
-      if (statusFilter !== "all" && vehicle.status !== statusFilter) {
-        return false;
-      }
-
-      // Make filter
-      if (makeFilter !== "all" && vehicle.make !== makeFilter) {
-        return false;
-      }
-
-      // Acquisition type filter
-      if (acquisitionFilter !== "all" && vehicle.acquisition_type !== acquisitionFilter) {
-        return false;
-      }
-
-      // P&L Performance filter
-      if (plFilter !== "all") {
-        const pl = vehiclePL?.[vehicle.id];
-        const netProfit = pl ? pl.net_profit : -Number(vehicle.purchase_price || 0);
-        
-        if (plFilter === "profitable" && netProfit <= 0) return false;
-        if (plFilter === "loss" && netProfit >= 0) return false;
-        if (plFilter === "breakeven" && netProfit !== 0) return false;
-      }
-
-      return true;
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      status: 'all',
+      make: 'all',
+      performance: 'all',
     });
-  }, [vehicles, vehiclePL, statusFilter, makeFilter, acquisitionFilter, plFilter]);
+    setCurrentPage(1);
+    setSearchParams(new URLSearchParams());
+  };
 
-  // Get unique values for filter options
-  const uniqueStatuses = useMemo(() => {
-    if (!vehicles) return [];
-    return [...new Set(vehicles.map(v => v.status))].filter(Boolean);
-  }, [vehicles]);
-
-  const uniqueMakes = useMemo(() => {
-    if (!vehicles) return [];
-    return [...new Set(vehicles.map(v => v.make))].filter(Boolean);
-  }, [vehicles]);
-
-  const uniqueAcquisitionTypes = useMemo(() => {
-    if (!vehicles) return [];
-    return [...new Set(vehicles.map(v => v.acquisition_type))].filter(Boolean);
-  }, [vehicles]);
-
-  // Check if any filters are active
-  const hasActiveFilters = statusFilter !== "all" || makeFilter !== "all" || 
-                          acquisitionFilter !== "all" || plFilter !== "all";
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />;
+  };
 
   if (isLoading) {
-    return <div>Loading vehicles...</div>;
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-start">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-10" />
+          ))}
+        </div>
+        
+        <Card>
+          <CardContent className="p-0">
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold">Vehicles</h1>
-          <p className="text-muted-foreground">Manage your fleet vehicles and view P&L performance</p>
+          <h1 className="text-3xl font-bold tracking-tight">Fleet Management</h1>
+          <p className="text-muted-foreground">
+            Manage your vehicle fleet, track P&L performance, and monitor compliance
+          </p>
         </div>
+        <div data-add-vehicle-trigger>
+          <AddVehicleDialog />
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search vehicles..."
+            value={filters.search}
+            onChange={(e) => updateFilters({ search: e.target.value })}
+            className="pl-9"
+          />
+        </div>
+        
+        <Select value={filters.status} onValueChange={(value) => updateFilters({ status: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="available">Available</SelectItem>
+            <SelectItem value="rented">Rented</SelectItem>
+            <SelectItem value="disposed">Disposed</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.make} onValueChange={(value) => updateFilters({ make: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Makes" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Makes</SelectItem>
+            {uniqueMakes.map(make => (
+              <SelectItem key={make} value={make}>{make}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.performance} onValueChange={(value) => updateFilters({ performance: value as PerformanceFilter })}>
+          <SelectTrigger>
+            <SelectValue placeholder="All Performance" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Performance</SelectItem>
+            <SelectItem value="profitable">Profitable</SelectItem>
+            <SelectItem value="loss">Loss Making</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Button 
-          onClick={() => setShowAddDialog(true)}
-          className="bg-gradient-primary"
+          variant="outline" 
+          onClick={clearFilters}
+          className="flex items-center gap-2"
         >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Vehicle
+          <RefreshCw className="h-4 w-4" />
+          Clear
         </Button>
       </div>
 
-      {/* Filter Bar */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Filter className="h-4 w-4" />
-              Filters:
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {uniqueStatuses.map(status => (
-                  <SelectItem key={status} value={status}>{status}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      {/* Results Info */}
+      <div className="text-sm text-muted-foreground">
+        Showing {paginatedVehicles.length} of {filteredVehicles.length} vehicles
+      </div>
 
-            <Select value={makeFilter} onValueChange={setMakeFilter}>
-              <SelectTrigger className="w-[130px]">
-                <SelectValue placeholder="All Makes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Makes</SelectItem>
-                {uniqueMakes.map(make => (
-                  <SelectItem key={make} value={make}>{make}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={acquisitionFilter} onValueChange={setAcquisitionFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {uniqueAcquisitionTypes.map(type => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={plFilter} onValueChange={setPlFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Performance" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Performance</SelectItem>
-                <SelectItem value="profitable">Profitable</SelectItem>
-                <SelectItem value="loss">Loss-making</SelectItem>
-                <SelectItem value="breakeven">Break-even</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={clearFilters}>
-                <X className="h-4 w-4 mr-1" />
-                Clear Filters
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Vehicles Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Car className="h-5 w-5 text-primary" />
-            Fleet Overview
-          </CardTitle>
-          <CardDescription>
-            {vehicles && filteredVehicles ? 
-              `Showing ${filteredVehicles.length} of ${vehicles.length} vehicles` :
-              "View all vehicles with registration, status, and P&L performance"
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredVehicles && filteredVehicles.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Registration</TableHead>
-                    <TableHead>Make/Model</TableHead>
-                    <TableHead>Colour</TableHead>
-                    <TableHead>Acquisition</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>MOT Due</TableHead>
-                    <TableHead>TAX Due</TableHead>
-                    <TableHead className="text-right">Net P&L</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+      {/* Table */}
+      {filteredVehicles.length === 0 ? (
+        <EmptyState
+          icon={Plus}
+          title="No vehicles found"
+          description="No vehicles match your current filters. Try adjusting your search criteria."
+          actionLabel="Add Vehicle"
+          onAction={() => {
+            // Open add vehicle dialog programmatically
+            const addButton = document.querySelector('[data-add-vehicle-trigger]') as HTMLButtonElement;
+            addButton?.click();
+          }}
+        />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('reg')}>
+                    <div className="flex items-center gap-2">
+                      Registration
+                      {getSortIcon('reg')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('make_model')}>
+                    <div className="flex items-center gap-2">
+                      Make/Model
+                      {getSortIcon('make_model')}
+                    </div>
+                  </TableHead>
+                  <TableHead>Colour</TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('acquisition_type')}>
+                    <div className="flex items-center gap-2">
+                      Acquisition
+                      {getSortIcon('acquisition_type')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
+                    <div className="flex items-center gap-2">
+                      Status
+                      {getSortIcon('status')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('mot_due_date')}>
+                    <div className="flex items-center gap-2">
+                      MOT Due
+                      {getSortIcon('mot_due_date')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('tax_due_date')}>
+                    <div className="flex items-center gap-2">
+                      TAX Due
+                      {getSortIcon('tax_due_date')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer text-right" onClick={() => handleSort('net_profit')}>
+                    <div className="flex items-center justify-end gap-2">
+                      Net P&L
+                      {getSortIcon('net_profit')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedVehicles.map((vehicle) => (
+                  <TableRow 
+                    key={vehicle.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleRowClick(vehicle.id)}
+                  >
+                    <TableCell>
+                      <Link 
+                        to={`/vehicle/${vehicle.id}`}
+                        className="font-bold text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {vehicle.reg}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="font-medium">{vehicle.make}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {vehicle.model}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{vehicle.colour}</TableCell>
+                    <TableCell>
+                      <AcquisitionBadge acquisitionType={vehicle.acquisition_type} />
+                    </TableCell>
+                    <TableCell>
+                      <VehicleStatusBadge status={vehicle.computed_status} />
+                    </TableCell>
+                    <TableCell>
+                      <MOTTaxStatusChip 
+                        dueDate={vehicle.mot_due_date} 
+                        type="MOT" 
+                        compact 
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <MOTTaxStatusChip 
+                        dueDate={vehicle.tax_due_date} 
+                        type="TAX" 
+                        compact 
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <NetPLChip
+                        revenue={vehicle.pl_data.total_revenue}
+                        costs={vehicle.pl_data.total_costs}
+                        net={vehicle.pl_data.net_profit}
+                        compact
+                      />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/vehicle/${vehicle.id}`);
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVehicles.map((vehicle) => {
-                    const pl = vehiclePL?.[vehicle.id];
-                    const netProfit = pl ? pl.net_profit : -Number(vehicle.purchase_price || 0);
-                    
-                    return (
-                      <TableRow key={vehicle.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{vehicle.reg}</TableCell>
-                        <TableCell>{vehicle.make} {vehicle.model}</TableCell>
-                        <TableCell>{vehicle.colour}</TableCell>
-                        <TableCell>
-                          <AcquisitionBadge acquisitionType={vehicle.acquisition_type} />
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={vehicle.status} />
-                        </TableCell>
-                        <TableCell>
-                          <MOTTaxStatusChip dueDate={vehicle.mot_due_date} type="MOT" compact />
-                        </TableCell>
-                        <TableCell>
-                          <MOTTaxStatusChip dueDate={vehicle.tax_due_date} type="TAX" compact />
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {vehicle.last_service_date 
-                              ? new Date(vehicle.last_service_date).toLocaleDateString('en-GB')
-                              : "—"
-                            }
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <PLPill netProfit={netProfit} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/vehicles/${vehicle.id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Car className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                {!vehicles || vehicles.length === 0 
-                  ? "No vehicles found" 
-                  : "No vehicles match your filters"}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {!vehicles || vehicles.length === 0 
-                  ? "Add your first vehicle to get started"
-                  : "Try adjusting your filters or add a new vehicle"}
-              </p>
-              {(!vehicles || vehicles.length === 0) ? (
-                <Button onClick={() => setShowAddDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Vehicle
-                </Button>
-              ) : (
-                <div className="space-x-2">
-                  <Button variant="outline" onClick={clearFilters}>
-                    <X className="h-4 w-4 mr-2" />
-                    Clear Filters
-                  </Button>
-                  <Button onClick={() => setShowAddDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Vehicle
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
-      <AddVehicleDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows per page:</span>
+            <Select value={pageSize.toString()} onValueChange={(value) => {
+              setPageSize(parseInt(value));
+              setCurrentPage(1);
+              const params = new URLSearchParams(searchParams);
+              params.set('limit', value);
+              params.delete('page');
+              setSearchParams(params);
+            }}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => {
+                setCurrentPage(currentPage - 1);
+                const params = new URLSearchParams(searchParams);
+                params.set('page', (currentPage - 1).toString());
+                setSearchParams(params);
+              }}
+            >
+              Previous
+            </Button>
+            
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+            </span>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => {
+                setCurrentPage(currentPage + 1);
+                const params = new URLSearchParams(searchParams);
+                params.set('page', (currentPage + 1).toString());
+                setSearchParams(params);
+              }}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
-
-export default VehiclesList;
+}

@@ -1,8 +1,8 @@
 import { differenceInDays } from "date-fns";
 
-export type InsurancePolicyStatus = "Active" | "Expired" | "Suspended" | "Cancelled";
+export type InsurancePolicyStatus = "Active" | "ExpiringSoon" | "Expired" | "Suspended" | "Cancelled" | "Inactive";
 
-export type InsuranceStatusLevel = "ok" | "due_soon" | "expired" | "suspended" | "cancelled";
+export type InsuranceStatusLevel = "ok" | "due_soon" | "expired" | "suspended" | "cancelled" | "inactive";
 
 export interface InsuranceStatusInfo {
   level: InsuranceStatusLevel;
@@ -18,12 +18,20 @@ export function getInsuranceStatusInfo(
   const expiry = new Date(expiryDate);
   const daysUntilExpiry = differenceInDays(expiry, today);
 
-  // Handle non-active statuses first
+  // Handle explicit statuses first (not date-derived)
   if (status === "Expired") {
     return {
       level: "expired",
       label: "Expired",
       daysUntilExpiry: Math.abs(daysUntilExpiry)
+    };
+  }
+
+  if (status === "ExpiringSoon") {
+    return {
+      level: "due_soon",
+      label: daysUntilExpiry === 0 ? "Expires Today" : `Expires in ${daysUntilExpiry} days`,
+      daysUntilExpiry
     };
   }
 
@@ -43,7 +51,15 @@ export function getInsuranceStatusInfo(
     };
   }
 
-  // Handle active policies based on expiry date
+  if (status === "Inactive") {
+    return {
+      level: "inactive",
+      label: "Inactive",
+      daysUntilExpiry
+    };
+  }
+
+  // Handle active policies based on expiry date for backwards compatibility
   if (daysUntilExpiry < 0) {
     return {
       level: "expired",

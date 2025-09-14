@@ -28,6 +28,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -38,8 +48,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useInsuranceValidation } from "@/hooks/useInsuranceData";
 
 const policySchema = z.object({
   policy_number: z.string().min(3, "Policy number must be at least 3 characters"),
@@ -51,7 +62,7 @@ const policySchema = z.object({
     required_error: "Expiry date is required",
   }),
   vehicle_id: z.string().optional(),
-  status: z.enum(["Active", "Expired", "Suspended", "Cancelled"]),
+  status: z.enum(["Active", "ExpiringSoon", "Expired", "Suspended", "Cancelled", "Inactive"]).default("Active"),
   notes: z.string().optional(),
 }).refine(
   (data) => data.expiry_date > data.start_date,
@@ -78,6 +89,9 @@ export function InsurancePolicyDialog({
 }: InsurancePolicyDialogProps) {
   const queryClient = useQueryClient();
   const isEditing = Boolean(policyId);
+  const [showOverlapDialog, setShowOverlapDialog] = useState(false);
+  const [overlapData, setOverlapData] = useState<any[]>([]);
+  const { checkPolicyOverlap, checkPolicyNumberUnique } = useInsuranceValidation();
 
   const form = useForm<PolicyFormData>({
     resolver: zodResolver(policySchema),
@@ -161,6 +175,35 @@ export function InsurancePolicyDialog({
 
   const savePolicyMutation = useMutation({
     mutationFn: async (data: PolicyFormData) => {
+      // Check for policy number uniqueness
+      const isUnique = await checkPolicyNumberUnique(
+        customerId, 
+        data.policy_number, 
+        isEditing ? policyId : undefined
+      );
+      
+      if (!isUnique) {
+        throw new Error("Policy number already exists for this customer");
+      }
+
+      // Check for overlapping policies if status is Active
+      if (data.status === "Active") {
+        const overlaps = await checkPolicyOverlap(
+          customerId,
+          data.vehicle_id === "none" ? null : data.vehicle_id || null,
+          data.start_date,
+          data.expiry_date,
+          isEditing ? policyId : undefined
+        );
+
+        if (overlaps && overlaps.length > 0) {
+          setOverlapData(overlaps);
+          setShowOverlapDialog(true);
+          return; // Don't proceed with save
+        }
+      }
+
+      // Proceed with save
       const policyData = {
         customer_id: customerId,
         policy_number: data.policy_number,
@@ -200,7 +243,7 @@ export function InsurancePolicyDialog({
     },
     onError: (error) => {
       console.error("Error saving policy:", error);
-      toast.error("Failed to save policy");
+      toast.error(error.message || "Failed to save policy");
     },
   });
 
@@ -381,12 +424,14 @@ export function InsurancePolicyDialog({
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Expired">Expired</SelectItem>
-                        <SelectItem value="Suspended">Suspended</SelectItem>
-                        <SelectItem value="Cancelled">Cancelled</SelectItem>
-                      </SelectContent>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="ExpiringSoon">Expiring Soon</SelectItem>
+                          <SelectItem value="Expired">Expired</SelectItem>
+                          <SelectItem value="Suspended">Suspended</SelectItem>
+                          <SelectItem value="Cancelled">Cancelled</SelectItem>
+                          <SelectItem value="Inactive">Inactive</SelectItem>
+                        </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
@@ -429,6 +474,49 @@ export function InsurancePolicyDialog({
           </form>
         </Form>
       </DialogContent>
+
+      {/* Overlap Warning Dialog */}
+      <AlertDialog open={showOverlapDialog} onOpenChange={setShowOverlapDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              Overlapping Policy Found
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  An active policy already exists for this customer and vehicle during the specified period:
+                </p>
+                {overlapData.map((overlap) => (
+                  <div key={overlap.overlapping_policy_id} className="p-3 border rounded bg-muted">
+                    <div className="font-medium">Policy: {overlap.overlapping_policy_number}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Period: {format(new Date(overlap.overlapping_start_date), "MMM d, yyyy")} - {format(new Date(overlap.overlapping_expiry_date), "MMM d, yyyy")}
+                    </div>
+                  </div>
+                ))}
+                <p>
+                  Would you like to set the overlapping policy to Inactive and proceed with creating this new policy?
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                // Set overlapping policies to inactive and proceed
+                setShowOverlapDialog(false);
+                // Force proceed with save (this would need additional logic to handle the overlap resolution)
+                toast.info("Please manually set overlapping policies to Inactive first");
+              }}
+            >
+              Proceed Anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

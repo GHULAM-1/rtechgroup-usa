@@ -24,6 +24,8 @@ export function InsurancePolicyStatusChip({
       case "suspended":
       case "cancelled":
         return "destructive";
+      case "inactive":
+        return "outline";
       default:
         return "outline";
     }

@@ -28,7 +28,7 @@ import FinesList from "@/pages/FinesList";
 import CreateFine from "@/pages/CreateFine";
 import FineDetail from "@/pages/FineDetail";
 import RemindersPageNew from "@/pages/RemindersPageNew";
-import InsuranceList from "@/pages/InsuranceList";
+import InsuranceListEnhanced from "@/pages/InsuranceListEnhanced";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -82,7 +82,7 @@ function App() {
             <Route path="/fines" element={<Layout><FinesList /></Layout>} />
             <Route path="/fines/new" element={<Layout><CreateFine /></Layout>} />
             <Route path="/fines/:id" element={<Layout><FineDetail /></Layout>} />
-            <Route path="/insurance" element={<Layout><InsuranceList /></Layout>} />
+            <Route path="/insurance" element={<Layout><InsuranceListEnhanced /></Layout>} />
             <Route path="/test" element={<Layout><AcceptanceTestDashboard /></Layout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

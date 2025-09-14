@@ -409,6 +409,7 @@ export type Database = {
         Row: {
           created_at: string | null
           customer_id: string
+          docs_count: number | null
           expiry_date: string
           id: string
           notes: string | null
@@ -422,6 +423,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           customer_id: string
+          docs_count?: number | null
           expiry_date: string
           id?: string
           notes?: string | null
@@ -435,6 +437,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           customer_id?: string
+          docs_count?: number | null
           expiry_date?: string
           id?: string
           notes?: string | null
@@ -2021,6 +2024,21 @@ export type Database = {
         Args: { p_vehicle_id: string }
         Returns: number
       }
+      check_policy_overlap: {
+        Args: {
+          p_customer_id: string
+          p_expiry_date: string
+          p_policy_id?: string
+          p_start_date: string
+          p_vehicle_id: string
+        }
+        Returns: {
+          overlapping_expiry_date: string
+          overlapping_policy_id: string
+          overlapping_policy_number: string
+          overlapping_start_date: string
+        }[]
+      }
       dispose_vehicle: {
         Args: {
           p_buyer?: string
@@ -2158,6 +2176,14 @@ export type Database = {
           customers_affected: number
           payments_processed: number
           total_credit_applied: number
+        }[]
+      }
+      recalculate_insurance_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          expired_policies: number
+          expiring_soon_policies: number
+          updated_policies: number
         }[]
       }
       recalculate_vehicle_pl: {

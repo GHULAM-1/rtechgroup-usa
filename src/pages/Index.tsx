@@ -1,7 +1,7 @@
-import { AcceptanceTestDashboard } from "@/components/AcceptanceTestDashboard";
+import { AuthDashboard } from "@/components/AuthDashboard";
 
 const Index = () => {
-  return <AcceptanceTestDashboard />;
+  return <AuthDashboard />;
 };
 
 export default Index;

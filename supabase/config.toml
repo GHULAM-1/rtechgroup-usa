@@ -1,5 +1,17 @@
 project_id = "wrogevjpvhvputrjhvvg"
 
+[functions.admin-create-user]
+verify_jwt = true
+
+[functions.admin-reset-password]
+verify_jwt = true
+
+[functions.admin-update-role]
+verify_jwt = true
+
+[functions.admin-deactivate-user]
+verify_jwt = true
+
 [functions.apply-fine]
 verify_jwt = true
 

@@ -17,6 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { useOrgSettings } from '@/hooks/useOrgSettings';
 import { CompanyLogoUpload } from '@/components/CompanyLogoUpload';
 import { TestingCards } from '@/components/TestingCards';
+import UsersManagement from '@/pages/UsersManagement';
 
 const Settings = () => {
   const queryClient = useQueryClient();
@@ -27,7 +28,7 @@ const Settings = () => {
   // Handle URL tab parameter
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['company', 'reminders', 'maintenance', 'testing', 'integrations'].includes(tabParam)) {
+    if (tabParam && ['company', 'reminders', 'maintenance', 'testing', 'integrations', 'users'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -213,7 +214,7 @@ const Settings = () => {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="company" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Company Profile
@@ -233,6 +234,10 @@ const Settings = () => {
           <TabsTrigger value="integrations" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
             Integrations
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <SettingsIcon className="h-4 w-4" />
+            Users
           </TabsTrigger>
         </TabsList>
 
@@ -590,13 +595,18 @@ const Settings = () => {
                     <li>• Accounting software integration</li>
                   </ul>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+
+      {/* Users Tab */}
+      <TabsContent value="users">
+        <UsersManagement />
+      </TabsContent>
+    </Tabs>
+  </div>
+);
 };
 
 export { Settings };

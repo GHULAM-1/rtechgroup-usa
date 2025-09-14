@@ -81,6 +81,7 @@ export default function AddCustomerDocumentDialog({
     resolver: zodResolver(documentSchema),
     defaultValues: {
       document_name: "",
+      vehicle_id: "none",
       insurance_provider: "",
       policy_number: "",
       notes: "",
@@ -128,7 +129,7 @@ export default function AddCustomerDocumentDialog({
       form.reset({
         document_type: existingDocument.document_type as any,
         document_name: existingDocument.document_name,
-        vehicle_id: existingDocument.vehicle_id || undefined,
+        vehicle_id: existingDocument.vehicle_id || "none",
         insurance_provider: existingDocument.insurance_provider || "",
         policy_number: existingDocument.policy_number || "",
         start_date: existingDocument.start_date ? new Date(existingDocument.start_date) : undefined,
@@ -138,6 +139,7 @@ export default function AddCustomerDocumentDialog({
     } else if (open && !documentId) {
       form.reset({
         document_name: "",
+        vehicle_id: "none",
         insurance_provider: "",
         policy_number: "",
         notes: "",
@@ -187,7 +189,7 @@ export default function AddCustomerDocumentDialog({
 
       const documentData = {
         customer_id: customerId,
-        vehicle_id: data.vehicle_id || null,
+        vehicle_id: data.vehicle_id === "none" ? null : data.vehicle_id || null,
         document_type: data.document_type,
         document_name: data.document_name,
         file_url: fileUrl,
@@ -324,7 +326,7 @@ export default function AddCustomerDocumentDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No vehicle</SelectItem>
+                        <SelectItem value="none">No vehicle</SelectItem>
                         {vehicles.map(vehicle => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
                             {vehicle.reg} - {vehicle.make} {vehicle.model}

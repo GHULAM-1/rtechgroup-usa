@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,15 +64,17 @@ const PaymentsList = () => {
   const [page, setPage] = useState(1);
   const pageSize = 25;
 
-  // Apply default date filter for "thisMonth"
-  if (filters.quickFilter === 'thisMonth' && !filters.dateFrom) {
-    const today = new Date();
-    setFilters(prev => ({
-      ...prev,
-      dateFrom: new Date(today.getFullYear(), today.getMonth(), 1),
-      dateTo: today
-    }));
-  }
+  // Apply default date filter for "thisMonth" in useEffect to avoid infinite re-renders
+  useEffect(() => {
+    if (filters.quickFilter === 'thisMonth' && !filters.dateFrom) {
+      const today = new Date();
+      setFilters(prev => ({
+        ...prev,
+        dateFrom: new Date(today.getFullYear(), today.getMonth(), 1),
+        dateTo: today
+      }));
+    }
+  }, [filters.quickFilter, filters.dateFrom]);
 
   const { data: paymentsData, isLoading } = usePaymentsData({
     filters,
@@ -163,62 +165,193 @@ const PaymentsList = () => {
       {/* Payments Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-primary" />
-            Payment History
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" />
+              <CardTitle>Payment Records</CardTitle>
+            </div>
+            {totalCount > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Showing {((page - 1) * pageSize) + 1}-{Math.min(page * pageSize, totalCount)} of {totalCount} payments
+              </div>
+            )}
+          </div>
           <CardDescription>
-            Complete record of all payments received
+            Complete record of all payments received with allocation details
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {payments && payments.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Vehicle</TableHead>
-                    <TableHead>Rental</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                 </TableHeader>
-                <TableBody>
-                   {payments.map((payment) => (
-                     <TableRow key={payment.id} className="hover:bg-muted/50">
-                       <TableCell>{formatInTimeZone(new Date(payment.payment_date), 'Europe/London', 'dd/MM/yyyy')}</TableCell>
-                       <TableCell>{payment.customers?.name}</TableCell>
-                       <TableCell>{payment.vehicles?.reg || '-'}</TableCell>
-                       <TableCell>
-                         {payment.rentals ? (
-                           <Badge variant="outline" className="text-xs">
-                             Rental #{payment.rentals.id.slice(0, 8)}
-                           </Badge>
-                         ) : (
-                           '-'
-                         )}
-                       </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                               <Badge variant="default">
-                                 {getPaymentTypeDisplay(payment.payment_type)}
-                               </Badge>
-                             </div>
-                           </TableCell>
-                          <TableCell>Cash</TableCell>
-                        <TableCell className="text-right font-medium">
-                          £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </TableCell>
-                     </TableRow>
-                   ))}
-                </TableBody>
-              </Table>
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse flex space-x-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-4 bg-muted rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : payments && payments.length > 0 ? (
+            <>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleSort('payment_date')}
+                      >
+                        Date {sortBy === 'payment_date' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleSort('customer')}
+                      >
+                        Customer {sortBy === 'customer' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </TableHead>
+                      <TableHead>Vehicle</TableHead>
+                      <TableHead>Rental</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead 
+                        className="text-right cursor-pointer hover:bg-muted/50"
+                        onClick={() => handleSort('amount')}
+                      >
+                        Amount {sortBy === 'amount' && (sortOrder === 'asc' ? '↑' : '↓')}
+                      </TableHead>
+                      <TableHead>Allocation</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {payments.map((payment) => {
+                      const allocatedAmount = payment.amount - (payment.remaining_amount || 0);
+                      const hasCredit = (payment.remaining_amount || 0) > 0;
+                      
+                      return (
+                        <TableRow key={payment.id} className="hover:bg-muted/50">
+                          <TableCell className="font-medium">
+                            {formatInTimeZone(new Date(payment.payment_date), 'Europe/London', 'dd/MM/yyyy')}
+                          </TableCell>
+                          <TableCell>
+                            <button
+                              onClick={() => navigate(`/customers/${payment.customers.id}`)}
+                              className="text-blue-600 hover:text-blue-800 hover:underline"
+                            >
+                              {payment.customers.name}
+                            </button>
+                          </TableCell>
+                          <TableCell>
+                            {payment.vehicles ? (
+                              <button
+                                onClick={() => navigate(`/vehicles/${payment.vehicles!.id}`)}
+                                className="text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                {payment.vehicles.reg}
+                                {payment.vehicles.make && payment.vehicles.model && 
+                                  <span className="text-muted-foreground"> • {payment.vehicles.make} {payment.vehicles.model}</span>
+                                }
+                              </button>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {payment.rentals ? (
+                              <Badge variant="outline" className="text-xs cursor-pointer" 
+                                onClick={() => navigate(`/rentals/${payment.rentals!.id}`)}>
+                                {payment.rentals.rental_number || `#${payment.rentals.id.slice(0, 8)}`}
+                              </Badge>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>{payment.method || '-'}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{payment.amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                          </TableCell>
+                          <TableCell>
+                            {allocatedAmount === payment.amount ? (
+                              <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                                Applied
+                              </Badge>
+                            ) : hasCredit ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-help">
+                                      Credit £{payment.remaining_amount?.toFixed(2)}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <div>
+                                      <p>Applied £{allocatedAmount.toFixed(2)} to charges</p>
+                                      <p>Remaining £{payment.remaining_amount?.toFixed(2)} credit will auto-apply to next charge</p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Badge variant="outline">Pending</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewAllocations(payment.id)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Allocations
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleViewLedger(payment)}>
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  View Ledger
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No payments found</h3>
               <p className="text-muted-foreground mb-4">
@@ -235,6 +368,13 @@ const PaymentsList = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Allocation Drawer */}
+      <PaymentAllocationDrawer
+        open={showAllocationDrawer}
+        onOpenChange={setShowAllocationDrawer}
+        paymentId={selectedPaymentId}
+      />
     </div>
   );
 };

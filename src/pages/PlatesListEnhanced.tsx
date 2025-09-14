@@ -110,7 +110,7 @@ export default function PlatesListEnhanced() {
         .from("plates")
         .select(`
           *,
-          vehicles (
+          vehicles!plates_vehicle_id_fkey (
             id,
             reg,
             make,

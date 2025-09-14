@@ -242,6 +242,9 @@ export default function VehiclesListEnhanced() {
     params.set('sort', field);
     params.set('dir', newDirection);
     setSearchParams(params);
+    
+    // Debug logging
+    console.log(`Sorting by ${field} in ${newDirection} direction`);
   };
 
   const handleRowClick = (vehicleId: string) => {

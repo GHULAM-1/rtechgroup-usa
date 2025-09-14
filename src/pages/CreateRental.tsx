@@ -4,27 +4,34 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { addMonths, isAfter, isBefore, subYears } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, FileText, Save } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, FileText, Save, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCustomerActiveRentals } from "@/hooks/useCustomerActiveRentals";
 import { PAYMENT_TYPES } from "@/lib/constants";
+import { ContractSummary } from "@/components/ContractSummary";
+import { DatePickerInput } from "@/components/DatePickerInput";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 const rentalSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
   vehicle_id: z.string().min(1, "Vehicle is required"),
   start_date: z.date(),
   end_date: z.date(),
-  monthly_amount: z.number().min(0.01, "Monthly amount must be greater than 0"),
+  monthly_amount: z.number().min(1, "Monthly amount must be at least £1"),
   initial_fee: z.number().min(0, "Initial fee cannot be negative").optional(),
-}).refine((data) => data.start_date < data.end_date, {
-  message: "End date must be after start date",
+}).refine((data) => {
+  const monthAfterStart = addMonths(data.start_date, 1);
+  return isAfter(data.end_date, monthAfterStart) || data.end_date.getTime() === monthAfterStart.getTime();
+}, {
+  message: "End date must be at least 1 month after start date",
   path: ["end_date"],
 });
 
@@ -35,18 +42,28 @@ const CreateRental = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string>("");
+
+  const today = new Date();
+  const defaultEndDate = addMonths(today, 12); // 12 months from today
 
   const form = useForm<RentalFormData>({
     resolver: zodResolver(rentalSchema),
     defaultValues: {
       customer_id: "",
       vehicle_id: "",
-      start_date: new Date(),
-      end_date: new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
-      monthly_amount: 0,
-      initial_fee: 0,
+      start_date: today,
+      end_date: defaultEndDate,
+      monthly_amount: undefined,
+      initial_fee: undefined,
     },
+    mode: "onBlur", // Validate on blur for better UX
   });
+
+  // Watch form values for live updates
+  const watchedValues = form.watch();
+  const selectedCustomerId = watchedValues.customer_id;
+  const selectedVehicleId = watchedValues.vehicle_id;
 
   // Get customers and available vehicles
   const { data: customers } = useQuery({
@@ -54,16 +71,13 @@ const CreateRental = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
-        .select("id, name, customer_type, type")
+        .select("id, name, customer_type, type, email, phone")
         .eq("status", "Active");
       if (error) throw error;
       return data;
     },
   });
 
-  const selectedCustomerId = form.watch("customer_id");
-  const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
-  
   // Get active rentals count for selected customer to enforce rules
   const { data: activeRentalsCount } = useCustomerActiveRentals(selectedCustomerId);
 
@@ -79,8 +93,12 @@ const CreateRental = () => {
     },
   });
 
+  const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
+  const selectedVehicle = vehicles?.find(v => v.id === selectedVehicleId);
+
   const onSubmit = async (data: RentalFormData) => {
     setLoading(true);
+    setSubmitError("");
     try {
       // Validate form data
       if (!data.customer_id || !data.vehicle_id) {
@@ -166,9 +184,12 @@ const CreateRental = () => {
       // Generate only first month's charge (subsequent charges created monthly)
       await supabase.rpc("backfill_rental_charges_first_month_only");
 
+      const customerName = selectedCustomer?.name || "Customer";
+      const vehicleReg = selectedVehicle?.reg || "Vehicle";
+      
       toast({
         title: "Rental Created",
-        description: "Rental agreement has been created successfully with monthly charges scheduled.",
+        description: `Rental created for ${customerName} • ${vehicleReg}`,
       });
 
       // Refresh queries and navigate
@@ -193,6 +214,7 @@ const CreateRental = () => {
         error
       });
       
+      setSubmitError(fullError);
       toast({
         title: "Error Creating Rental",
         description: fullError,
@@ -202,6 +224,13 @@ const CreateRental = () => {
       setLoading(false);
     }
   };
+
+  // Form validation state
+  const isFormValid = form.formState.isValid && !form.formState.isValidating;
+  const yearAgo = subYears(new Date(), 1);
+  
+  // Check if start date is in the past
+  const isPastStartDate = watchedValues.start_date && isBefore(watchedValues.start_date, today);
 
   return (
     <div className="space-y-6">
@@ -217,174 +246,237 @@ const CreateRental = () => {
         </div>
       </div>
 
-      {/* Form */}
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Rental Agreement Details
-          </CardTitle>
-          <CardDescription>
-            Fill in the details to create a new rental agreement. Monthly charges will be automatically generated.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              {/* Customer and Vehicle Selection */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="customer_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select customer" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {customers?.map((customer) => {
-                            const customerType = customer.customer_type || customer.type;
-                            return (
-                              <SelectItem key={customer.id} value={customer.id}>
-                                {customer.name} ({customerType})
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      {/* Two-column layout: Form + Contract Summary */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Form */}
+        <div className="xl:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Rental Agreement Details
+              </CardTitle>
+              <CardDescription>
+                Fill in the details to create a new rental agreement. Monthly charges will be automatically generated.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Submit Error Alert */}
+              {submitError && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>{submitError}</AlertDescription>
+                </Alert>
+              )}
 
-                <FormField
-                  control={form.control}
-                  name="vehicle_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Vehicle</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select vehicle" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {vehicles?.map((vehicle) => (
-                            <SelectItem key={vehicle.id} value={vehicle.id}>
-                              {vehicle.reg} ({vehicle.make} {vehicle.model})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Customer and Vehicle Selection */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="customer_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Customer *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className={form.formState.errors.customer_id ? "border-destructive" : ""}>
+                                <SelectValue placeholder="Select customer" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {customers?.map((customer) => {
+                                const customerType = customer.customer_type || customer.type;
+                                const contact = customer.email || customer.phone;
+                                return (
+                                  <SelectItem key={customer.id} value={customer.id}>
+                                    {customer.name} • {contact || customerType}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              {/* Dates */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="start_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Start Date</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="vehicle_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Vehicle *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className={form.formState.errors.vehicle_id ? "border-destructive" : ""}>
+                                <SelectValue placeholder="Select vehicle" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {vehicles?.map((vehicle) => (
+                                <SelectItem key={vehicle.id} value={vehicle.id}>
+                                  {vehicle.reg} • {vehicle.make} {vehicle.model}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                          <FormDescription>
+                            Only available vehicles are shown
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="end_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>End Date</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="date"
-                          {...field}
-                          value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                          onChange={(e) => field.onChange(new Date(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  {/* Dates */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="start_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Date *</FormLabel>
+                          <FormControl>
+                            <DatePickerInput
+                              date={field.value}
+                              onSelect={field.onChange}
+                              placeholder="Select start date"
+                              disabled={(date) => isBefore(date, yearAgo)}
+                              error={!!form.formState.errors.start_date}
+                              className="w-full"
+                            />
+                          </FormControl>
+                          {isPastStartDate && (
+                            <div className="flex items-center gap-1 text-amber-600 text-sm">
+                              <AlertTriangle className="h-3 w-3" />
+                              Warning: Start date is in the past
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              {/* Financial Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="monthly_amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Monthly Amount (£)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Monthly rental amount"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    <FormField
+                      control={form.control}
+                      name="end_date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Date *</FormLabel>
+                          <FormControl>
+                            <DatePickerInput
+                              date={field.value}
+                              onSelect={field.onChange}
+                              placeholder="Select end date"
+                              disabled={(date) => 
+                                watchedValues.start_date 
+                                  ? isBefore(date, addMonths(watchedValues.start_date, 1))
+                                  : false
+                              }
+                              error={!!form.formState.errors.end_date}
+                              className="w-full"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <FormDescription>
+                            Must be at least 1 month after start date
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="initial_fee"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Initial Fee (£) - Optional</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="Initial fee amount"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  {/* Financial Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="monthly_amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Monthly Amount *</FormLabel>
+                          <FormControl>
+                            <CurrencyInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Monthly rental amount"
+                              min={1}
+                              step={1}
+                              error={!!form.formState.errors.monthly_amount}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-              {/* Submit */}
-              <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate("/rentals")}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading} className="bg-gradient-primary">
-                  <Save className="h-4 w-4 mr-2" />
-                  {loading ? "Creating..." : "Create Rental"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                    <FormField
+                      control={form.control}
+                      name="initial_fee"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Initial Fee (Optional)</FormLabel>
+                          <FormControl>
+                            <CurrencyInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Initial fee amount"
+                              min={0}
+                              step={1}
+                              error={!!form.formState.errors.initial_fee}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <FormDescription>
+                            Initial fee is recorded as a payment on the start date and will show in Payments & P&L (Initial Fees)
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Helper Info */}
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Note:</strong> Monthly charges will be generated automatically from the start date to the end date. 
+                      Payments are applied automatically to outstanding charges.
+                    </p>
+                  </div>
+
+                  {/* Submit */}
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={() => navigate("/rentals")}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={loading || !isFormValid}
+                      className="bg-gradient-primary"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {loading ? "Creating..." : "Create Rental"}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contract Summary Panel */}
+        <div className="xl:col-span-1">
+          <ContractSummary
+            customer={selectedCustomer}
+            vehicle={selectedVehicle}
+            startDate={watchedValues.start_date}
+            endDate={watchedValues.end_date}
+            monthlyAmount={watchedValues.monthly_amount}
+            initialFee={watchedValues.initial_fee}
+          />
+        </div>
+      </div>
     </div>
   );
 };

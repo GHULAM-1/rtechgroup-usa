@@ -26,9 +26,14 @@ import {
   Edit,
   Upload,
   Ban,
-  Trash2
+  Trash2,
+  Shield,
+  User,
+  ExternalLink,
+  Car,
+  FileText,
+  Clock
 } from "lucide-react";
-import { InsurancePolicyDrawer } from "./InsurancePolicyDrawer";
 import { DocumentUploadDialog } from "./DocumentUploadDialog";
 import { format, differenceInDays } from "date-fns";
 import { Link } from "react-router-dom";

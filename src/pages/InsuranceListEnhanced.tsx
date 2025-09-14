@@ -80,29 +80,7 @@ export default function InsuranceListEnhanced() {
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
 
-  // Data
-  const { policies, stats, isLoading, error } = useInsuranceData(filters);
-  const queryClient = useQueryClient();
-
-type SortField = "customer" | "vehicle" | "policy_number" | "provider" | "start_date" | "expiry_date" | "status" | "docs_count";
-type SortDirection = "asc" | "desc";
-
-export default function InsuranceListEnhanced() {
-  // State
-  const [filters, setFilters] = useState<FiltersType>({
-    search: "",
-    status: "all",
-    dateRange: { from: undefined, to: undefined }
-  });
-  const [sortField, setSortField] = useState<SortField>("expiry_date");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
-
-  // Data
+  // Data fetching
   const { policies, stats, isLoading, error } = useInsuranceData(filters);
   const queryClient = useQueryClient();
 

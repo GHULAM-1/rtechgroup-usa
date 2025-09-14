@@ -27,7 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const plateSchema = z.object({
   plate_number: z.string().min(1, "Plate number is required").max(10, "Plate number too long"),
-  vehicle_id: z.string().min(1, "Vehicle is required"),
+  vehicle_id: z.string().optional(),
   supplier: z.string().optional(),
   order_date: z.string().optional(),
   cost: z.string().optional(),
@@ -94,7 +94,7 @@ export const AddPlateDialog = ({
     try {
       const plateData: any = {
         plate_number: data.plate_number.toUpperCase(),
-        vehicle_id: data.vehicle_id,
+        vehicle_id: data.vehicle_id || null,
         supplier: data.supplier || null,
         order_date: data.order_date || null,
         cost: data.cost ? parseFloat(data.cost) : 0,
@@ -179,14 +179,15 @@ export const AddPlateDialog = ({
                 name="vehicle_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Vehicle *</FormLabel>
+                    <FormLabel>Vehicle</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a vehicle" />
+                          <SelectValue placeholder="Select a vehicle (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="">No vehicle assigned</SelectItem>
                         {vehicles?.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
                             {vehicle.reg} - {vehicle.make} {vehicle.model}

@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users } from "lucide-react";
 import { format } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
+import { MetricCard, MetricItem, MetricDivider } from "@/components/MetricCard";
+import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
+import { EmptyState } from "@/components/EmptyState";
+import { TruncatedCell } from "@/components/TruncatedCell";
 import { useVehicleServices } from "@/hooks/useVehicleServices";
 import { useVehicleExpenses } from "@/hooks/useVehicleExpenses";
 import { useVehicleFiles } from "@/hooks/useVehicleFiles";
@@ -86,21 +90,7 @@ interface Rental {
   };
 }
 
-const StatusBadge = ({ status }: { status: string }) => {
-  const variants = {
-    Available: 'default',
-    Rented: 'secondary', 
-    Maintenance: 'destructive',
-    Disposed: 'destructive',
-    Sold: 'outline'
-  };
-
-  return (
-    <Badge variant={variants[status as keyof typeof variants] as any} className="badge-status">
-      {status}
-    </Badge>
-  );
-};
+// Remove old StatusBadge - replaced with VehicleStatusBadge component
 
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -301,51 +291,60 @@ export default function VehicleDetail() {
         </div>
         <div className="flex items-center gap-2">
           <EditVehicleDialog vehicle={vehicle} />
-          <StatusBadge status={vehicle.status} />
+          <VehicleStatusBadge status={vehicle.status} showTooltip />
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs with Sticky Navigation */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-9">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="rentals">Rentals</TabsTrigger>
-          <TabsTrigger value="fines">Fines</TabsTrigger>
-          <TabsTrigger value="services">Services</TabsTrigger>
-          <TabsTrigger value="plates">Plates</TabsTrigger>
-          <TabsTrigger value="pl">P&L</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
+        <TabsList variant="sticky-evenly-spaced" className="mb-6">
+          <TabsTrigger variant="evenly-spaced" value="overview">Overview</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="history">History</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="expenses">Expenses</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="rentals">Rentals</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="fines">Fines</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="services">Services</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="plates">Plates</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="pl">P&L</TabsTrigger>
+          <TabsTrigger variant="evenly-spaced" value="files">Files</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Vehicle Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Car className="h-5 w-5" />
-                  Vehicle Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div><strong>Registration:</strong> {vehicle.reg}</div>
-                <div><strong>Make:</strong> {vehicle.make}</div>
-                <div><strong>Model:</strong> {vehicle.model}</div>
-                <div><strong>Colour:</strong> {vehicle.colour}</div>
-                <div><strong>Status:</strong> <StatusBadge status={vehicle.status} /></div>
-                <div><strong>Acquisition:</strong> <AcquisitionBadge acquisitionType={vehicle.acquisition_type} /></div>
-                <div><strong>{vehicle.acquisition_type === 'Finance' ? 'Contract Total' : 'Purchase Price'}:</strong> £{
-                  vehicle.acquisition_type === 'Finance' && vehicle.monthly_payment && vehicle.term_months
-                    ? ((vehicle.initial_payment || 0) + (vehicle.monthly_payment * vehicle.term_months) + (vehicle.balloon || 0)).toLocaleString()
-                    : Number(vehicle.purchase_price).toLocaleString()
-                }</div>
-                <div><strong>Acquired:</strong> {format(new Date(vehicle.acquisition_date), "dd/MM/yyyy")}</div>
+            {/* Vehicle Details */}
+            <MetricCard 
+              title="Vehicle Details"
+              icon={Car}
+              badge={{ text: vehicle.status, variant: vehicle.status === 'Available' ? 'default' : 'secondary' }}
+            >
+              <div className="space-y-3">
+                <MetricItem label="Registration" value={vehicle.reg} />
+                <MetricItem label="Make" value={vehicle.make} />
+                <MetricItem label="Model" value={vehicle.model} />
+                <MetricItem label="Colour" value={vehicle.colour} />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Status:</span>
+                  <VehicleStatusBadge status={vehicle.status} showTooltip />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Acquisition:</span>
+                  <AcquisitionBadge acquisitionType={vehicle.acquisition_type} />
+                </div>
+                <MetricDivider />
+                <MetricItem 
+                  label={vehicle.acquisition_type === 'Finance' ? 'Contract Total' : 'Purchase Price'}
+                  value={vehicle.acquisition_type === 'Finance' && vehicle.monthly_payment && vehicle.term_months
+                    ? (vehicle.initial_payment || 0) + (vehicle.monthly_payment * vehicle.term_months) + (vehicle.balloon || 0)
+                    : Number(vehicle.purchase_price)
+                  }
+                  isAmount
+                />
+                <MetricItem label="Acquired" value={format(new Date(vehicle.acquisition_date), "dd/MM/yyyy")} />
                 
-                {/* MOT & TAX Status */}
-                <div className="mt-4 pt-4 border-t">
-                  <div className="text-sm font-medium mb-2">Compliance Status</div>
+                {/* Compliance Status */}
+                <MetricDivider />
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Compliance Status</div>
                   <div className="flex flex-wrap gap-2">
                     <MOTTaxStatusChip 
                       dueDate={vehicle.mot_due_date}
@@ -357,160 +356,160 @@ export default function VehicleDetail() {
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </MetricCard>
 
-            {/* Finance Info Card - Only show for financed vehicles */}
+            {/* Finance Information Card - Only show for financed vehicles */}
             {vehicle.acquisition_type === 'Finance' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    Finance Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
+              <MetricCard 
+                title="Finance Information"
+                icon={DollarSign}
+                badge={{ text: "Financed", variant: "outline" }}
+              >
+                <div className="space-y-3">
                   {vehicle.monthly_payment && (
-                    <div><strong>Monthly Payment:</strong> £{Number(vehicle.monthly_payment).toLocaleString()}</div>
+                    <MetricItem label="Monthly Payment" value={Number(vehicle.monthly_payment)} isAmount />
                   )}
                   {vehicle.initial_payment && vehicle.initial_payment > 0 && (
-                    <div><strong>Initial Payment:</strong> £{Number(vehicle.initial_payment).toLocaleString()}</div>
+                    <MetricItem label="Initial Payment" value={Number(vehicle.initial_payment)} isAmount />
                   )}
                   {vehicle.term_months && (
-                    <div><strong>Term:</strong> {vehicle.term_months} months</div>
+                    <MetricItem label="Term" value={`${vehicle.term_months} months`} />
                   )}
                   {vehicle.balloon && vehicle.balloon > 0 && (
-                    <div><strong>Balloon Payment:</strong> £{Number(vehicle.balloon).toLocaleString()}</div>
+                    <MetricItem label="Balloon Payment" value={Number(vehicle.balloon)} isAmount />
                   )}
                   {vehicle.finance_start_date && (
-                    <div><strong>Finance Start:</strong> {format(new Date(vehicle.finance_start_date), "dd/MM/yyyy")}</div>
+                    <MetricItem label="Finance Start" value={format(new Date(vehicle.finance_start_date), "dd/MM/yyyy")} />
                   )}
                   
                   {/* Contract Total */}
                   {vehicle.monthly_payment && vehicle.term_months && (
-                    <div className="pt-2 border-t">
-                      <div><strong>Contract Total:</strong> £{(
-                        (vehicle.initial_payment || 0) + 
-                        (vehicle.monthly_payment * vehicle.term_months) + 
-                        (vehicle.balloon || 0)
-                      ).toLocaleString()}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                    <>
+                      <MetricDivider />
+                      <MetricItem 
+                        label="Contract Total" 
+                        value={(vehicle.initial_payment || 0) + (vehicle.monthly_payment * vehicle.term_months) + (vehicle.balloon || 0)}
+                        isAmount
+                      />
+                      <div className="text-xs text-muted-foreground mt-2">
                         Finance costs are recorded upfront in P&L when vehicle is added
                       </div>
-                    </div>
+                    </>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </MetricCard>
             )}
 
             {/* P&L Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  P&L Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Total Revenue:</span>
-                  <span className="font-medium text-green-600">£{plSummary.totalRevenue.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Total Costs:</span>
-                  <span className="font-medium text-red-600">£{plSummary.totalCosts.toLocaleString()}</span>
-                </div>
-                <hr />
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Net Profit:</span>
-                  <div className={`flex items-center gap-1 font-medium ${
-                    netProfit >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {netProfit >= 0 ? (
-                      <TrendingUp className="h-4 w-4" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4" />
-                    )}
-                    £{Math.abs(netProfit).toLocaleString()}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard 
+              title="P&L Summary"
+              icon={TrendingUp}
+              badge={{ 
+                text: netProfit >= 0 ? "Profitable" : "Loss", 
+                variant: netProfit >= 0 ? "default" : "destructive" 
+              }}
+            >
+              <div className="space-y-3">
+                <MetricItem 
+                  label="Total Revenue" 
+                  value={plSummary.totalRevenue} 
+                  isAmount 
+                  trend={plSummary.totalRevenue > 0 ? "up" : "neutral"}
+                />
+                <MetricItem 
+                  label="Total Costs" 
+                  value={plSummary.totalCosts} 
+                  isAmount 
+                  trend={plSummary.totalCosts > 0 ? "down" : "neutral"}
+                />
+                <MetricDivider />
+                <MetricItem 
+                  label="Net Profit" 
+                  value={Math.abs(netProfit)} 
+                  isAmount 
+                  trend={netProfit >= 0 ? "up" : "down"}
+                  className="font-semibold"
+                />
+              </div>
+            </MetricCard>
 
             {/* Vehicle Actions */}
             {vehicle && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Vehicle Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {vehicle.is_disposed ? (
-                    <div className="space-y-3">
-                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <div className="text-sm text-red-800">
-                          <div className="font-medium">Vehicle Disposed</div>
+              <MetricCard 
+                title="Vehicle Actions"
+                icon={Shield}
+                badge={{ 
+                  text: vehicle.is_disposed ? "Disposed" : "Active", 
+                  variant: vehicle.is_disposed ? "destructive" : "default" 
+                }}
+              >
+                {vehicle.is_disposed ? (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                      <div className="text-sm">
+                        <div className="font-medium text-destructive mb-2">Vehicle Disposed</div>
+                        <div className="space-y-1 text-xs text-muted-foreground">
                           {vehicle.disposal_date && (
-                            <div>Date: {format(new Date(vehicle.disposal_date), "dd/MM/yyyy")}</div>
+                            <MetricItem label="Date" value={format(new Date(vehicle.disposal_date), "dd/MM/yyyy")} />
                           )}
                           {vehicle.sale_proceeds && (
-                            <div>Sale Proceeds: £{Number(vehicle.sale_proceeds).toLocaleString()}</div>
+                            <MetricItem label="Sale Proceeds" value={Number(vehicle.sale_proceeds)} isAmount />
                           )}
                           {vehicle.disposal_buyer && (
-                            <div>Buyer: {vehicle.disposal_buyer}</div>
+                            <MetricItem label="Buyer" value={vehicle.disposal_buyer} />
                           )}
                         </div>
                       </div>
-                      <VehicleUndoDisposalDialog vehicle={vehicle} />
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Administrative actions for this vehicle
-                      </p>
-                      <VehicleDisposalDialog vehicle={vehicle} />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                    <VehicleUndoDisposalDialog vehicle={vehicle} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Administrative actions for this vehicle
+                    </p>
+                    <VehicleDisposalDialog vehicle={vehicle} />
+                  </div>
+                )}
+              </MetricCard>
             )}
 
             {/* Rental Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Rental Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {rentals && rentals.length > 0 ? (
-                  <div className="space-y-2">
-                    <div><strong>Active Rentals:</strong> {rentals.filter(r => r.status === 'Active').length}</div>
-                    <div><strong>Total Rentals:</strong> {rentals.length}</div>
-                    <div><strong>Fines:</strong> {fines?.length || 0} 
-                      {fines && fines.length > 0 && (
-                        <span className="text-red-600 ml-1">
-                          (£{fines.filter(f => f.status === 'Open').reduce((sum, f) => sum + f.amount, 0).toLocaleString()} outstanding)
-                        </span>
-                      )}
-                    </div>
-                    {rentals.filter(r => r.status === 'Active').map(rental => (
-                      <div key={rental.id} className="p-2 bg-muted rounded">
-                        <div className="text-sm font-medium">{rental.customers.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          £{rental.monthly_amount}/month
-                        </div>
+            <MetricCard 
+              title="Rental Status"
+              icon={Users}
+              badge={{ 
+                text: rentals?.filter(r => r.status === 'Active').length ? "Active" : "Idle", 
+                variant: rentals?.filter(r => r.status === 'Active').length ? "default" : "secondary" 
+              }}
+            >
+              {rentals && rentals.length > 0 ? (
+                <div className="space-y-3">
+                  <MetricItem label="Active Rentals" value={rentals.filter(r => r.status === 'Active').length} />
+                  <MetricItem label="Total Rentals" value={rentals.length} />
+                  <MetricItem 
+                    label="Outstanding Fines" 
+                    value={fines?.filter(f => f.status === 'Open').reduce((sum, f) => sum + f.amount, 0) || 0} 
+                    isAmount 
+                    trend={fines?.filter(f => f.status === 'Open').length ? "down" : "neutral"}
+                  />
+                  {rentals.filter(r => r.status === 'Active').map(rental => (
+                    <div key={rental.id} className="p-2 bg-muted/50 rounded-md border">
+                      <div className="text-sm font-medium">{rental.customers.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        £{rental.monthly_amount.toLocaleString()}/month
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground">No active rentals</div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No active rentals</p>
+                </div>
+              )}
+            </MetricCard>
             
             <LastServiceCard vehicle={vehicle} />
           </div>
@@ -712,9 +711,11 @@ export default function VehicleDetail() {
 
         <TabsContent value="rentals" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Rental History</CardTitle>
-              <CardDescription>All rental agreements for this vehicle</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Rental History</CardTitle>
+                <CardDescription>All rental agreements for this vehicle</CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               {rentals && rentals.length > 0 ? (
@@ -722,22 +723,32 @@ export default function VehicleDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Rental #</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
-                        <TableHead>Monthly Amount</TableHead>
+                        <TableHead className="text-right">Monthly Amount</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {rentals.map((rental) => (
-                        <TableRow key={rental.id}>
-                          <TableCell className="font-medium">{rental.customers.name}</TableCell>
-                          <TableCell>{format(new Date(rental.start_date), "dd/MM/yyyy")}</TableCell>
-                          <TableCell>
+                        <TableRow key={rental.id} className="hover:bg-muted/50">
+                          <TableCell className="font-mono text-sm">
+                            <TruncatedCell content={rental.id.slice(0, 8)} maxLength={8} />
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <TruncatedCell content={rental.customers.name} maxLength={20} />
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(rental.start_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
                             {rental.end_date ? format(new Date(rental.end_date), "dd/MM/yyyy") : "Ongoing"}
                           </TableCell>
-                          <TableCell>£{rental.monthly_amount.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            £{rental.monthly_amount.toLocaleString()}
+                          </TableCell>
                           <TableCell>
                             <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'}>
                               {rental.status}
@@ -749,9 +760,11 @@ export default function VehicleDetail() {
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No rental history found</p>
-                </div>
+                <EmptyState
+                  icon={Users}
+                  title="No rental history found"
+                  description="Rental agreements will appear here when customers rent this vehicle"
+                />
               )}
             </CardContent>
           </Card>
@@ -771,32 +784,42 @@ export default function VehicleDetail() {
                       <TableRow>
                         <TableHead>Issue Date</TableHead>
                         <TableHead>Type</TableHead>
-                        <TableHead>Amount</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Due Date</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {fines.map((fine) => (
-                        <TableRow key={fine.id}>
-                          <TableCell>{format(new Date(fine.issue_date), "dd/MM/yyyy")}</TableCell>
-                          <TableCell>{fine.type}</TableCell>
-                          <TableCell>£{fine.amount.toLocaleString()}</TableCell>
+                        <TableRow key={fine.id} className="hover:bg-muted/50">
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(fine.issue_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <TruncatedCell content={fine.type} maxLength={20} />
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-destructive">
+                            £{fine.amount.toLocaleString()}
+                          </TableCell>
                           <TableCell>
                             <Badge variant={fine.status === 'Open' ? 'destructive' : 'outline'}>
                               {fine.status}
                             </Badge>
                           </TableCell>
-                          <TableCell>{format(new Date(fine.due_date), "dd/MM/yyyy")}</TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(fine.due_date), "dd/MM/yyyy")}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No fines found</p>
-                </div>
+                <EmptyState
+                  icon={Receipt}
+                  title="No fines found"
+                  description="Traffic fines and penalties will appear here when recorded"
+                />
               )}
             </CardContent>
           </Card>
@@ -836,133 +859,167 @@ export default function VehicleDetail() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">Vehicle History</h3>
-            <p className="text-sm text-muted-foreground">
-              Timeline of events and activities for this vehicle
-            </p>
-          </div>
-
-          {isLoadingEvents ? (
-            <div className="text-center py-8 text-muted-foreground">Loading events...</div>
-          ) : events.length > 0 ? (
-            <div className="space-y-4">
-              {events.map((event) => (
-                <Card key={event.id}>
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium">{event.summary}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(event.event_date), "MMM d, yyyy 'at' HH:mm")}
-                        </p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Vehicle History
+              </CardTitle>
+              <CardDescription>
+                Timeline of events and activities for this vehicle
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingEvents ? (
+                <div className="text-center py-8 text-muted-foreground">Loading events...</div>
+              ) : events.length > 0 ? (
+                <div className="space-y-3">
+                  {events.map((event) => (
+                    <div key={event.id} className="flex gap-4 p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                      <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-2"></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-sm">
+                              <TruncatedCell content={event.summary} maxLength={50} />
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(event.event_date), "MMM d, yyyy 'at' HH:mm")}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="flex-shrink-0 text-xs">
+                            {event.event_type.replace('_', ' ')}
+                          </Badge>
+                        </div>
                       </div>
-                      <Badge variant="outline">{event.event_type.replace('_', ' ')}</Badge>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No events recorded yet</p>
-            </div>
-          )}
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  icon={History}
+                  title="No events recorded yet"
+                  description="Uploads, plate changes, rentals, services will appear here as they occur"
+                />
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold">Vehicle Expenses</h3>
-              <p className="text-sm text-muted-foreground">
-                Track repairs, services, and other vehicle costs
-              </p>
-            </div>
-            <VehicleExpenseDialog onSubmit={addExpense} isLoading={isAddingExpense} />
-          </div>
-
-          {isLoadingExpenses ? (
-            <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
-          ) : expenses.length > 0 ? (
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Notes</TableHead>
-                      <TableHead className="w-20">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {expenses.map((expense) => (
-                      <TableRow key={expense.id}>
-                        <TableCell>{format(new Date(expense.expense_date), "dd/MM/yyyy")}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{expense.category}</Badge>
-                        </TableCell>
-                        <TableCell>£{expense.amount.toLocaleString()}</TableCell>
-                        <TableCell>{expense.reference || '-'}</TableCell>
-                        <TableCell className="max-w-xs truncate">{expense.notes || '-'}</TableCell>
-                        <TableCell>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="sm" disabled={isDeletingExpense}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Expense</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure? This will also remove the P&L entry.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteExpense(expense.id)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TableCell>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5" />
+                  Vehicle Expenses
+                </CardTitle>
+                <CardDescription>
+                  Track repairs, services, and other vehicle costs
+                </CardDescription>
+              </div>
+              <VehicleExpenseDialog onSubmit={addExpense} isLoading={isAddingExpense} />
+            </CardHeader>
+            <CardContent>
+              {isLoadingExpenses ? (
+                <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
+              ) : expenses.length > 0 ? (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead>Reference</TableHead>
+                        <TableHead>Notes</TableHead>
+                        <TableHead className="w-20">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No expenses recorded yet</p>
-            </div>
-          )}
+                    </TableHeader>
+                    <TableBody>
+                      {expenses.map((expense) => (
+                        <TableRow key={expense.id} className="hover:bg-muted/50">
+                          <TableCell className="whitespace-nowrap">
+                            {format(new Date(expense.expense_date), "dd/MM/yyyy")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{expense.category}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-destructive">
+                            £{expense.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            <TruncatedCell content={expense.reference || '-'} maxLength={20} />
+                          </TableCell>
+                          <TableCell>
+                            <TruncatedCell content={expense.notes || '-'} maxLength={30} />
+                          </TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" disabled={isDeletingExpense}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure? This will also remove the P&L entry.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteExpense(expense.id)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={Receipt}
+                  title="No expenses recorded yet"
+                  description="Vehicle repairs, services, and other costs will appear here"
+                  actionLabel="Add Expense"
+                  onAction={() => {/* TODO: Open expense dialog */}}
+                />
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="files" className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold">Vehicle Files {files.length > 0 && `(${files.length})`}</h3>
-            <p className="text-sm text-muted-foreground">
-              Upload and manage documents for this vehicle
-            </p>
-          </div>
-
-          <VehicleFileUpload
-            files={files}
-            onUpload={uploadFile}
-            onDelete={deleteFile}
-            onDownload={downloadFile}
-            isUploading={isUploadingFile}
-            isDeleting={isDeletingFile}
-            canUpload={true} // TODO: Add role-based permissions when auth is implemented
-            canDelete={true} // TODO: Add role-based permissions when auth is implemented
-          />
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Documents & Files {files.length > 0 && `(${files.length})`}
+                </CardTitle>
+                <CardDescription>
+                  Upload and manage documents for this vehicle
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <VehicleFileUpload
+                files={files}
+                onUpload={uploadFile}
+                onDelete={deleteFile}
+                onDownload={downloadFile}
+                isUploading={isUploadingFile}
+                isDeleting={isDeletingFile}
+                canUpload={true}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -53,16 +53,16 @@ export const VehiclePhotoUpload = ({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-primary" />
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Camera className="h-4 w-4 text-primary" />
           Vehicle Photo
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {/* Photo Display */}
         <div className="flex justify-center">
-          <div className="relative w-80 h-60 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20 overflow-hidden">
+          <div className="relative w-64 h-48 bg-muted/30 rounded-lg border-2 border-dashed border-muted-foreground/20 overflow-hidden">
             {currentPhotoUrl ? (
               <img
                 src={currentPhotoUrl}
@@ -76,42 +76,44 @@ export const VehiclePhotoUpload = ({
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <Car className="h-16 w-16 mb-4 opacity-30" />
-                <p className="text-sm font-medium">No photo uploaded</p>
-                <p className="text-xs">Upload a photo of {vehicleReg}</p>
+                <Car className="h-12 w-12 mb-2 opacity-30" />
+                <p className="text-xs font-medium">No photo uploaded</p>
+                <p className="text-xs opacity-75">Upload a photo of {vehicleReg}</p>
               </div>
             )}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-1.5">
           <Button
+            size="sm"
             onClick={handleUploadClick}
             disabled={isUploading || isRemoving}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5 text-xs"
           >
             {isUploading ? (
-              <RotateCcw className="h-4 w-4 animate-spin" />
+              <RotateCcw className="h-3 w-3 animate-spin" />
             ) : (
-              <Upload className="h-4 w-4" />
+              <Upload className="h-3 w-3" />
             )}
-            {currentPhotoUrl ? 'Replace Photo' : 'Upload Photo'}
+            {currentPhotoUrl ? 'Replace' : 'Upload'}
           </Button>
 
           {currentPhotoUrl && (
             <Button
+              size="sm"
               variant="outline"
               onClick={handleRemovePhoto}
               disabled={isUploading || isRemoving}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5 text-xs"
             >
               {isRemoving ? (
-                <RotateCcw className="h-4 w-4 animate-spin" />
+                <RotateCcw className="h-3 w-3 animate-spin" />
               ) : (
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
               )}
-              Remove Photo
+              Remove
             </Button>
           )}
         </div>
@@ -126,9 +128,8 @@ export const VehiclePhotoUpload = ({
         />
 
         {/* Upload instructions */}
-        <div className="text-xs text-muted-foreground text-center space-y-1">
-          <p>Supported formats: JPG, PNG, WebP</p>
-          <p>Maximum file size: 5MB</p>
+        <div className="text-xs text-muted-foreground/75 text-center">
+          <p>JPG, PNG, WebP • Max 5MB</p>
         </div>
       </CardContent>
     </Card>

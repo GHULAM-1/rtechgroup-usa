@@ -24,6 +24,8 @@ interface Vehicle {
   acquisition_type: string;
   mot_due_date?: string;
   tax_due_date?: string;
+  last_service_date?: string;
+  last_service_mileage?: number;
 }
 
 interface VehiclePL {
@@ -80,7 +82,7 @@ const VehiclesList = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vehicles")
-        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date, acquisition_type, mot_due_date, tax_due_date")
+        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date, acquisition_type, mot_due_date, tax_due_date, last_service_date, last_service_mileage")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -327,6 +329,14 @@ const VehiclesList = () => {
                         </TableCell>
                         <TableCell>
                           <MOTTaxStatusChip dueDate={vehicle.tax_due_date} type="TAX" compact />
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {vehicle.last_service_date 
+                              ? new Date(vehicle.last_service_date).toLocaleDateString('en-GB')
+                              : "—"
+                            }
+                          </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <PLPill netProfit={netProfit} />

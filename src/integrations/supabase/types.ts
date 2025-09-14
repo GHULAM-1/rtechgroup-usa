@@ -653,6 +653,96 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance_runs: {
+        Row: {
+          completed_at: string | null
+          customers_affected: number | null
+          duration_seconds: number | null
+          error_message: string | null
+          id: string
+          operation_type: string
+          payments_processed: number | null
+          revenue_recalculated: number | null
+          started_at: string
+          started_by: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          customers_affected?: number | null
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          operation_type: string
+          payments_processed?: number | null
+          revenue_recalculated?: number | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          customers_affected?: number | null
+          duration_seconds?: number | null
+          error_message?: string | null
+          id?: string
+          operation_type?: string
+          payments_processed?: number | null
+          revenue_recalculated?: number | null
+          started_at?: string
+          started_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      org_settings: {
+        Row: {
+          company_name: string
+          created_at: string
+          currency_code: string
+          date_format: string
+          id: string
+          logo_url: string | null
+          org_id: string
+          reminder_due_soon_2d: boolean
+          reminder_due_today: boolean
+          reminder_overdue_1d: boolean
+          reminder_overdue_multi: boolean
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          company_name?: string
+          created_at?: string
+          currency_code?: string
+          date_format?: string
+          id?: string
+          logo_url?: string | null
+          org_id?: string
+          reminder_due_soon_2d?: boolean
+          reminder_due_today?: boolean
+          reminder_overdue_1d?: boolean
+          reminder_overdue_multi?: boolean
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          currency_code?: string
+          date_format?: string
+          id?: string
+          logo_url?: string | null
+          org_id?: string
+          reminder_due_soon_2d?: boolean
+          reminder_due_today?: boolean
+          reminder_overdue_1d?: boolean
+          reminder_overdue_multi?: boolean
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_applications: {
         Row: {
           amount_applied: number
@@ -1445,6 +1535,39 @@ export type Database = {
             referencedColumns: ["vehicle_id"]
           },
         ]
+      }
+      settings_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          changed_fields: string[] | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          operation: string
+          table_name: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[] | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation: string
+          table_name: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          changed_fields?: string[] | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          operation?: string
+          table_name?: string
+        }
+        Relationships: []
       }
       users: {
         Row: {

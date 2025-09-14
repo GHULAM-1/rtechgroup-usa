@@ -10,128 +10,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
-import { PaymentsAcceptanceTest } from '@/components/PaymentsAcceptanceTest';
-
-interface CompanyProfile {
-  company_name: string;
-  logo_url: string | null;
-  timezone: string;
-  currency: string;
-  date_format: string;
-}
-
-interface ReminderSetting {
-  reminder_type: string;
-  enabled: boolean;
-  delivery_mode: string;
-}
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database, AlertTriangle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import { useOrgSettings } from '@/hooks/useOrgSettings';
+import { EnhancedSettingsTest } from '@/components/EnhancedSettingsTest';
 
 const Settings = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('company');
   const [isBackfilling, setIsBackfilling] = useState(false);
+  
+  // Use the new centralized settings hook
+  const {
+    settings,
+    isLoading,
+    updateCompanyProfile,
+    toggleReminder,
+    isUpdating
+  } = useOrgSettings();
 
-  // Company Profile Settings
-  const { data: companyProfile, isLoading: loadingProfile } = useQuery({
-    queryKey: ['company-profile'],
+  // Maintenance run tracking
+  const { data: maintenanceRuns } = useQuery({
+    queryKey: ['maintenance-runs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('reminder_settings')
+        .from('maintenance_runs')
         .select('*')
-        .eq('setting_key', 'company_profile')
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      return (data?.setting_value as unknown as CompanyProfile) || {
-        company_name: 'RTECHGROUP UK Fleet Management',
-        logo_url: null,
-        timezone: 'Europe/London',
-        currency: 'GBP',
-        date_format: 'DD/MM/YYYY'
-      };
-    },
-  });
-
-  // Reminder Settings
-  const { data: reminderSettings, isLoading: loadingReminders } = useQuery({
-    queryKey: ['reminder-settings'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('reminder_settings')
-        .select('*')
-        .eq('setting_key', 'reminder_types');
-
-      if (error && error.code !== 'PGRST116') throw error;
-      
-      return (data?.[0]?.setting_value as unknown as ReminderSetting[]) || [
-        { reminder_type: 'Due', enabled: true, delivery_mode: 'In-App Only' },
-        { reminder_type: 'Overdue1', enabled: true, delivery_mode: 'In-App Only' },
-        { reminder_type: 'OverdueN', enabled: true, delivery_mode: 'In-App Only' },
-        { reminder_type: 'Upcoming', enabled: false, delivery_mode: 'In-App Only' },
-      ];
-    },
-  });
-
-  // Update Company Profile
-  const updateCompanyProfile = useMutation({
-    mutationFn: async (profile: CompanyProfile) => {
-      const { data, error } = await supabase
-        .from('reminder_settings')
-        .upsert({
-          setting_key: 'company_profile',
-          setting_value: profile as any,
-          updated_at: new Date().toISOString()
-        });
-      
+        .order('started_at', { ascending: false })
+        .limit(3);
       if (error) throw error;
       return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['company-profile'] });
-      toast({
-        title: "Settings Updated",
-        description: "Company profile has been updated successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update company profile.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Update Reminder Settings
-  const updateReminderSettings = useMutation({
-    mutationFn: async (settings: ReminderSetting[]) => {
-      const { data, error } = await supabase
-        .from('reminder_settings')
-        .upsert({
-          setting_key: 'reminder_types',
-          setting_value: settings as any,
-          updated_at: new Date().toISOString()
-        });
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reminder-settings'] });
-      toast({
-        title: "Settings Updated",
-        description: "Reminder settings have been updated successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update reminder settings.",
-        variant: "destructive",
-      });
     },
   });
 
@@ -139,51 +48,80 @@ const Settings = () => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const profile: CompanyProfile = {
+    const profile = {
       company_name: formData.get('company_name') as string,
-      logo_url: companyProfile?.logo_url || null,
       timezone: formData.get('timezone') as string,
-      currency: formData.get('currency') as string,
+      currency_code: formData.get('currency') as string,
       date_format: formData.get('date_format') as string,
+      logo_url: settings?.logo_url || undefined,
     };
 
-    updateCompanyProfile.mutate(profile);
-  };
-
-  const handleReminderToggle = (reminderType: string, enabled: boolean) => {
-    if (!reminderSettings) return;
-    
-    const updatedSettings = reminderSettings.map(setting =>
-      setting.reminder_type === reminderType
-        ? { ...setting, enabled }
-        : setting
-    );
-    
-    updateReminderSettings.mutate(updatedSettings);
+    updateCompanyProfile(profile);
   };
 
   const handleBackfillPayments = async () => {
     setIsBackfilling(true);
     try {
+      // Record maintenance run start
+      const { data: runRecord, error: insertError } = await supabase
+        .from('maintenance_runs')
+        .insert({
+          operation_type: 'payment_reapplication',
+          status: 'running',
+          started_by: 'settings_manual'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      const startTime = Date.now();
       const { data, error } = await supabase.rpc("reapply_all_payments_v2");
+      const duration = Math.floor((Date.now() - startTime) / 1000);
       
-      if (error) throw error;
+      if (error) {
+        // Update run record with error
+        await supabase
+          .from('maintenance_runs')
+          .update({
+            status: 'failed',
+            error_message: error.message,
+            duration_seconds: duration,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', runRecord.id);
+        
+        throw error;
+      }
+
+      // Update run record with success
+      await supabase
+        .from('maintenance_runs')
+        .update({
+          status: 'completed',
+          payments_processed: data[0]?.payments_processed || 0,
+          customers_affected: data[0]?.customers_affected || 0,
+          revenue_recalculated: data[0]?.total_credit_applied || 0,
+          duration_seconds: duration,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', runRecord.id);
       
       toast({
-        title: "Backfill Complete",
-        description: `Processed ${data[0]?.payments_processed || 0} payments, affected ${data[0]?.customers_affected || 0} customers, applied £${data[0]?.total_credit_applied?.toFixed(2) || '0.00'} in credit.`,
+        title: "Maintenance Complete",
+        description: `Processed ${data[0]?.payments_processed || 0} payments, affected ${data[0]?.customers_affected || 0} customers, applied £${data[0]?.total_credit_applied?.toFixed(2) || '0.00'} in credit. Duration: ${duration}s`,
       });
       
-      // Invalidate all payment-related queries
+      // Invalidate queries
       queryClient.invalidateQueries({ queryKey: ["payments"] });
       queryClient.invalidateQueries({ queryKey: ["customer-balance"] });
-      queryClient.invalidateQueries({ queryKey: ["customer-credit"] });
+      queryClient.invalidateQueries({ queryKey: ["maintenance-runs"] });
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Backfill error:", error);
       toast({
-        title: "Backfill Failed",
-        description: "Failed to reapply payments. Please try again.",
+        title: "Maintenance Failed",
+        description: `Failed to reapply payments: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -191,7 +129,7 @@ const Settings = () => {
     }
   };
 
-  if (loadingProfile || loadingReminders) {
+  if (isLoading) {
     return <div>Loading settings...</div>;
   }
 
@@ -252,14 +190,14 @@ const Settings = () => {
                     <Input
                       id="company_name"
                       name="company_name"
-                      defaultValue={companyProfile?.company_name}
+                      defaultValue={settings?.company_name}
                       required
                     />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Timezone</Label>
-                    <Select name="timezone" defaultValue={companyProfile?.timezone}>
+                    <Select name="timezone" defaultValue={settings?.timezone}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select timezone" />
                       </SelectTrigger>
@@ -274,7 +212,7 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="currency">Currency</Label>
-                    <Select name="currency" defaultValue={companyProfile?.currency}>
+                    <Select name="currency" defaultValue={settings?.currency_code}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select currency" />
                       </SelectTrigger>
@@ -288,7 +226,7 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="date_format">Date Format</Label>
-                    <Select name="date_format" defaultValue={companyProfile?.date_format}>
+                    <Select name="date_format" defaultValue={settings?.date_format}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select date format" />
                       </SelectTrigger>
@@ -317,9 +255,9 @@ const Settings = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={updateCompanyProfile.isPending}>
+                  <Button type="submit" disabled={isUpdating}>
                     <Save className="h-4 w-4 mr-2" />
-                    {updateCompanyProfile.isPending ? 'Saving...' : 'Save Changes'}
+                    {isUpdating ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               </form>
@@ -340,33 +278,75 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {reminderSettings?.map((setting) => (
-                <div key={setting.reminder_type} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium">
-                        {setting.reminder_type === 'Due' && 'Payment Due Today'}
-                        {setting.reminder_type === 'Overdue1' && 'Payment Overdue (1 Day)'}
-                        {setting.reminder_type === 'OverdueN' && 'Payment Overdue (Multiple Days)'}
-                        {setting.reminder_type === 'Upcoming' && 'Payment Due Soon (2 Days)'}
-                      </h4>
-                      <Badge variant="secondary" className="text-xs">
-                        {setting.delivery_mode}
-                      </Badge>
+                      <h4 className="font-medium">Payment Due Today</h4>
+                      <Badge variant="secondary" className="text-xs">In-App Only</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {setting.reminder_type === 'Due' && 'Send reminders for payments due today'}
-                      {setting.reminder_type === 'Overdue1' && 'Send reminders 1 day after payment due date'}
-                      {setting.reminder_type === 'OverdueN' && 'Send reminders for payments overdue by multiple days'}
-                      {setting.reminder_type === 'Upcoming' && 'Send reminders 2 days before payment due date'}
+                      Send reminders for payments due today
                     </p>
                   </div>
                   <Switch
-                    checked={setting.enabled}
-                    onCheckedChange={(enabled) => handleReminderToggle(setting.reminder_type, enabled)}
+                    checked={settings?.reminder_due_today ?? true}
+                    onCheckedChange={() => toggleReminder('reminder_due_today')}
+                    disabled={isUpdating}
                   />
                 </div>
-              ))}
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Payment Overdue (1 Day)</h4>
+                      <Badge variant="secondary" className="text-xs">In-App Only</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Send reminders 1 day after payment due date
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings?.reminder_overdue_1d ?? true}
+                    onCheckedChange={() => toggleReminder('reminder_overdue_1d')}
+                    disabled={isUpdating}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Payment Overdue (Multiple Days)</h4>
+                      <Badge variant="secondary" className="text-xs">In-App Only</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Send reminders for payments overdue by multiple days
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings?.reminder_overdue_multi ?? true}
+                    onCheckedChange={() => toggleReminder('reminder_overdue_multi')}
+                    disabled={isUpdating}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">Payment Due Soon (2 Days)</h4>
+                      <Badge variant="secondary" className="text-xs">In-App Only</Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Send reminders 2 days before payment due date
+                    </p>
+                  </div>
+                  <Switch
+                    checked={settings?.reminder_due_soon_2d ?? false}
+                    onCheckedChange={() => toggleReminder('reminder_due_soon_2d')}
+                    disabled={isUpdating}
+                  />
+                </div>
+              </div>
 
               <div className="bg-muted/50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Delivery Mode</h4>
@@ -391,38 +371,71 @@ const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
                   <h4 className="font-medium">Re-apply Credits & Recompute Balances</h4>
                   <p className="text-sm text-muted-foreground">
                     This will reprocess all payments using the latest auto-credit logic, 
-                    recompute customer balances, rental totals, and vehicle P&L revenue.
+                    recompute customer balances, rental totals, and vehicle P&L revenue. This is a safe operation that can be run multiple times.
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <Button 
-                    onClick={handleBackfillPayments} 
-                    disabled={isBackfilling}
-                    variant="outline"
-                  >
-                    {isBackfilling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Run Backfill
-                  </Button>
-                  <Badge variant="secondary" className="text-xs">
-                    Safe Operation
-                  </Badge>
-                </div>
-                
-                <div className="text-xs text-muted-foreground">
-                  <strong>What this does:</strong>
-                  <ul className="list-disc list-inside mt-1 space-y-1">
-                    <li>Resets all payment applications and P&L revenue entries</li>
-                    <li>Reapplies all payments in chronological order using FIFO logic</li>
-                    <li>Updates payment status (Applied/Credit/Partial) based on allocation</li>
-                    <li>Recalculates customer balances and rental totals</li>
-                  </ul>
-                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" disabled={isBackfilling}>
+                      {isBackfilling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isBackfilling ? 'Running...' : 'Run Maintenance'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-orange-500" />
+                        Confirm Maintenance Operation
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will reprocess all payments and recompute balances. The operation is safe and can be run multiple times, but may take several minutes to complete.
+                        
+                        <div className="mt-3 p-3 bg-muted rounded text-sm">
+                          <strong>What this does:</strong>
+                          <ul className="list-disc list-inside mt-1 space-y-1">
+                            <li>Resets all payment applications and P&L revenue entries</li>
+                            <li>Reapplies all payments in chronological order using FIFO logic</li>
+                            <li>Updates payment status (Applied/Credit/Partial) based on allocation</li>
+                            <li>Recalculates customer balances and rental totals</li>
+                          </ul>
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleBackfillPayments}>
+                        Run Maintenance
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+
+                {maintenanceRuns && maintenanceRuns.length > 0 && (
+                  <div className="mt-4">
+                    <h5 className="font-medium mb-2">Recent Runs</h5>
+                    <div className="space-y-2">
+                      {maintenanceRuns.map((run) => (
+                        <div key={run.id} className="text-xs p-2 bg-muted rounded flex justify-between">
+                          <span>
+                            {new Date(run.started_at).toLocaleString()} - {run.operation_type}
+                          </span>
+                          <Badge variant={
+                            run.status === 'completed' ? 'default' : 
+                            run.status === 'failed' ? 'destructive' : 'secondary'
+                          } className="text-xs">
+                            {run.status}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -430,7 +443,7 @@ const Settings = () => {
 
         {/* Testing Tab */}
         <TabsContent value="testing">
-          <PaymentsAcceptanceTest />
+          <EnhancedSettingsTest />
         </TabsContent>
 
         {/* Integrations Tab */}

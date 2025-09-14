@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export interface DashboardKPIs {
   overdue: { count: number; amount: number };
@@ -19,14 +20,17 @@ interface UseDashboardKPIsParams {
   timezone?: string;
 }
 
-export const useDashboardKPIs = ({ from, to, timezone = 'Europe/London' }: UseDashboardKPIsParams = {}) => {
+export const useDashboardKPIs = ({ from, to }: UseDashboardKPIsParams = {}) => {
+  const { settings } = useSettings();
+  const timezone = settings?.timezone || 'Europe/London';
+  
   return useQuery({
     queryKey: ['dashboard-kpis', from, to, timezone],
     queryFn: async (): Promise<DashboardKPIs> => {
       const params = new URLSearchParams();
       if (from) params.append('from', from);
       if (to) params.append('to', to);
-      if (timezone) params.append('tz', timezone);
+      params.append('tz', timezone);
 
       const { data, error } = await supabase.functions.invoke('dashboard-kpis', {
         method: 'GET',

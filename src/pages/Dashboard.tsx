@@ -1,170 +1,115 @@
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock, TestTube } from "lucide-react";
-import { DashboardStats } from "@/components/DashboardStats";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarIcon, Plus, TestTube } from "lucide-react";
+import { DashboardKPICards } from "@/components/DashboardKPICards";
 import { RecentActivity } from "@/components/RecentActivity";
 import { FleetOverview } from "@/components/FleetOverview";
 import { ComplianceOverviewCard } from "@/components/ComplianceOverviewCard";
 import { RentalAcceptanceTest } from "@/components/RentalAcceptanceTest";
 import { FinanceAcceptanceTest } from "@/components/FinanceAcceptanceTest";
+import { DashboardSystemTests } from "@/components/DashboardSystemTests";
+import { useDashboardKPIs } from "@/hooks/useDashboardKPIs";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
 
-interface DashboardWidget {
-  title: string;
-  value: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  color: string;
-  href: string;
+interface DateRange {
+  from: string;
+  to: string;
+  label: string;
 }
 
-const DashboardCard = ({ widget, onClick }: { widget: DashboardWidget; onClick: () => void }) => (
-  <Card 
-    className="card-hover cursor-pointer transition-all duration-200" 
-    onClick={onClick}
-  >
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{widget.title}</CardTitle>
-      <widget.icon className={`h-4 w-4 ${widget.color}`} />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{widget.value}</div>
-      <p className="text-xs text-muted-foreground">{widget.description}</p>
-    </CardContent>
-  </Card>
-);
+const getDateRanges = (): DateRange[] => {
+  const now = new Date();
+  return [
+    {
+      from: format(startOfMonth(now), 'yyyy-MM-dd'),
+      to: format(endOfMonth(now), 'yyyy-MM-dd'),
+      label: 'This Month'
+    },
+    {
+      from: format(startOfMonth(subMonths(now, 1)), 'yyyy-MM-dd'),
+      to: format(endOfMonth(subMonths(now, 1)), 'yyyy-MM-dd'),
+      label: 'Last Month'
+    },
+    {
+      from: format(startOfYear(now), 'yyyy-MM-dd'),
+      to: format(endOfYear(now), 'yyyy-MM-dd'),
+      label: 'This Year'
+    }
+  ];
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Get date range from URL or default to "This Month"
+  const dateRanges = getDateRanges();
+  const defaultRange = dateRanges[0]; // This Month
+  const selectedRangeLabel = searchParams.get('range') || 'This Month';
+  const selectedRange = dateRanges.find(r => r.label === selectedRangeLabel) || defaultRange;
+  
+  // Use custom from/to if provided in URL, otherwise use selected range
+  const from = searchParams.get('from') || selectedRange.from;
+  const to = searchParams.get('to') || selectedRange.to;
 
-  // Dashboard metrics queries
-  const { data: overduePayments } = useQuery({
-    queryKey: ["overdue-payments"],
-    queryFn: async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const { data } = await supabase
-        .from("ledger_entries")
-        .select("remaining_amount")
-        .eq("type", "Charge")
-        .gt("remaining_amount", 0)
-        .lt("due_date", today);
-      
-      return data?.reduce((sum, entry) => sum + Number(entry.remaining_amount), 0) || 0;
-    },
+  // Fetch dashboard KPIs
+  const { data: kpis, isLoading, error } = useDashboardKPIs({
+    from,
+    to,
+    timezone: 'Europe/London'
   });
 
-  const { data: vehicleCount } = useQuery({
-    queryKey: ["vehicle-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("vehicles")
-        .select("*", { count: "exact", head: true })
-        .eq("is_disposed", false);
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const { data: customerCount } = useQuery({
-    queryKey: ["customer-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("customers")
-        .select("*", { count: "exact", head: true });
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const { data: activeRentalsCount } = useQuery({
-    queryKey: ["active-rentals-count"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("rentals")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "Active");
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const { data: pendingFines } = useQuery({
-    queryKey: ["pending-fines"],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("fines")
-        .select("*", { count: "exact", head: true })
-        .in("status", ["Open", "Appealed"]);
-      
-      if (error) throw error;
-      return count || 0;
-    },
-  });
-
-  const widgets: DashboardWidget[] = [
-    {
-      title: "Total Vehicles",
-      value: vehicleCount?.toString() || "0",
-      description: "Active fleet vehicles",
-      icon: Car,
-      color: "text-blue-600",
-      href: "/vehicles"
-    },
-    {
-      title: "Total Customers",
-      value: customerCount?.toString() || "0",
-      description: "Registered customers",
-      icon: Users,
-      color: "text-green-600",
-      href: "/customers"
-    },
-    {
-      title: "Active Rentals",
-      value: activeRentalsCount?.toString() || "0",
-      description: "Currently active rentals",
-      icon: FileText,
-      color: "text-purple-600",
-      href: "/rentals"
-    },
-    {
-      title: "Overdue Amount",
-      value: `£${(overduePayments || 0).toLocaleString()}`,
-      description: "Outstanding overdue payments",
-      icon: AlertTriangle,
-      color: "text-red-600",
-      href: "/payments"
+  const handleDateRangeChange = (value: string) => {
+    const range = dateRanges.find(r => r.label === value);
+    if (range) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('range', range.label);
+      newParams.set('from', range.from);
+      newParams.set('to', range.to);
+      setSearchParams(newParams);
     }
-  ];
+  };
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      <div className="flex justify-between items-center">
+      {/* Header with Date Range Selector */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Fleet management overview and key metrics
+          <h1 className="text-2xl font-semibold tracking-tight">Fleet Dashboard</h1>
+          <p className="text-muted-foreground">
+            One-glance control room for fleet operations
           </p>
         </div>
-        <Button onClick={() => navigate("/rentals/new")}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Rental
-        </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <Select value={selectedRangeLabel} onValueChange={handleDateRangeChange}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {dateRanges.map((range) => (
+                  <SelectItem key={range.label} value={range.label}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => navigate("/rentals/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Rental
+          </Button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <DashboardStats />
-      </div>
+      {/* KPI Cards Grid */}
+      <DashboardKPICards data={kpis} isLoading={isLoading} error={error} />
       
       {/* Compliance and Fleet Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <ComplianceOverviewCard />
         <div className="md:col-span-2">
           <FleetOverview />
@@ -172,29 +117,15 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activity */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-7">
-          <RecentActivity />
-        </div>
+      <div className="grid gap-6">
+        <RecentActivity />
       </div>
 
-      {/* Acceptance Tests */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TestTube className="h-5 w-5" />
-              System Tests
-            </CardTitle>
-            <CardDescription>
-              Run automated tests to verify system functionality
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <RentalAcceptanceTest />
-            <FinanceAcceptanceTest />
-          </CardContent>
-        </Card>
+      {/* System Tests */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <DashboardSystemTests />
+        <RentalAcceptanceTest />
+        <FinanceAcceptanceTest />
       </div>
     </div>
   );

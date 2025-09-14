@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users } from "lucide-react";
 import { format } from "date-fns";
+import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 import { MetricCard, MetricItem, MetricDivider } from "@/components/MetricCard";
@@ -28,6 +29,7 @@ import { VehicleExpenseDialog } from "@/components/VehicleExpenseDialog";
 import { VehicleFileUpload } from "@/components/VehicleFileUpload";
 import { VehicleDisposalDialog } from "@/components/VehicleDisposalDialog";
 import { VehicleUndoDisposalDialog } from "@/components/VehicleUndoDisposalDialog";
+import { DateRangeFilter } from "@/components/DateRangeFilter";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,9 +97,24 @@ interface Rental {
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'overview';
+  
+  // Get tab and date filtering from URL params
+  const activeTab = searchParams.get('tab') || 'overview';
+  const monthParam = searchParams.get('month');
+  
+  // Parse month parameter if present (format: YYYY-MM)
+  const dateFilter = useMemo(() => {
+    if (monthParam) {
+      const monthDate = parseISO(`${monthParam}-01`);
+      return {
+        startDate: startOfMonth(monthDate),
+        endDate: endOfMonth(monthDate)
+      };
+    }
+    return null;
+  }, [monthParam]);
 
   // Service management hook
   const {
@@ -155,16 +172,26 @@ export default function VehicleDetail() {
     enabled: !!id,
   });
 
-  // Fetch P&L entries
+  // Fetch P&L entries with optional date filtering
   const { data: plEntries } = useQuery({
-    queryKey: ["plEntries", id],
+    queryKey: ["plEntries", id, dateFilter?.startDate, dateFilter?.endDate],
     queryFn: async () => {
       if (!id) return [];
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from("pnl_entries")
         .select("*")
-        .eq("vehicle_id", id)
-        .order("entry_date", { ascending: false });
+        .eq("vehicle_id", id);
+      
+      // Apply date filtering if present
+      if (dateFilter?.startDate) {
+        query = query.gte("entry_date", dateFilter.startDate.toISOString().split('T')[0]);
+      }
+      if (dateFilter?.endDate) {
+        query = query.lte("entry_date", dateFilter.endDate.toISOString().split('T')[0]);
+      }
+      
+      const { data, error } = await query.order("entry_date", { ascending: false });
       
       if (error) throw error;
       return data as PLEntry[];
@@ -298,7 +325,11 @@ export default function VehicleDetail() {
       </div>
 
       {/* Tabs with Sticky Navigation */}
-      <Tabs defaultValue={defaultTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('tab', value);
+        setSearchParams(newParams);
+      }} className="w-full">
         <TabsList variant="sticky-evenly-spaced" className="mb-6">
           <TabsTrigger variant="evenly-spaced" value="overview">Overview</TabsTrigger>
           <TabsTrigger variant="evenly-spaced" value="history">History</TabsTrigger>
@@ -519,6 +550,26 @@ export default function VehicleDetail() {
 
         <TabsContent value="pl" className="mt-6">
           <div className="space-y-6">
+            {/* Date Filter */}
+            {monthParam && (
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium">P&L for {format(parseISO(`${monthParam}-01`), 'MMMM yyyy')}</h3>
+                  <p className="text-sm text-muted-foreground">Filtered view for the selected month</p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('month');
+                    setSearchParams(newParams);
+                  }}
+                >
+                  View Full History
+                </Button>
+              </div>
+            )}
+            
             {/* P&L Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -659,7 +710,7 @@ export default function VehicleDetail() {
             <Card>
               <CardHeader>
                 <CardTitle>P&L Entries</CardTitle>
-                <CardDescription>Detailed profit and loss entries for this vehicle</CardDescription>
+                <CardDescription>Detailed profit and loss entries for this vehicle{monthParam ? ` (${format(parseISO(`${monthParam}-01`), 'MMMM yyyy')})` : ''}</CardDescription>
               </CardHeader>
               <CardContent>
                 {plEntries && plEntries.length > 0 ? (

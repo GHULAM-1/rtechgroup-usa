@@ -17,6 +17,7 @@ import PaymentsList from "@/pages/PaymentsList";
 import ChargesList from "@/pages/ChargesList";
 import PlatesListEnhanced from "@/pages/PlatesListEnhanced";
 import PLDashboard from "@/pages/PLDashboard";
+import MonthlyPLDrilldown from "@/pages/MonthlyPLDrilldown";
 import CreateRental from "@/pages/CreateRental";
 import RemindersPage from "@/pages/RemindersPage";
 import ReminderSettings from "@/pages/ReminderSettings";
@@ -73,6 +74,7 @@ function App() {
             <Route path="/charges" element={<Layout><ChargesList /></Layout>} />
             <Route path="/plates" element={<Layout><PlatesListEnhanced /></Layout>} />
             <Route path="/pl-dashboard" element={<Layout><PLDashboard /></Layout>} />
+            <Route path="/pl-dashboard/monthly/:month" element={<Layout><MonthlyPLDrilldown /></Layout>} />
             <Route path="/reminders-new" element={<Layout><RemindersPageNew /></Layout>} />
             <Route path="/reminders" element={<Layout><RemindersPage /></Layout>} />
             <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />

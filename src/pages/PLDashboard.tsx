@@ -510,7 +510,17 @@ const PLDashboard: React.FC = () => {
               // Monthly chart view
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyPLData}>
+                   <LineChart 
+                     data={monthlyPLData}
+                     onClick={(data) => {
+                       if (data && data.activeLabel) {
+                         // Convert month name to YYYY-MM format
+                         const monthDate = new Date(`${data.activeLabel} 1, ${new Date().getFullYear()}`);
+                         const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+                         navigate(`/pl-dashboard/monthly/${monthStr}`);
+                       }
+                     }}
+                   >
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="month" className="text-xs" />
                     <YAxis className="text-xs" tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`} />
@@ -519,9 +529,30 @@ const PLDashboard: React.FC = () => {
                       labelClassName="text-foreground"
                       contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
                     />
-                    <Line type="monotone" dataKey="total_revenue" stroke="hsl(var(--success))" strokeWidth={2} name="Revenue" />
-                    <Line type="monotone" dataKey="total_costs" stroke="hsl(var(--destructive))" strokeWidth={2} name="Costs" />
-                    <Line type="monotone" dataKey="net_profit" stroke="hsl(var(--primary))" strokeWidth={2} name="Net Profit" />
+                     <Line 
+                       type="monotone" 
+                       dataKey="total_revenue" 
+                       stroke="hsl(var(--success))" 
+                       strokeWidth={2} 
+                       name="Revenue"
+                       className="cursor-pointer"
+                     />
+                     <Line 
+                       type="monotone" 
+                       dataKey="total_costs" 
+                       stroke="hsl(var(--destructive))" 
+                       strokeWidth={2} 
+                       name="Costs"
+                       className="cursor-pointer"
+                     />
+                     <Line 
+                       type="monotone" 
+                       dataKey="net_profit" 
+                       stroke="hsl(var(--primary))" 
+                       strokeWidth={2} 
+                       name="Net Profit"
+                       className="cursor-pointer"
+                     />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -539,9 +570,18 @@ const PLDashboard: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {monthlyPLData?.map((month, index) => (
-                      <TableRow key={index} className="hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-medium">{month.month}</TableCell>
+                     {monthlyPLData?.map((month, index) => (
+                       <TableRow 
+                         key={index} 
+                         className="hover:bg-muted/50 transition-colors cursor-pointer"
+                         onClick={() => {
+                           // Convert month name to YYYY-MM format
+                           const monthDate = new Date(`${month.month} 1, ${new Date().getFullYear()}`);
+                           const monthStr = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+                           navigate(`/pl-dashboard/monthly/${monthStr}`);
+                         }}
+                       >
+                         <TableCell className="font-medium">{month.month}</TableCell>
                         <TableCell className="text-right">{formatCurrency(month.total_revenue)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(month.total_costs)}</TableCell>
                         <TableCell className="text-right font-medium">

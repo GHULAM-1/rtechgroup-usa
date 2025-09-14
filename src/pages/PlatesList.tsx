@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +38,7 @@ interface Plate {
 const PlatesList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const vehicleFilter = searchParams.get("vehicle_id");
   const [searchTerm, setSearchTerm] = useState("");
@@ -48,6 +49,7 @@ const PlatesList = () => {
   const { data: plates, isLoading, refetch } = useQuery({
     queryKey: ["plates", vehicleFilter],
     queryFn: async () => {
+      console.log("Fetching plates...");
       let query = supabase
         .from("plates")
         .select(`
@@ -62,10 +64,42 @@ const PlatesList = () => {
       
       const { data, error } = await query.order("created_at", { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching plates:", error);
+        throw error;
+      }
+      console.log("Fetched plates:", data?.length, "plates");
       return (data || []) as any[];
     },
+    staleTime: 0, // Always refetch when component mounts
+    gcTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    console.log("Setting up real-time subscription for plates");
+    const channel = supabase
+      .channel('plates-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'plates'
+        },
+        (payload) => {
+          console.log('Real-time update received:', payload);
+          // Invalidate and refetch plates data
+          queryClient.invalidateQueries({ queryKey: ["plates"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log("Cleaning up real-time subscription");
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const filteredPlates = plates?.filter(plate =>
     plate.plate_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,7 +127,8 @@ const PlatesList = () => {
         description: "Plate unassigned successfully",
       });
 
-      refetch();
+      // Invalidate all plates queries to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ["plates"] });
     } catch (error) {
       toast({
         title: "Error",
@@ -101,6 +136,12 @@ const PlatesList = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handlePlateSuccess = () => {
+    console.log("Plate operation successful, invalidating queries");
+    // Invalidate all plates queries to ensure fresh data
+    queryClient.invalidateQueries({ queryKey: ["plates"] });
   };
 
   const handleExportCSV = () => {
@@ -324,7 +365,7 @@ const PlatesList = () => {
       <AddPlateDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        onSuccess={() => refetch()}
+        onSuccess={handlePlateSuccess}
         preSelectedVehicleId={vehicleFilter || undefined}
       />
 
@@ -333,7 +374,7 @@ const PlatesList = () => {
         onOpenChange={setShowAssignDialog}
         plate={selectedPlate}
         onSuccess={() => {
-          refetch();
+          handlePlateSuccess();
           setSelectedPlate(null);
         }}
       />

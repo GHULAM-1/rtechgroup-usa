@@ -36,7 +36,6 @@ export function useReminders(filters?: ReminderFilters) {
       let query = supabase
         .from('reminders')
         .select('*')
-        .order('severity', { ascending: false })
         .order('due_on', { ascending: true })
         .order('remind_on', { ascending: true });
 
@@ -75,7 +74,13 @@ export function useReminders(filters?: ReminderFilters) {
         throw new Error('Failed to fetch reminders');
       }
 
-      return data as Reminder[];
+      // Sort by severity priority: critical (1), warning (2), info (3)
+      const sortedData = (data as Reminder[]).sort((a, b) => {
+        const severityOrder = { critical: 1, warning: 2, info: 3 };
+        return severityOrder[a.severity] - severityOrder[b.severity];
+      });
+
+      return sortedData;
     },
   });
 }
@@ -90,7 +95,6 @@ export function useRemindersByObject(objectType: string, objectId: string) {
         .eq('object_type', objectType)
         .eq('object_id', objectId)
         .in('status', ['pending', 'sent', 'snoozed'])
-        .order('severity', { ascending: false })
         .order('due_on', { ascending: true });
 
       if (error) {
@@ -98,7 +102,13 @@ export function useRemindersByObject(objectType: string, objectId: string) {
         throw new Error('Failed to fetch reminders');
       }
 
-      return data as Reminder[];
+      // Sort by severity priority: critical (1), warning (2), info (3)
+      const sortedData = (data as Reminder[]).sort((a, b) => {
+        const severityOrder = { critical: 1, warning: 2, info: 3 };
+        return severityOrder[a.severity] - severityOrder[b.severity];
+      });
+
+      return sortedData;
     },
   });
 }

@@ -65,45 +65,69 @@ export type Database = {
           customer_id: string
           document_name: string
           document_type: string
+          end_date: string | null
           file_name: string | null
+          file_size: number | null
           file_url: string | null
           id: string
           insurance_provider: string | null
+          mime_type: string | null
           notes: string | null
           policy_end_date: string | null
           policy_number: string | null
           policy_start_date: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
           uploaded_at: string | null
+          vehicle_id: string | null
+          verified: boolean
         }
         Insert: {
           created_at?: string | null
           customer_id: string
           document_name: string
           document_type: string
+          end_date?: string | null
           file_name?: string | null
+          file_size?: number | null
           file_url?: string | null
           id?: string
           insurance_provider?: string | null
+          mime_type?: string | null
           notes?: string | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
           uploaded_at?: string | null
+          vehicle_id?: string | null
+          verified?: boolean
         }
         Update: {
           created_at?: string | null
           customer_id?: string
           document_name?: string
           document_type?: string
+          end_date?: string | null
           file_name?: string | null
+          file_size?: number | null
           file_url?: string | null
           id?: string
           insurance_provider?: string | null
+          mime_type?: string | null
           notes?: string | null
           policy_end_date?: string | null
           policy_number?: string | null
           policy_start_date?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
           uploaded_at?: string | null
+          vehicle_id?: string | null
+          verified?: boolean
         }
         Relationships: [
           {
@@ -126,6 +150,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "view_aging_receivables"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "customer_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "customer_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
           },
         ]
       }

@@ -7,12 +7,43 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { User, ArrowLeft, Edit, Mail, Phone, FileText, CreditCard, Plus, Car, AlertTriangle, FolderOpen, CalendarPlus, DollarSign } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  ArrowLeft,
+  CreditCard,
+  FileText,
+  Plus,
+  Upload,
+  Car,
+  AlertTriangle,
+  Eye,
+  Download,
+  Edit,
+  Trash2,
+  User,
+  Mail,
+  Phone,
+  CalendarPlus,
+  DollarSign,
+  FolderOpen,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AddCustomerDocumentDialog } from "@/components/AddCustomerDocumentDialog";
-import { InsuranceTabContent } from "@/components/InsuranceTabContent";
+import { useCustomerDocuments, useDeleteCustomerDocument, useDownloadDocument } from "@/hooks/useCustomerDocuments";
 import { useCustomerBalanceWithStatus } from "@/hooks/useCustomerBalance";
+import AddCustomerDocumentDialog from "@/components/AddCustomerDocumentDialog";
+import DocumentStatusBadge from "@/components/DocumentStatusBadge";
+import { format } from "date-fns";
 
 interface Customer {
   id: string;
@@ -53,18 +84,6 @@ interface Fine {
   vehicles: { reg: string; make: string; model: string };
 }
 
-interface CustomerDocument {
-  id: string;
-  document_type: string;
-  document_name: string;
-  insurance_provider?: string;
-  policy_number?: string;
-  policy_start_date?: string;
-  policy_end_date?: string;
-  notes?: string;
-  uploaded_at: string;
-}
-
 interface VehicleHistory {
   id: string;
   reg: string;
@@ -79,7 +98,8 @@ interface VehicleHistory {
 const CustomerDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
+  const [documentDialogOpen, setDocumentDialogOpen] = useState(false);
+  const [editingDocumentId, setEditingDocumentId] = useState<string | undefined>();
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ["customer", id],
@@ -164,22 +184,11 @@ const CustomerDetail = () => {
     enabled: !!id,
   });
 
-  const { data: documents } = useQuery({
-    queryKey: ["customer-documents", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customer_documents")
-        .select("*")
-        .eq("customer_id", id)
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as CustomerDocument[];
-    },
-    enabled: !!id,
-  });
+  const { data: documents, isLoading: documentsLoading } = useCustomerDocuments(id!);
+  const deleteDocumentMutation = useDeleteCustomerDocument();
+  const downloadDocumentMutation = useDownloadDocument();
 
-  const { data: vehicleHistory } = useQuery({
+  const { data: vehicleHistory, isLoading: vehicleHistoryLoading } = useQuery({
     queryKey: ["customer-vehicle-history", id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -214,7 +223,6 @@ const CustomerDetail = () => {
 
   // Use the enhanced customer balance hook with status
   const { data: customerBalanceData } = useCustomerBalanceWithStatus(id);
-
 
   if (isLoading) {
     return <div>Loading customer details...</div>;
@@ -340,10 +348,8 @@ const CustomerDetail = () => {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Fines Outstanding</span>
-              <span className="font-medium text-red-600">
-                £{fines?.filter(f => f.status === 'Open').reduce((sum, f) => sum + f.amount, 0).toFixed(2) || '0.00'}
-              </span>
+              <span className="text-sm text-muted-foreground">Documents</span>
+              <span className="font-medium">{documents?.length || 0}</span>
             </div>
           </CardContent>
         </Card>
@@ -351,14 +357,15 @@ const CustomerDetail = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="rentals">
-        <TabsList>
-          <TabsTrigger value="rentals">Rentals</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="fines">Fines</TabsTrigger>
-          <TabsTrigger value="insurance">Insurance</TabsTrigger>
-          <TabsTrigger value="vehicle-history">Vehicle History</TabsTrigger>
-          <TabsTrigger value="documents">Documents & IDs</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between mb-4">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="rentals">Rentals ({rentals?.length || 0})</TabsTrigger>
+            <TabsTrigger value="payments">Payments ({payments?.length || 0})</TabsTrigger>
+            <TabsTrigger value="fines">Fines ({fines?.length || 0})</TabsTrigger>
+            <TabsTrigger value="vehicles">Vehicle History ({vehicleHistory?.length || 0})</TabsTrigger>
+            <TabsTrigger value="documents">Documents & IDs ({documents?.length || 0})</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="rentals">
           <Card>
@@ -501,9 +508,9 @@ const CustomerDetail = () => {
                           <TableCell>{fine.type}</TableCell>
                           <TableCell>{new Date(fine.issue_date).toLocaleDateString()}</TableCell>
                           <TableCell>{new Date(fine.due_date).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-right">£{Number(fine.amount).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">£{Number(fine.amount).toFixed(2)}</TableCell>
                           <TableCell>
-                            <Badge variant={fine.status === 'Paid' ? 'default' : 'destructive'}>
+                            <Badge variant={fine.status === 'Open' ? 'destructive' : 'secondary'}>
                               {fine.status}
                             </Badge>
                           </TableCell>
@@ -528,11 +535,9 @@ const CustomerDetail = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="insurance">
-          <InsuranceTabContent customerId={id!} />
-        </TabsContent>
+        {/* Insurance is now handled through documents - removed tab */}
 
-        <TabsContent value="vehicle-history">
+        <TabsContent value="vehicles">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -542,41 +547,37 @@ const CustomerDetail = () => {
               <CardDescription>All vehicles rented by this customer</CardDescription>
             </CardHeader>
             <CardContent>
-              {vehicleHistory && vehicleHistory.length > 0 ? (
+              {vehicleHistoryLoading ? (
+                <div className="text-center py-4">Loading vehicle history...</div>
+              ) : vehicleHistory && vehicleHistory.length > 0 ? (
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Registration</TableHead>
                         <TableHead>Vehicle</TableHead>
-                        <TableHead>Colour</TableHead>
+                        <TableHead>Registration</TableHead>
+                        <TableHead>Color</TableHead>
                         <TableHead>Start Date</TableHead>
                         <TableHead>End Date</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {vehicleHistory.map((vehicle) => (
-                        <TableRow key={vehicle.id + vehicle.start_date}>
-                          <TableCell className="font-medium">{vehicle.reg}</TableCell>
-                          <TableCell>{vehicle.make} {vehicle.model}</TableCell>
+                        <TableRow key={`${vehicle.id}-${vehicle.start_date}`}>
+                          <TableCell className="font-medium">
+                            {vehicle.make} {vehicle.model}
+                          </TableCell>
+                          <TableCell>{vehicle.reg}</TableCell>
                           <TableCell>{vehicle.colour}</TableCell>
                           <TableCell>{new Date(vehicle.start_date).toLocaleDateString()}</TableCell>
-                          <TableCell>{vehicle.end_date ? new Date(vehicle.end_date).toLocaleDateString() : 'Ongoing'}</TableCell>
+                          <TableCell>
+                            {vehicle.end_date ? new Date(vehicle.end_date).toLocaleDateString() : 'Ongoing'}
+                          </TableCell>
                           <TableCell>
                             <Badge variant={vehicle.status === 'Active' ? 'default' : 'secondary'}>
                               {vehicle.status}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => navigate(`/vehicles/${vehicle.id}`)}
-                            >
-                              View Vehicle
-                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -593,77 +594,126 @@ const CustomerDetail = () => {
         <TabsContent value="documents">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FolderOpen className="h-5 w-5 text-primary" />
-                    Documents & IDs
-                  </CardTitle>
-                  <CardDescription>
-                    National Insurance, Driving Licence, Insurance certificates, Address proof, and other documents
-                  </CardDescription>
-                </div>
-                <Button onClick={() => setShowDocumentDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+              <div className="flex justify-between items-center">
+                <CardTitle>Documents & IDs</CardTitle>
+                <Button onClick={() => {
+                  setEditingDocumentId(undefined);
+                  setDocumentDialogOpen(true);
+                }}>
+                  <Upload className="mr-2 h-4 w-4" />
                   Add Document
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              {documents && documents.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Document Type</TableHead>
-                        <TableHead>Name/Description</TableHead>
-                        <TableHead>Details</TableHead>
-                        <TableHead>Upload Date</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {documents.map((doc) => (
-                        <TableRow key={doc.id}>
-                          <TableCell>
-                            <Badge variant="outline">{doc.document_type}</Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{doc.document_name}</TableCell>
-                          <TableCell>
-                            {doc.document_type === 'Insurance Certificate' && (
-                              <div className="text-sm text-muted-foreground">
-                                {doc.insurance_provider && <div>Provider: {doc.insurance_provider}</div>}
-                                {doc.policy_number && <div>Policy: {doc.policy_number}</div>}
-                                {doc.policy_start_date && doc.policy_end_date && (
-                                  <div>
-                                    Valid: {new Date(doc.policy_start_date).toLocaleDateString()} - {new Date(doc.policy_end_date).toLocaleDateString()}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {doc.notes && <div className="text-sm text-muted-foreground">{doc.notes}</div>}
-                          </TableCell>
-                          <TableCell>{new Date(doc.uploaded_at).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm">
-                              View
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+              {documentsLoading ? (
+                <div className="text-center py-4">Loading documents...</div>
+              ) : !documents || documents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No documents found for this customer.
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No documents uploaded</h3>
-                  <p className="text-muted-foreground mb-4">Upload customer documents and IDs to get started</p>
-                  <Button onClick={() => setShowDocumentDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Document
-                  </Button>
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Provider/Policy</TableHead>
+                      <TableHead>Start</TableHead>
+                      <TableHead>End (Expiry)</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>File</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {documents.map((document) => (
+                      <TableRow key={document.id}>
+                        <TableCell className="font-medium">
+                          {document.document_type}
+                        </TableCell>
+                        <TableCell>{document.document_name}</TableCell>
+                        <TableCell>
+                          {document.insurance_provider ? (
+                            <>
+                              <div className="text-sm font-medium">
+                                {document.insurance_provider}
+                              </div>
+                              {document.policy_number && (
+                                <div className="text-xs text-muted-foreground">
+                                  {document.policy_number}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {document.start_date ? format(new Date(document.start_date), "MMM dd, yyyy") : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {document.end_date ? format(new Date(document.end_date), "MMM dd, yyyy") : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <DocumentStatusBadge endDate={document.end_date} />
+                        </TableCell>
+                        <TableCell>
+                          {document.file_url ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => downloadDocumentMutation.mutate(document)}
+                              disabled={downloadDocumentMutation.isPending}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">No file</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingDocumentId(document.id);
+                                setDocumentDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this document? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteDocumentMutation.mutate(document.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
@@ -671,9 +721,13 @@ const CustomerDetail = () => {
       </Tabs>
 
       <AddCustomerDocumentDialog
-        open={showDocumentDialog}
-        onOpenChange={setShowDocumentDialog}
+        open={documentDialogOpen}
+        onOpenChange={(open) => {
+          setDocumentDialogOpen(open);
+          if (!open) setEditingDocumentId(undefined);
+        }}
         customerId={id!}
+        documentId={editingDocumentId}
       />
     </div>
   );

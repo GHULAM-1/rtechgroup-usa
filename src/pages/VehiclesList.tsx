@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,6 +64,19 @@ export default function VehiclesListEnhanced() {
   const [sortDirection, setSortDirection] = useState<SortDirection>((searchParams.get('dir') as SortDirection) || 'asc');
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [pageSize, setPageSize] = useState(parseInt(searchParams.get('limit') || '25'));
+
+  // Sync state with URL params when they change
+  useEffect(() => {
+    const urlSortField = (searchParams.get('sort') as SortField) || 'reg';
+    const urlSortDirection = (searchParams.get('dir') as SortDirection) || 'asc';
+    const urlCurrentPage = parseInt(searchParams.get('page') || '1');
+    const urlPageSize = parseInt(searchParams.get('limit') || '25');
+
+    setSortField(urlSortField);
+    setSortDirection(urlSortDirection);
+    setCurrentPage(urlCurrentPage);
+    setPageSize(urlPageSize);
+  }, [searchParams]);
 
   // Update URL params when filters change
   const updateFilters = (newFilters: Partial<FiltersState>) => {

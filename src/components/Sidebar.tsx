@@ -60,7 +60,7 @@ export const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu button - only shown on mobile */}
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <Button
           variant="outline"
@@ -73,18 +73,16 @@ export const Sidebar = () => {
       </div>
 
       {/* Sidebar */}
-      <div
+      <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
-          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "app-sidebar",
+          isMobileOpen && "mobile-open"
         )}
       >
         <div className="flex h-full flex-col">
-          {/* Logo/Brand */}
-          <div className="flex h-16 items-center justify-center border-b px-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-primary">RTECHGROUP UK</span>
-            </div>
+          {/* Brand header - aligned with app header height */}
+          <div className="flex items-center justify-center px-4" style={{ height: 'var(--header-height)' }}>
+            <span className="text-lg font-bold text-primary">RTECHGROUP UK</span>
           </div>
 
           {/* Navigation */}
@@ -123,7 +121,7 @@ export const Sidebar = () => {
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
       {/* Mobile overlay */}
       {isMobileOpen && (

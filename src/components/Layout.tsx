@@ -18,23 +18,23 @@ export const Layout = ({ children }: LayoutProps) => {
   }, []);
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        {/* RTECHGROUP Header - 56px height, sticky */}
-        <header className="sticky top-0 z-40 h-14 bg-background border-b border-border">
-          <div className="flex items-center justify-between h-full px-6">
-            <div className="flex-1 max-w-md">
-              <SearchTrigger onClick={() => setSearchOpen(true)} />
-            </div>
-            <ThemeToggle />
+    <div className="app-shell">
+      {/* Global header spanning full width */}
+      <header className="app-header">
+        <div className="flex items-center justify-between h-full px-6 w-full">
+          <div className="flex-1 max-w-md">
+            <SearchTrigger onClick={() => setSearchOpen(true)} />
           </div>
-        </header>
-        
-        <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
-        
-        {/* Main content with 24px padding */}
-        <main className="flex-1 overflow-auto p-6">
+          <ThemeToggle />
+        </div>
+      </header>
+      
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
+      
+      {/* App body with sidebar and main content */}
+      <div className="app-body">
+        <Sidebar />
+        <main className="app-main p-6">
           {children}
         </main>
       </div>

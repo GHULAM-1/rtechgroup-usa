@@ -88,6 +88,9 @@ export default {
       spacing: {
         '14': '3.5rem',
         '56': '14rem',  /* 56px header height */
+        'header': 'var(--header-height)',
+        'sidebar': 'var(--sidebar-width)',
+        'sidebar-collapsed': 'var(--sidebar-collapsed-width)',
       },
       borderRadius: {
         lg: "var(--radius)",

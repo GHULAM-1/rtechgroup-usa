@@ -26,7 +26,7 @@ interface PaymentEntry {
   id: string;
   amount: number;
   entry_date: string;
-  category: string;
+  payment_type: string;
   customers: { name: string };
   vehicles: { reg: string } | null;
   rentals: { id: string } | null;
@@ -41,6 +41,18 @@ const paymentSchema = z.object({
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
+
+// Helper function to display user-friendly payment type names
+const getPaymentTypeDisplay = (paymentType: string): string => {
+  switch (paymentType) {
+    case 'InitialFee':
+      return 'Initial Fee';
+    case 'Payment':
+      return 'Rental Payment';
+    default:
+      return paymentType;
+  }
+};
 
 const PaymentsList = () => {
   const navigate = useNavigate();
@@ -128,7 +140,7 @@ const PaymentsList = () => {
         id: payment.id,
         amount: payment.amount,
         entry_date: payment.payment_date,
-        category: 'Customer Payment', // Show all as generic customer payments
+        payment_type: payment.payment_type,
         customers: payment.customers,
         vehicles: payment.vehicles,
         rentals: payment.rentals
@@ -432,13 +444,13 @@ const PaymentsList = () => {
                            '-'
                          )}
                        </TableCell>
-                         <TableCell>
-                           <div className="flex gap-1">
-                              <Badge variant="default">
-                                {payment.category}
-                              </Badge>
-                            </div>
-                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                               <Badge variant="default">
+                                 {getPaymentTypeDisplay(payment.payment_type)}
+                               </Badge>
+                             </div>
+                           </TableCell>
                           <TableCell>Cash</TableCell>
                         <TableCell className="text-right font-medium">
                           £{Math.abs(Number(payment.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

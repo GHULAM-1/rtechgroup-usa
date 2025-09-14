@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.record-authority-payment]
 verify_jwt = false
+
+[functions.reminders-generate]
+verify_jwt = false
+
+[functions.reminders-digest]
+verify_jwt = false

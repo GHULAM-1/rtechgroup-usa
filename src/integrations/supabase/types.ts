@@ -1312,6 +1312,180 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_events: {
+        Row: {
+          created_at: string | null
+          event_date: string
+          event_type: Database["public"]["Enums"]["vehicle_event_type"]
+          id: string
+          reference_id: string | null
+          reference_table: string | null
+          summary: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_date?: string
+          event_type: Database["public"]["Enums"]["vehicle_event_type"]
+          id?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          summary: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_date?: string
+          event_type?: Database["public"]["Enums"]["vehicle_event_type"]
+          id?: string
+          reference_id?: string | null
+          reference_table?: string | null
+          summary?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "vehicle_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_events_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
+      vehicle_expenses: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["expense_category"]
+          created_at: string | null
+          created_by: string | null
+          expense_date: string
+          id: string
+          notes: string | null
+          reference: string | null
+          updated_at: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          amount: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string | null
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          updated_at?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["expense_category"]
+          created_at?: string | null
+          created_by?: string | null
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          reference?: string | null
+          updated_at?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_expenses_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "vehicle_expenses_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_expenses_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
+      vehicle_files: {
+        Row: {
+          content_type: string | null
+          created_at: string | null
+          file_name: string
+          id: string
+          size_bytes: number | null
+          storage_path: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+          vehicle_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string | null
+          file_name: string
+          id?: string
+          size_bytes?: number | null
+          storage_path: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          vehicle_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string | null
+          file_name?: string
+          id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_files_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "vehicle_files_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_files_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           acquisition_date: string | null
@@ -1321,6 +1495,9 @@ export type Database = {
           colour: string | null
           created_at: string | null
           finance_start_date: string | null
+          has_ghost: boolean | null
+          has_remote_immobiliser: boolean | null
+          has_tracker: boolean | null
           id: string
           initial_payment: number | null
           last_service_date: string | null
@@ -1331,6 +1508,7 @@ export type Database = {
           mot_due_date: string | null
           purchase_price: number | null
           reg: string
+          security_notes: string | null
           status: string | null
           tax_due_date: string | null
           term_months: number | null
@@ -1344,6 +1522,9 @@ export type Database = {
           colour?: string | null
           created_at?: string | null
           finance_start_date?: string | null
+          has_ghost?: boolean | null
+          has_remote_immobiliser?: boolean | null
+          has_tracker?: boolean | null
           id?: string
           initial_payment?: number | null
           last_service_date?: string | null
@@ -1354,6 +1535,7 @@ export type Database = {
           mot_due_date?: string | null
           purchase_price?: number | null
           reg: string
+          security_notes?: string | null
           status?: string | null
           tax_due_date?: string | null
           term_months?: number | null
@@ -1367,6 +1549,9 @@ export type Database = {
           colour?: string | null
           created_at?: string | null
           finance_start_date?: string | null
+          has_ghost?: boolean | null
+          has_remote_immobiliser?: boolean | null
+          has_tracker?: boolean | null
           id?: string
           initial_payment?: number | null
           last_service_date?: string | null
@@ -1377,6 +1562,7 @@ export type Database = {
           mot_due_date?: string | null
           purchase_price?: number | null
           reg?: string
+          security_notes?: string | null
           status?: string | null
           tax_due_date?: string | null
           term_months?: number | null
@@ -1978,10 +2164,32 @@ export type Database = {
       customer_status: "active" | "inactive"
       customer_type: "individual" | "company"
       entry_type: "charge" | "payment" | "adjustment"
+      expense_category:
+        | "Repair"
+        | "Service"
+        | "Tyres"
+        | "Valet"
+        | "Accessory"
+        | "Other"
       ledger_status: "pending" | "applied"
       payment_status: "paid" | "due" | "overdue" | "void"
       payment_type: "initial_fee" | "monthly" | "fine" | "service" | "other"
       rental_status: "active" | "completed" | "cancelled"
+      vehicle_event_type:
+        | "acquisition_created"
+        | "acquisition_updated"
+        | "rental_started"
+        | "rental_ended"
+        | "expense_added"
+        | "expense_removed"
+        | "fine_assigned"
+        | "fine_closed"
+        | "file_uploaded"
+        | "file_deleted"
+        | "disposal"
+        | "service_added"
+        | "service_updated"
+        | "service_removed"
       vehicle_status: "available" | "rented" | "sold"
     }
     CompositeTypes: {
@@ -2114,10 +2322,34 @@ export const Constants = {
       customer_status: ["active", "inactive"],
       customer_type: ["individual", "company"],
       entry_type: ["charge", "payment", "adjustment"],
+      expense_category: [
+        "Repair",
+        "Service",
+        "Tyres",
+        "Valet",
+        "Accessory",
+        "Other",
+      ],
       ledger_status: ["pending", "applied"],
       payment_status: ["paid", "due", "overdue", "void"],
       payment_type: ["initial_fee", "monthly", "fine", "service", "other"],
       rental_status: ["active", "completed", "cancelled"],
+      vehicle_event_type: [
+        "acquisition_created",
+        "acquisition_updated",
+        "rental_started",
+        "rental_ended",
+        "expense_added",
+        "expense_removed",
+        "fine_assigned",
+        "fine_closed",
+        "file_uploaded",
+        "file_deleted",
+        "disposal",
+        "service_added",
+        "service_updated",
+        "service_removed",
+      ],
       vehicle_status: ["available", "rented", "sold"],
     },
   },

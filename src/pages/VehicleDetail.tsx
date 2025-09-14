@@ -7,15 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 import { useVehicleServices } from "@/hooks/useVehicleServices";
+import { useVehicleExpenses } from "@/hooks/useVehicleExpenses";
+import { useVehicleFiles } from "@/hooks/useVehicleFiles";
+import { useVehicleEvents } from "@/hooks/useVehicleEvents";
 import { AddServiceRecordDialog } from "@/components/AddServiceRecordDialog";
 import { ServiceHistoryTable } from "@/components/ServiceHistoryTable";
 import { LastServiceCard } from "@/components/LastServiceCard";
 import { VehiclePlatesPanel } from "@/components/VehiclePlatesPanel";
+import { EditVehicleDialog } from "@/components/EditVehicleDialog";
+import { VehicleExpenseDialog } from "@/components/VehicleExpenseDialog";
+import { VehicleFileUpload } from "@/components/VehicleFileUpload";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 interface Vehicle {
   id: string;
@@ -40,6 +50,11 @@ interface Vehicle {
   // Service fields
   last_service_date?: string;
   last_service_mileage?: number;
+  // Security fields
+  has_ghost?: boolean;
+  has_tracker?: boolean;
+  has_remote_immobiliser?: boolean;
+  security_notes?: string;
 }
 
 interface PLEntry {
@@ -81,6 +96,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Service management hook
   const {
@@ -93,6 +109,33 @@ export default function VehicleDetail() {
     isEditing: isEditingService,
     isDeleting: isDeletingService,
   } = useVehicleServices(id!);
+
+  // Expenses management hook
+  const {
+    expenses,
+    isLoading: isLoadingExpenses,
+    addExpense,
+    deleteExpense,
+    isAdding: isAddingExpense,
+    isDeleting: isDeletingExpense,
+  } = useVehicleExpenses(id!);
+
+  // Files management hook  
+  const {
+    files,
+    isLoading: isLoadingFiles,
+    uploadFile,
+    deleteFile,
+    downloadFile,
+    isUploading: isUploadingFile,
+    isDeleting: isDeletingFile,
+  } = useVehicleFiles(id!);
+
+  // Events/history hook
+  const {
+    events,
+    isLoading: isLoadingEvents,
+  } = useVehicleEvents(id!);
 
   // Fetch vehicle details
   const { data: vehicle, isLoading: vehicleLoading } = useQuery({
@@ -240,7 +283,10 @@ export default function VehicleDetail() {
             </p>
           </div>
         </div>
-        <StatusBadge status={vehicle.status} />
+        <div className="flex items-center gap-2">
+          <EditVehicleDialog vehicle={vehicle} />
+          <StatusBadge status={vehicle.status} />
+        </div>
       </div>
 
       {/* Tabs */}
@@ -722,24 +768,131 @@ export default function VehicleDetail() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Vehicle history will be displayed here</p>
+          <div>
+            <h3 className="text-lg font-semibold">Vehicle History</h3>
+            <p className="text-sm text-muted-foreground">
+              Timeline of events and activities for this vehicle
+            </p>
           </div>
+
+          {isLoadingEvents ? (
+            <div className="text-center py-8 text-muted-foreground">Loading events...</div>
+          ) : events.length > 0 ? (
+            <div className="space-y-4">
+              {events.map((event) => (
+                <Card key={event.id}>
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium">{event.summary}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {format(new Date(event.event_date), "MMM d, yyyy 'at' HH:mm")}
+                        </p>
+                      </div>
+                      <Badge variant="outline">{event.event_type.replace('_', ' ')}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No events recorded yet</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="expenses" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Vehicle expenses will be displayed here</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Vehicle Expenses</h3>
+              <p className="text-sm text-muted-foreground">
+                Track repairs, services, and other vehicle costs
+              </p>
+            </div>
+            <VehicleExpenseDialog onSubmit={addExpense} isLoading={isAddingExpense} />
           </div>
+
+          {isLoadingExpenses ? (
+            <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
+          ) : expenses.length > 0 ? (
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Notes</TableHead>
+                      <TableHead className="w-20">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {expenses.map((expense) => (
+                      <TableRow key={expense.id}>
+                        <TableCell>{format(new Date(expense.expense_date), "dd/MM/yyyy")}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{expense.category}</Badge>
+                        </TableCell>
+                        <TableCell>£{expense.amount.toLocaleString()}</TableCell>
+                        <TableCell>{expense.reference || '-'}</TableCell>
+                        <TableCell className="max-w-xs truncate">{expense.notes || '-'}</TableCell>
+                        <TableCell>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" disabled={isDeletingExpense}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure? This will also remove the P&L entry.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteExpense(expense.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No expenses recorded yet</p>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="files" className="space-y-4">
-          <div className="text-center py-8 text-muted-foreground">
-            <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Vehicle files will be displayed here</p>
+          <div>
+            <h3 className="text-lg font-semibold">Vehicle Files</h3>
+            <p className="text-sm text-muted-foreground">
+              Upload and manage documents for this vehicle
+            </p>
           </div>
+
+          <VehicleFileUpload
+            files={files}
+            onUpload={uploadFile}
+            onDelete={deleteFile}
+            onDownload={downloadFile}
+            isUploading={isUploadingFile}
+            isDeleting={isDeletingFile}
+          />
         </TabsContent>
       </Tabs>
     </div>

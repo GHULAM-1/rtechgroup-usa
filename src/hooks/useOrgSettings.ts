@@ -14,6 +14,12 @@ export interface OrgSettings {
   reminder_overdue_1d: boolean;
   reminder_overdue_multi: boolean;
   reminder_due_soon_2d: boolean;
+  tests_last_run_dashboard?: string;
+  tests_last_result_dashboard?: any;
+  tests_last_run_rental?: string;
+  tests_last_result_rental?: any;
+  tests_last_run_finance?: string;
+  tests_last_result_finance?: any;
   created_at?: string;
   updated_at?: string;
 }

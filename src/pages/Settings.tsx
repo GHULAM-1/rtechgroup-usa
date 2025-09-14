@@ -15,7 +15,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useOrgSettings } from '@/hooks/useOrgSettings';
-import { ComprehensiveTestingSuite } from '@/components/ComprehensiveTestingSuite';
+import { CompanyLogoUpload } from '@/components/CompanyLogoUpload';
+import { TestingCards } from '@/components/TestingCards';
 
 const Settings = () => {
   const queryClient = useQueryClient();
@@ -508,7 +509,16 @@ const Settings = () => {
 
         {/* Testing Tab */}
         <TabsContent value="testing">
-          <ComprehensiveTestingSuite />
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">System Tests</h2>
+              <p className="text-muted-foreground">
+                Run comprehensive tests to verify system integrity and calculations
+              </p>
+            </div>
+            
+            <TestingCards />
+          </div>
         </TabsContent>
 
         {/* Integrations Tab */}

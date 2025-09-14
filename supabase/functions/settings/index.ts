@@ -18,6 +18,14 @@ interface OrgSettings {
   reminder_overdue_1d: boolean;
   reminder_overdue_multi: boolean;
   reminder_due_soon_2d: boolean;
+  tests_last_run_dashboard?: string;
+  tests_last_result_dashboard?: any;
+  tests_last_run_rental?: string;
+  tests_last_result_rental?: any;
+  tests_last_run_finance?: string;
+  tests_last_result_finance?: any;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // In-memory cache for settings (60 seconds)
@@ -116,7 +124,10 @@ serve(async (req) => {
       const validFields = [
         'company_name', 'timezone', 'currency_code', 'date_format', 
         'logo_url', 'reminder_due_today', 'reminder_overdue_1d', 
-        'reminder_overdue_multi', 'reminder_due_soon_2d'
+        'reminder_overdue_multi', 'reminder_due_soon_2d',
+        'tests_last_run_dashboard', 'tests_last_result_dashboard',
+        'tests_last_run_rental', 'tests_last_result_rental',
+        'tests_last_run_finance', 'tests_last_result_finance'
       ];
 
       // Filter out invalid fields

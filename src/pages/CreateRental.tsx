@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { ArrowLeft, FileText, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { useCustomerActiveRentals } from "@/hooks/useCustomerActiveRentals";
 import { PAYMENT_TYPES } from "@/lib/constants";
 
 const rentalSchema = z.object({
@@ -53,12 +54,18 @@ const CreateRental = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
-        .select("id, name")
+        .select("id, name, customer_type, type")
         .eq("status", "Active");
       if (error) throw error;
       return data;
     },
   });
+
+  const selectedCustomerId = form.watch("customer_id");
+  const selectedCustomer = customers?.find(c => c.id === selectedCustomerId);
+  
+  // Get active rentals count for selected customer to enforce rules
+  const { data: activeRentalsCount } = useCustomerActiveRentals(selectedCustomerId);
 
   const { data: vehicles } = useQuery({
     queryKey: ["vehicles-for-rental"],
@@ -86,6 +93,12 @@ const CreateRental = () => {
       
       if (data.initial_fee && data.initial_fee < 0) {
         throw new Error("Initial fee cannot be negative");
+      }
+
+      // Enforce rental rules based on customer type
+      const customerType = selectedCustomer?.customer_type || selectedCustomer?.type;
+      if (customerType === "Individual" && activeRentalsCount && activeRentalsCount > 0) {
+        throw new Error("This customer already has an active rental. Individuals can only have one active rental at a time.");
       }
       
       // Create rental
@@ -233,11 +246,14 @@ const CreateRental = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {customers?.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
+                          {customers?.map((customer) => {
+                            const customerType = customer.customer_type || customer.type;
+                            return (
+                              <SelectItem key={customer.id} value={customer.id}>
+                                {customer.name} ({customerType})
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                       <FormMessage />

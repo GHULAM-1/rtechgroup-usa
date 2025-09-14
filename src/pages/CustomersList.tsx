@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Plus, Mail, Phone, Eye, Edit, Search } from "lucide-react";
 import { CustomerFormModal } from "@/components/CustomerFormModal";
 
@@ -16,8 +17,10 @@ interface Customer {
   email: string;
   phone: string;
   type: string;
+  customer_type?: "Individual" | "Company";
   status: string;
   whatsapp_opt_in: boolean;
+  high_switcher?: boolean;
 }
 
 interface CustomerBalance {
@@ -45,13 +48,15 @@ const CustomersList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [highSwitcherFilter, setHighSwitcherFilter] = useState<string>("all");
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ["customers-list"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
-        .select("*")
+        .select("id, name, email, phone, type, customer_type, status, whatsapp_opt_in, high_switcher")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -176,15 +181,33 @@ const CustomersList = () => {
     setIsModalOpen(true);
   };
 
-  // Filter customers based on search term
+  // Filter customers based on search term and filters
   const filteredCustomers = customers?.filter(customer => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      customer.name.toLowerCase().includes(search) ||
-      customer.email?.toLowerCase().includes(search) ||
-      customer.phone?.toLowerCase().includes(search)
-    );
+    // Search filter
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = (
+        customer.name.toLowerCase().includes(search) ||
+        customer.email?.toLowerCase().includes(search) ||
+        customer.phone?.toLowerCase().includes(search)
+      );
+      if (!matchesSearch) return false;
+    }
+    
+    // Type filter
+    if (typeFilter !== "all") {
+      const customerType = customer.customer_type || customer.type;
+      if (customerType !== typeFilter) return false;
+    }
+    
+    // High switcher filter
+    if (highSwitcherFilter !== "all") {
+      const isHighSwitcher = customer.high_switcher || false;
+      if (highSwitcherFilter === "yes" && !isHighSwitcher) return false;
+      if (highSwitcherFilter === "no" && isHighSwitcher) return false;
+    }
+    
+    return true;
   });
 
   if (isLoading) {
@@ -217,8 +240,8 @@ const CustomersList = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Search Bar */}
-          <div className="mb-4">
+          {/* Search and Filters */}
+          <div className="mb-4 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -227,6 +250,30 @@ const CustomersList = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            
+            <div className="flex gap-4">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="Individual">Individual</SelectItem>
+                  <SelectItem value="Company">Company</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={highSwitcherFilter} onValueChange={setHighSwitcherFilter}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filter by high switcher" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers</SelectItem>
+                  <SelectItem value="yes">High Switchers</SelectItem>
+                  <SelectItem value="no">Regular Customers</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
@@ -249,9 +296,20 @@ const CustomersList = () => {
                     
                     return (
                       <TableRow key={customer.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {customer.name}
+                            {customer.high_switcher && (
+                              <Badge variant="secondary" className="text-xs">
+                                High Switcher
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{customer.type}</Badge>
+                          <Badge variant="outline">
+                            {customer.customer_type || customer.type}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">

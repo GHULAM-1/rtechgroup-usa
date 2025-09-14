@@ -177,9 +177,16 @@ export type Database = {
       customers: {
         Row: {
           created_at: string | null
+          customer_type: string | null
           email: string | null
+          high_switcher: boolean | null
           id: string
           name: string
+          nok_address: string | null
+          nok_email: string | null
+          nok_full_name: string | null
+          nok_phone: string | null
+          nok_relationship: string | null
           phone: string | null
           status: string | null
           type: string
@@ -188,9 +195,16 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          customer_type?: string | null
           email?: string | null
+          high_switcher?: boolean | null
           id?: string
           name: string
+          nok_address?: string | null
+          nok_email?: string | null
+          nok_full_name?: string | null
+          nok_phone?: string | null
+          nok_relationship?: string | null
           phone?: string | null
           status?: string | null
           type: string
@@ -199,9 +213,16 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          customer_type?: string | null
           email?: string | null
+          high_switcher?: boolean | null
           id?: string
           name?: string
+          nok_address?: string | null
+          nok_email?: string | null
+          nok_full_name?: string | null
+          nok_phone?: string | null
+          nok_relationship?: string | null
           phone?: string | null
           status?: string | null
           type?: string

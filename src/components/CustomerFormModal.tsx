@@ -8,20 +8,30 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Users, Mail, Phone } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Users, Mail, Phone, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 
 const customerSchema = z.object({
   type: z.enum(['Individual', 'Company']),
+  customer_type: z.enum(['Individual', 'Company']),
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
   phone: z.string().optional(),
   whatsapp_opt_in: z.boolean(),
+  high_switcher: z.boolean(),
   status: z.enum(['Active', 'Inactive']),
   notes: z.string().optional(),
+  // Next of Kin fields
+  nok_full_name: z.string().optional(),
+  nok_relationship: z.string().optional(),
+  nok_phone: z.string().optional(),
+  nok_email: z.string().email("Invalid email format").optional().or(z.literal("")),
+  nok_address: z.string().optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -32,8 +42,15 @@ interface Customer {
   email: string | null;
   phone: string | null;
   type: string;
+  customer_type?: "Individual" | "Company";
   status: string;
   whatsapp_opt_in: boolean;
+  high_switcher?: boolean;
+  nok_full_name?: string;
+  nok_relationship?: string;
+  nok_phone?: string;
+  nok_email?: string;
+  nok_address?: string;
 }
 
 interface CustomerFormModalProps {
@@ -44,6 +61,7 @@ interface CustomerFormModalProps {
 
 export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerFormModalProps) => {
   const [loading, setLoading] = useState(false);
+  const [showNextOfKin, setShowNextOfKin] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditing = !!customer;
@@ -52,36 +70,64 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
     resolver: zodResolver(customerSchema),
     defaultValues: {
       type: "Individual",
+      customer_type: "Individual",
       name: "",
       email: "",
       phone: "",
       whatsapp_opt_in: false,
+      high_switcher: false,
       status: "Active",
       notes: "",
+      nok_full_name: "",
+      nok_relationship: "",
+      nok_phone: "",
+      nok_email: "",
+      nok_address: "",
     },
   });
+
+  const customerType = form.watch("customer_type");
 
   // Update form when customer changes
   useEffect(() => {
     if (customer) {
+      const hasNextOfKin = customer.nok_full_name || customer.nok_relationship || 
+                          customer.nok_phone || customer.nok_email || customer.nok_address;
+      setShowNextOfKin(!!hasNextOfKin);
+      
       form.reset({
         type: customer.type as "Individual" | "Company",
+        customer_type: customer.customer_type || "Individual",
         name: customer.name,
         email: customer.email || "",
         phone: customer.phone || "",
         whatsapp_opt_in: customer.whatsapp_opt_in,
+        high_switcher: customer.high_switcher || false,
         status: customer.status as "Active" | "Inactive",
         notes: "",
+        nok_full_name: customer.nok_full_name || "",
+        nok_relationship: customer.nok_relationship || "",
+        nok_phone: customer.nok_phone || "",
+        nok_email: customer.nok_email || "",
+        nok_address: customer.nok_address || "",
       });
     } else {
+      setShowNextOfKin(false);
       form.reset({
         type: "Individual",
+        customer_type: "Individual",
         name: "",
         email: "",
         phone: "",
         whatsapp_opt_in: false,
+        high_switcher: false,
         status: "Active",
         notes: "",
+        nok_full_name: "",
+        nok_relationship: "",
+        nok_phone: "",
+        nok_email: "",
+        nok_address: "",
       });
     }
   }, [customer, form]);
@@ -92,11 +138,18 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
     try {
       const payload = {
         type: data.type,
+        customer_type: data.customer_type,
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
         whatsapp_opt_in: data.whatsapp_opt_in,
+        high_switcher: data.high_switcher,
         status: data.status,
+        nok_full_name: data.nok_full_name || null,
+        nok_relationship: data.nok_relationship || null,
+        nok_phone: data.nok_phone || null,
+        nok_email: data.nok_email || null,
+        nok_address: data.nok_address || null,
       };
 
       if (isEditing) {
@@ -169,7 +222,7 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type *</FormLabel>
+                    <FormLabel>Legacy Type *</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger className="input-focus">
@@ -210,13 +263,71 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
 
             <FormField
               control={form.control}
+              name="customer_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Customer Type *</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-6">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="Individual"
+                          checked={field.value === "Individual"}
+                          onChange={() => field.onChange("Individual")}
+                          className="w-4 h-4 text-primary"
+                        />
+                        <span>Individual</span>
+                      </label>
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          value="Company"
+                          checked={field.value === "Company"}
+                          onChange={() => field.onChange("Company")}
+                          className="w-4 h-4 text-primary"
+                        />
+                        <span>Company (can have multiple active rentals)</span>
+                      </label>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="high_switcher"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">High Switcher</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Customer frequently changes cars
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name *</FormLabel>
+                  <FormLabel>
+                    {customerType === "Company" ? "Company Name *" : "Name *"}
+                  </FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Enter customer name" 
+                      placeholder={customerType === "Company" ? "Enter company name" : "Enter customer name"} 
                       {...field} 
                       className="input-focus"
                       autoFocus
@@ -312,6 +423,98 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                 </FormItem>
               )}
             />
+
+            {/* Next of Kin Section */}
+            <Collapsible open={showNextOfKin} onOpenChange={setShowNextOfKin}>
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="outline" className="w-full">
+                  <div className="flex items-center justify-between w-full">
+                    <span>Next of Kin / Emergency Contact</span>
+                    {showNextOfKin ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-4">
+                <div className="rounded-lg border p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="nok_full_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter full name" {...field} className="input-focus" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="nok_relationship"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Relationship</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., Spouse, Parent, Friend" {...field} className="input-focus" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="nok_phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter phone number" {...field} className="input-focus" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="nok_email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="Enter email address" {...field} className="input-focus" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="nok_address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Address</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter full address..."
+                            {...field}
+                            className="input-focus resize-none"
+                            rows={3}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button 

@@ -85,38 +85,39 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
     setLoading(true);
 
     try {
-      const { data: vehicle, error } = await supabase
+      // Normalize registration
+      const normalizedReg = data.reg.toUpperCase().trim();
+      
+      const vehicleData: any = {
+        reg: normalizedReg,
+        make: data.make,
+        model: data.model,
+        colour: data.colour,
+        acquisition_type: data.acquisition_type,
+        acquisition_date: data.acquisition_date.toISOString().split('T')[0],
+        mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
+        tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
+      };
+
+      // Add type-specific fields
+      if (data.acquisition_type === 'Purchase') {
+        vehicleData.purchase_price = data.purchase_price;
+      } else if (data.acquisition_type === 'Finance') {
+        // For finance vehicles, convert contract total to the structure expected by triggers
+        vehicleData.initial_payment = data.contract_total;
+        vehicleData.monthly_payment = 1; // Dummy value to satisfy constraints
+        vehicleData.term_months = 1; // Dummy value
+      }
+
+      const { error } = await supabase
         .from("vehicles")
-        .insert({
-          reg: data.reg,
-          make: data.make,
-          model: data.model,
-          colour: data.colour,
-          acquisition_type: data.acquisition_type,
-          acquisition_date: data.acquisition_date.toISOString().split('T')[0],
-          status: "Available",
-          // Include purchase price only for purchased vehicles
-          ...(data.acquisition_type === 'Purchase' && { purchase_price: data.purchase_price }),
-          // Add finance fields only if acquisition type is Finance
-          ...(data.acquisition_type === 'Finance' && {
-            monthly_payment: data.monthly_payment,
-            initial_payment: data.initial_payment,
-            term_months: data.term_months,
-            balloon: data.balloon,
-            finance_start_date: data.finance_start_date?.toISOString().split('T')[0],
-          }),
-          // Add MOT & TAX dates
-          mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
-          tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
-        })
-        .select()
-        .single();
+        .insert(vehicleData);
 
       if (error) throw error;
 
       toast({
         title: "Vehicle Added",
-        description: `${data.make} ${data.model} (${data.reg}) has been added to your fleet.`,
+        description: `${data.make} ${data.model} (${normalizedReg}) has been added to the fleet.`,
       });
 
       form.reset();

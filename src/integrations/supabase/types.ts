@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      authority_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          fine_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          fine_id: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_method?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          fine_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authority_payments_fine_id_fkey"
+            columns: ["fine_id"]
+            isOneToOne: false
+            referencedRelation: "fines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "authority_payments_fine_id_fkey"
+            columns: ["fine_id"]
+            isOneToOne: false
+            referencedRelation: "view_fines_export"
+            referencedColumns: ["fine_id"]
+          },
+        ]
+      }
       customer_documents: {
         Row: {
           created_at: string | null

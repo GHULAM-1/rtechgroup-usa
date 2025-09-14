@@ -3,6 +3,9 @@ project_id = "wrogevjpvhvputrjhvvg"
 [functions.apply-fine]
 verify_jwt = true
 
+[functions.apply-payment]
+verify_jwt = false
+
 [functions.process-reminders]
 verify_jwt = false
 
@@ -10,4 +13,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.daily-reminders]
+verify_jwt = false
+
+[functions.record-authority-payment]
 verify_jwt = false

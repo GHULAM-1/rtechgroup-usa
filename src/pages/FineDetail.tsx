@@ -620,6 +620,15 @@ const FineDetail = () => {
         fineAmount={fine.amount}
         customerId={fine.customer_id || undefined}
       />
+
+      {/* Authority Payment Dialog */}
+      <AuthorityPaymentDialog
+        open={showAuthorityPaymentDialog}
+        onOpenChange={setShowAuthorityPaymentDialog}
+        fineId={fine.id}
+        fineAmount={fine.amount}
+        fineReference={fine.reference_no}
+      />
     </div>
   );
 };

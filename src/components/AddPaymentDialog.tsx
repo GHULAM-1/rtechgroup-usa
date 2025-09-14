@@ -19,12 +19,13 @@ import { cn } from "@/lib/utils";
 
 const paymentSchema = z.object({
   customer_id: z.string().min(1, "Customer is required"),
-  vehicle_id: z.string().min(1, "Vehicle is required"),
+  vehicle_id: z.string().optional(),
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_date: z.date({
     required_error: "Payment date is required",
   }),
-  method: z.string().min(1, "Payment method is required"),
+  method: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -53,7 +54,8 @@ export const AddPaymentDialog = ({
       vehicle_id: vehicle_id || "",
       amount: 0,
       payment_date: toZonedTime(new Date(), 'Europe/London'),
-      method: "Card",
+      method: "",
+      notes: "",
     },
   });
 
@@ -113,7 +115,7 @@ export const AddPaymentDialog = ({
       if (paymentError) throw paymentError;
 
       // Apply payment using edge function
-      const { error: applyError } = await supabase.functions.invoke('apply-payment', {
+      const { data: applyResult, error: applyError } = await supabase.functions.invoke('apply-payment', {
         body: { paymentId: payment.id }
       });
 
@@ -125,16 +127,23 @@ export const AddPaymentDialog = ({
         throw new Error(applyError.message || 'Payment processing failed');
       }
 
+      if (!applyResult?.ok) {
+        // Delete the payment record since processing failed
+        await supabase.from('payments').delete().eq('id', payment.id);
+        throw new Error(applyResult?.error || applyResult?.detail || 'Payment processing failed');
+      }
+
       toast({
-        title: "Success",
-        description: "Payment recorded and processed successfully",
+        title: "Payment Recorded",
+        description: `Payment of £${data.amount} has been recorded and applied.`,
       });
 
       form.reset();
       onOpenChange(false);
       
       // Invalidate queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['payments-data'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-summary'] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['rentals'] });
       queryClient.invalidateQueries({ queryKey: ['pnl'] });
@@ -289,7 +298,7 @@ export const AddPaymentDialog = ({
                     </PopoverContent>
                   </Popover>
                   <FormDescription className="text-sm text-muted-foreground">
-                    Payments are automatically applied to outstanding charges using FIFO allocation.
+                    Payments are automatically applied to outstanding charges. Any remaining credit will auto-apply to the next due charges.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -301,20 +310,30 @@ export const AddPaymentDialog = ({
               name="method"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Payment Method</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select method" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Card">Card</SelectItem>
-                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="Cash">Cash</SelectItem>
-                      <SelectItem value="Cheque">Cheque</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel>Payment Method (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g., Cash, Card, Bank Transfer" 
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Payment reference or notes" 
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -326,7 +345,7 @@ export const AddPaymentDialog = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Processing..." : "Add Payment"}
+                {loading ? "Recording..." : "Record Payment"}
               </Button>
             </div>
           </form>

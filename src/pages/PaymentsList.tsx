@@ -212,6 +212,7 @@ const PaymentsList = () => {
                       </TableHead>
                       <TableHead>Vehicle</TableHead>
                       <TableHead>Rental</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Method</TableHead>
                       <TableHead 
                         className="text-right cursor-pointer hover:bg-muted/50"
@@ -256,17 +257,25 @@ const PaymentsList = () => {
                               '-'
                             )}
                           </TableCell>
-                          <TableCell>
-                            {payment.rentals ? (
-                              <Badge variant="outline" className="text-xs cursor-pointer" 
-                                onClick={() => navigate(`/rentals/${payment.rentals!.id}`)}>
-                                {payment.rentals.rental_number || `#${payment.rentals.id.slice(0, 8)}`}
-                              </Badge>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
-                          <TableCell>{payment.method || '-'}</TableCell>
+                           <TableCell>
+                             {payment.rentals ? (
+                               <Badge variant="outline" className="text-xs cursor-pointer" 
+                                 onClick={() => navigate(`/rentals/${payment.rentals!.id}`)}>
+                                 {payment.rentals.rental_number || `R-${payment.rentals.id.slice(0, 6)}`}
+                               </Badge>
+                             ) : (
+                               <span className="text-muted-foreground text-xs">No rental</span>
+                             )}
+                           </TableCell>
+                           <TableCell>
+                             <Badge 
+                               variant={payment.payment_type === 'InitialFee' ? 'default' : 'secondary'}
+                               className={payment.payment_type === 'InitialFee' ? 'bg-purple-600 hover:bg-purple-700' : ''}
+                             >
+                               {getPaymentTypeDisplay(payment.payment_type)}
+                             </Badge>
+                           </TableCell>
+                           <TableCell>{payment.method || '-'}</TableCell>
                           <TableCell className="text-right font-medium">
                             £{payment.amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                           </TableCell>

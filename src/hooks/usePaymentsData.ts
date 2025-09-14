@@ -109,6 +109,7 @@ export const exportPaymentsCSV = async (filters: PaymentFilters) => {
       customers(name),
       vehicles(reg),
       rentals(rental_number),
+      payment_type,
       method,
       amount,
       status,
@@ -142,13 +143,25 @@ export const exportPaymentsCSV = async (filters: PaymentFilters) => {
   if (error) throw error;
 
   // Convert to CSV
-  const headers = ['Date', 'Customer', 'Vehicle', 'Rental Ref', 'Method', 'Amount', 'Applied', 'Credit Remaining'];
+  const headers = ['Date', 'Customer', 'Vehicle', 'Rental Ref', 'Type', 'Method', 'Amount', 'Applied', 'Credit Remaining'];
   
+  const getPaymentTypeDisplay = (paymentType: string): string => {
+    switch (paymentType) {
+      case 'InitialFee':
+        return 'Initial Fee';
+      case 'Payment':
+        return 'Customer Payment';
+      default:
+        return paymentType;
+    }
+  };
+
   const rows = data.map(payment => [
     payment.payment_date,
     payment.customers?.name || '',
     payment.vehicles?.reg || '',
     payment.rentals?.rental_number || '',
+    getPaymentTypeDisplay(payment.payment_type),
     payment.method || '',
     payment.amount.toFixed(2),
     (payment.amount - (payment.remaining_amount || 0)).toFixed(2),

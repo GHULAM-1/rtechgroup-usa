@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { ThemeToggle } from "./ThemeToggle";
-import { SearchWidget } from "./SearchWidget";
+import { HeaderSearch } from "./HeaderSearch";
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,13 +12,11 @@ export const Layout = ({ children }: LayoutProps) => {
     <div className="app-shell">
       {/* Global header spanning full width */}
       <header className="app-header">
-        <div className="flex items-center justify-end h-full px-6 w-full">
+        <div className="flex items-center justify-between h-full px-6 w-full">
+          <HeaderSearch />
           <ThemeToggle />
         </div>
       </header>
-      
-      {/* Floating search widget */}
-      <SearchWidget />
       
       {/* App body with sidebar and main content */}
       <div className="app-body">

@@ -131,6 +131,27 @@ const CustomersList = () => {
     enabled: !!customers?.length,
   });
 
+  // Query active rentals to determine customer status
+  const { data: activeRentals } = useQuery({
+    queryKey: ["active-rentals-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rentals")
+        .select("customer_id")
+        .eq("status", "Active");
+      
+      if (error) throw error;
+      
+      // Create a Set of customer IDs with active rentals
+      return new Set(data.map(rental => rental.customer_id));
+    },
+  });
+
+  // Function to determine display status based on active rentals
+  const getCustomerDisplayStatus = (customerId: string) => {
+    return activeRentals?.has(customerId) ? "Active" : "Inactive";
+  };
+
   // Keyboard shortcut handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -251,9 +272,14 @@ const CustomersList = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={customer.status === 'Active' ? 'default' : 'secondary'}>
-                            {customer.status}
-                          </Badge>
+                          {(() => {
+                            const displayStatus = getCustomerDisplayStatus(customer.id);
+                            return (
+                              <Badge variant={displayStatus === 'Active' ? 'default' : 'secondary'}>
+                                {displayStatus}
+                              </Badge>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           {balance ? (

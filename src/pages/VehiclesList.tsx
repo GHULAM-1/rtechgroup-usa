@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Car, Plus, TrendingUp, TrendingDown, Eye } from "lucide-react";
 import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
+import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 
 interface Vehicle {
   id: string;
@@ -20,6 +21,8 @@ interface Vehicle {
   purchase_price: number;
   acquisition_date: string;
   acquisition_type: string;
+  mot_due_date?: string;
+  tax_due_date?: string;
 }
 
 interface VehiclePL {
@@ -70,7 +73,7 @@ const VehiclesList = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vehicles")
-        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date, acquisition_type")
+        .select("id, reg, make, model, colour, status, purchase_price, acquisition_date, acquisition_type, mot_due_date, tax_due_date")
         .order("created_at", { ascending: false });
       
       if (error) throw error;
@@ -158,6 +161,8 @@ const VehiclesList = () => {
                     <TableHead>Colour</TableHead>
                     <TableHead>Acquisition</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>MOT Due</TableHead>
+                    <TableHead>TAX Due</TableHead>
                     <TableHead className="text-right">Net P&L</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -177,6 +182,12 @@ const VehiclesList = () => {
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={vehicle.status} />
+                        </TableCell>
+                        <TableCell>
+                          <MOTTaxStatusChip dueDate={vehicle.mot_due_date} type="MOT" compact />
+                        </TableCell>
+                        <TableCell>
+                          <MOTTaxStatusChip dueDate={vehicle.tax_due_date} type="TAX" compact />
                         </TableCell>
                         <TableCell className="text-right">
                           <PLPill netProfit={netProfit} />

@@ -1,0 +1,45 @@
+import { differenceInDays } from "date-fns";
+
+export interface DueStatus {
+  state: 'ok' | 'due_soon' | 'overdue' | 'missing';
+  days?: number;
+}
+
+export function getDueStatus(dueDate: Date | string | null): DueStatus {
+  if (!dueDate) {
+    return { state: 'missing' };
+  }
+  
+  const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
+  const today = new Date();
+  const diffDays = differenceInDays(dueDateObj, today);
+  
+  if (diffDays < 0) {
+    return { state: 'overdue', days: Math.abs(diffDays) };
+  }
+  
+  if (diffDays <= 30) {
+    return { state: 'due_soon', days: diffDays };
+  }
+  
+  return { state: 'ok' };
+}
+
+export function formatDueStatusText(status: DueStatus, dueDate: Date | string | null): string {
+  switch (status.state) {
+    case 'overdue':
+      return `Overdue by ${status.days} day${status.days === 1 ? '' : 's'}`;
+    case 'due_soon':
+      return `Due in ${status.days} day${status.days === 1 ? '' : 's'}`;
+    case 'ok':
+      if (dueDate) {
+        const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
+        return `OK (${dueDateObj.toLocaleDateString('en-GB')})`;
+      }
+      return 'OK';
+    case 'missing':
+      return 'Not set';
+    default:
+      return 'Unknown';
+  }
+}

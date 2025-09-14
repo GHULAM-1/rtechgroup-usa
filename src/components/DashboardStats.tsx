@@ -117,8 +117,69 @@ export const DashboardStats = () => {
     },
   });
 
+  // MOT & TAX tracking queries
+  const { data: motOverdue } = useQuery({
+    queryKey: ["mot-overdue"],
+    queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { count } = await supabase
+        .from("vehicles")
+        .select("*", { count: "exact", head: true })
+        .not("mot_due_date", "is", null)
+        .lt("mot_due_date", today);
+      
+      return count || 0;
+    },
+  });
+
+  const { data: motDueSoon } = useQuery({
+    queryKey: ["mot-due-soon"],
+    queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const futureDate = format(addDays(new Date(), 30), "yyyy-MM-dd");
+      const { count } = await supabase
+        .from("vehicles")
+        .select("*", { count: "exact", head: true })
+        .not("mot_due_date", "is", null)
+        .gte("mot_due_date", today)
+        .lte("mot_due_date", futureDate);
+      
+      return count || 0;
+    },
+  });
+
+  const { data: taxOverdue } = useQuery({
+    queryKey: ["tax-overdue"],
+    queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const { count } = await supabase
+        .from("vehicles")
+        .select("*", { count: "exact", head: true })
+        .not("tax_due_date", "is", null)
+        .lt("tax_due_date", today);
+      
+      return count || 0;
+    },
+  });
+
+  const { data: taxDueSoon } = useQuery({
+    queryKey: ["tax-due-soon"],
+    queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const futureDate = format(addDays(new Date(), 30), "yyyy-MM-dd");
+      const { count } = await supabase
+        .from("vehicles")
+        .select("*", { count: "exact", head: true })
+        .not("tax_due_date", "is", null)
+        .gte("tax_due_date", today)
+        .lte("tax_due_date", futureDate);
+      
+      return count || 0;
+    },
+  });
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-6">
       <StatCard
         title="Total Fleet"
         value={vehicleCount?.toString() || "0"}
@@ -147,6 +208,20 @@ export const DashboardStats = () => {
         value={overduePayments?.toString() || "0"}
         icon={AlertTriangle}
         variant="danger"
+      />
+      <StatCard
+        title="MOT Status"
+        value={`${motOverdue || 0} / ${motDueSoon || 0}`}
+        change="Overdue / Due (30 days)"
+        icon={AlertTriangle}
+        variant={motOverdue && motOverdue > 0 ? "danger" : motDueSoon && motDueSoon > 0 ? "warning" : "default"}
+      />
+      <StatCard
+        title="TAX Status"
+        value={`${taxOverdue || 0} / ${taxDueSoon || 0}`}
+        change="Overdue / Due (30 days)"
+        icon={AlertTriangle}
+        variant={taxOverdue && taxOverdue > 0 ? "danger" : taxDueSoon && taxDueSoon > 0 ? "warning" : "default"}
       />
     </div>
   );

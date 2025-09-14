@@ -1070,9 +1070,11 @@ export type Database = {
           make: string | null
           model: string | null
           monthly_payment: number | null
+          mot_due_date: string | null
           purchase_price: number | null
           reg: string
           status: string | null
+          tax_due_date: string | null
           term_months: number | null
           updated_at: string
         }
@@ -1089,9 +1091,11 @@ export type Database = {
           make?: string | null
           model?: string | null
           monthly_payment?: number | null
+          mot_due_date?: string | null
           purchase_price?: number | null
           reg: string
           status?: string | null
+          tax_due_date?: string | null
           term_months?: number | null
           updated_at?: string
         }
@@ -1108,9 +1112,11 @@ export type Database = {
           make?: string | null
           model?: string | null
           monthly_payment?: number | null
+          mot_due_date?: string | null
           purchase_price?: number | null
           reg?: string
           status?: string | null
+          tax_due_date?: string | null
           term_months?: number | null
           updated_at?: string
         }

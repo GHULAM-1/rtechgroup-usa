@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
+import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 
 interface Vehicle {
   id: string;
@@ -28,6 +29,9 @@ interface Vehicle {
   term_months?: number;
   balloon?: number;
   finance_start_date?: string;
+  // MOT & TAX fields
+  mot_due_date?: string;
+  tax_due_date?: string;
 }
 
 interface PLEntry {
@@ -250,6 +254,15 @@ export default function VehicleDetail() {
                     : Number(vehicle.purchase_price).toLocaleString()
                 }</div>
                 <div><strong>Acquired:</strong> {format(new Date(vehicle.acquisition_date), "dd/MM/yyyy")}</div>
+                
+                {/* MOT & TAX Status */}
+                <div className="mt-4 pt-4 border-t">
+                  <div className="text-sm font-medium mb-2">Compliance Status</div>
+                  <div className="flex flex-wrap gap-2">
+                    <MOTTaxStatusChip dueDate={vehicle.mot_due_date} type="MOT" />
+                    <MOTTaxStatusChip dueDate={vehicle.tax_due_date} type="TAX" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
 

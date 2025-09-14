@@ -276,7 +276,7 @@ const Reports = () => {
         <div>
           <div className="flex items-center space-x-2 mb-2">
             <BarChart3 className="h-5 w-5" />
-            <h1 className="text-xl font-semibold">Reports & Exports</h1>
+            <h1 className="text-3xl font-bold">Reports & Exports</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             Generate detailed reports and export data across your fleet

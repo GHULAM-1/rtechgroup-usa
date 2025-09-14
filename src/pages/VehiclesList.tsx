@@ -319,7 +319,7 @@ export default function VehiclesListEnhanced() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Fleet Management</h1>
+          <h1 className="text-3xl font-bold">Fleet Management</h1>
           <p className="text-muted-foreground">
             Manage your vehicle fleet, track P&L performance, and monitor compliance
           </p>

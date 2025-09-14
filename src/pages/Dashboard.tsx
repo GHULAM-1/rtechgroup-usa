@@ -74,7 +74,7 @@ const Dashboard = () => {
       {/* Header with Date Range Selector */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Fleet Dashboard</h1>
+          <h1 className="text-3xl font-bold">Fleet Dashboard</h1>
           <p className="text-muted-foreground">
             One-glance control room for fleet operations
           </p>

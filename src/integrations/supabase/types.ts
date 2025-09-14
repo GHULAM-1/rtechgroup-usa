@@ -708,6 +708,12 @@ export type Database = {
           reminder_due_today: boolean
           reminder_overdue_1d: boolean
           reminder_overdue_multi: boolean
+          tests_last_result_dashboard: Json | null
+          tests_last_result_finance: Json | null
+          tests_last_result_rental: Json | null
+          tests_last_run_dashboard: string | null
+          tests_last_run_finance: string | null
+          tests_last_run_rental: string | null
           timezone: string
           updated_at: string
         }
@@ -723,6 +729,12 @@ export type Database = {
           reminder_due_today?: boolean
           reminder_overdue_1d?: boolean
           reminder_overdue_multi?: boolean
+          tests_last_result_dashboard?: Json | null
+          tests_last_result_finance?: Json | null
+          tests_last_result_rental?: Json | null
+          tests_last_run_dashboard?: string | null
+          tests_last_run_finance?: string | null
+          tests_last_run_rental?: string | null
           timezone?: string
           updated_at?: string
         }
@@ -738,6 +750,12 @@ export type Database = {
           reminder_due_today?: boolean
           reminder_overdue_1d?: boolean
           reminder_overdue_multi?: boolean
+          tests_last_result_dashboard?: Json | null
+          tests_last_result_finance?: Json | null
+          tests_last_result_rental?: Json | null
+          tests_last_run_dashboard?: string | null
+          tests_last_run_finance?: string | null
+          tests_last_run_rental?: string | null
           timezone?: string
           updated_at?: string
         }

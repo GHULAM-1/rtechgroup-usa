@@ -222,7 +222,10 @@ const PaymentsList = () => {
               <CreditCard className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No payments found</h3>
               <p className="text-muted-foreground mb-4">
-                {filter ? "No payments match the current filter" : "No payments recorded yet"}
+                {Object.values(filters).some(f => f && f !== 'all' && f !== 'thisMonth') ? 
+                  "No payments match your current filters" : 
+                  "Start recording payments to track your cash flow"
+                }
               </p>
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />

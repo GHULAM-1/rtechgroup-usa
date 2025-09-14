@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -84,6 +84,9 @@ export function InsurancePolicyDialog({
     defaultValues: {
       policy_number: "",
       provider: "",
+      start_date: new Date(),
+      expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default to 1 year from now
+      vehicle_id: "none",
       status: "Active",
       notes: "",
     },
@@ -131,7 +134,7 @@ export function InsurancePolicyDialog({
   });
 
   // Reset form when policy data loads
-  useState(() => {
+  useEffect(() => {
     if (existingPolicy && open) {
       form.reset({
         policy_number: existingPolicy.policy_number,
@@ -142,8 +145,19 @@ export function InsurancePolicyDialog({
         status: existingPolicy.status as PolicyFormData["status"],
         notes: existingPolicy.notes || "",
       });
+    } else if (open && !isEditing) {
+      // Reset to defaults when opening for new policy
+      form.reset({
+        policy_number: "",
+        provider: "",
+        start_date: new Date(),
+        expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        vehicle_id: "none",
+        status: "Active",
+        notes: "",
+      });
     }
-  });
+  }, [existingPolicy, open, form, isEditing]);
 
   const savePolicyMutation = useMutation({
     mutationFn: async (data: PolicyFormData) => {

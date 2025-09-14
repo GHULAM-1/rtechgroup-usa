@@ -24,7 +24,7 @@ export interface OrgSettings {
   updated_at?: string;
 }
 
-// Custom hook for organization settings
+// Custom hook for organisation settings
 export const useOrgSettings = () => {
   const queryClient = useQueryClient();
 
@@ -113,7 +113,7 @@ export const useOrgSettings = () => {
       
       toast({
         title: "Settings Updated",
-        description: "Organization settings have been updated successfully.",
+        description: "Organisation settings have been updated successfully.",
       });
     },
     onError: (error: Error) => {

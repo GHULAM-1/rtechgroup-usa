@@ -17,7 +17,7 @@ export const formatCurrency = (
   const currencySymbols: Record<string, string> = {
     GBP: '£',
     EUR: '€',
-    USD: '$',
+    
   };
 
   const symbol = currencySymbols[currencyCode] || '£';

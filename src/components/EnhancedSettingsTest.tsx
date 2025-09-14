@@ -169,8 +169,8 @@ export const EnhancedSettingsTest = () => {
         });
       }
 
-      // Test 5: Settings Cache Behavior
-      console.log("Testing cache behavior...");
+      // Test 5: Settings Cache Behaviour
+      console.log("Testing cache behaviour...");
       try {
         const start1 = Date.now();
         await supabase.functions.invoke('settings', { method: 'GET' });

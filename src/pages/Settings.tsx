@@ -285,7 +285,7 @@ const Settings = () => {
                       <SelectContent>
                         <SelectItem value="GBP">British Pound (GBP)</SelectItem>
                         <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                        <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                        
                       </SelectContent>
                     </Select>
                   </div>

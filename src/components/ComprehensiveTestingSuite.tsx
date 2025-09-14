@@ -83,7 +83,7 @@ export const ComprehensiveTestingSuite = () => {
                 <li>Cross-page data consistency</li>
                 <li>API response performance</li>
                 <li>Settings configuration integrity</li>
-                <li>Cache behavior and invalidation</li>
+                <li>Cache behaviour and invalidation</li>
               </ul>
             </div>
             

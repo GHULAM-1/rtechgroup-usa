@@ -6,7 +6,18 @@ export const PNL_CATEGORIES = {
   FINANCE: 'Finance',
   SERVICE: 'Service',
   FINES: 'Fines',
+  EXPENSES: 'Expenses',
   OTHER: 'Other'
+} as const;
+
+// Expense Category to P&L Category Mapping
+export const EXPENSE_CATEGORY_TO_PNL = {
+  'Service': 'Service',
+  'Repair': 'Expenses',
+  'Tyres': 'Expenses',
+  'Valet': 'Expenses',
+  'Accessory': 'Expenses',
+  'Other': 'Expenses'
 } as const;
 
 // Payment Type Constants

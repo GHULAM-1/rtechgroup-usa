@@ -68,6 +68,9 @@ export function useVehicleExpenses(vehicleId: string) {
       queryClient.invalidateQueries({ queryKey: ['vehicleExpenses', vehicleId] });
       queryClient.invalidateQueries({ queryKey: ['plEntries', vehicleId] });
       queryClient.invalidateQueries({ queryKey: ['vehicle', vehicleId] });
+      queryClient.invalidateQueries({ queryKey: ['plSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['vehiclePLData'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyPLData'] });
       toast({
         title: "Expense Added",
         description: "Vehicle expense has been added successfully.",
@@ -96,6 +99,9 @@ export function useVehicleExpenses(vehicleId: string) {
       queryClient.invalidateQueries({ queryKey: ['vehicleExpenses', vehicleId] });
       queryClient.invalidateQueries({ queryKey: ['plEntries', vehicleId] });
       queryClient.invalidateQueries({ queryKey: ['vehicle', vehicleId] });
+      queryClient.invalidateQueries({ queryKey: ['plSummary'] });
+      queryClient.invalidateQueries({ queryKey: ['vehiclePLData'] });
+      queryClient.invalidateQueries({ queryKey: ['monthlyPLData'] });
       toast({
         title: "Expense Deleted",
         description: "Vehicle expense has been deleted successfully.",

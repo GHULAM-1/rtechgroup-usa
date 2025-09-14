@@ -1,5 +1,6 @@
 import { AcceptanceTestVehicleDisposal } from "@/components/AcceptanceTestVehicleDisposal";
 import { AcceptanceTestVehicleFiles } from "@/components/AcceptanceTestVehicleFiles";
+import { AcceptanceTestVehicleExpenses } from "@/components/AcceptanceTestVehicleExpenses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -22,6 +23,7 @@ export default function AcceptanceTests() {
             <TabsList>
               <TabsTrigger value="disposal">Vehicle Disposal</TabsTrigger>
               <TabsTrigger value="files">Vehicle Files</TabsTrigger>
+              <TabsTrigger value="expenses">Vehicle Expenses</TabsTrigger>
             </TabsList>
             
             <TabsContent value="disposal" className="mt-6">
@@ -30,6 +32,10 @@ export default function AcceptanceTests() {
             
             <TabsContent value="files" className="mt-6">
               <AcceptanceTestVehicleFiles />
+            </TabsContent>
+            
+            <TabsContent value="expenses" className="mt-6">
+              <AcceptanceTestVehicleExpenses />
             </TabsContent>
           </Tabs>
         </CardContent>

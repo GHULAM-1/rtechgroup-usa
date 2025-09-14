@@ -144,7 +144,7 @@ export default function VehicleDetail() {
       if (entry.side === 'Revenue') {
         acc.totalRevenue += amount;
         if (entry.category === 'Rental') acc.rentalRevenue += amount;
-        if (entry.category === 'Fees') acc.feesRevenue += amount;
+        if (entry.category === 'Initial Fees') acc.initialFeesRevenue += amount;
       } else if (entry.side === 'Cost') {
         acc.totalCosts += amount;
         if (entry.category === 'Acquisition') acc.acquisitionCosts += amount;
@@ -158,7 +158,7 @@ export default function VehicleDetail() {
     {
       totalRevenue: 0,
       rentalRevenue: 0,
-      feesRevenue: 0,
+      initialFeesRevenue: 0,
       totalCosts: 0,
       acquisitionCosts: 0,
       financeCosts: 0,
@@ -169,7 +169,7 @@ export default function VehicleDetail() {
   ) || {
     totalRevenue: 0,
     rentalRevenue: 0,
-    feesRevenue: 0,
+    initialFeesRevenue: 0,
     totalCosts: 0,
     acquisitionCosts: 0,
     financeCosts: 0,
@@ -327,8 +327,8 @@ export default function VehicleDetail() {
                     <span>£{plSummary.rentalRevenue.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Fees:</span>
-                    <span>£{plSummary.feesRevenue.toLocaleString()}</span>
+                    <span>Initial Fees:</span>
+                    <span>£{plSummary.initialFeesRevenue.toLocaleString()}</span>
                   </div>
                   <hr />
                   <div className="flex justify-between font-medium">

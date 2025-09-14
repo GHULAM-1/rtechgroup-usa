@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import Dashboard from "@/pages/Dashboard";
 import VehiclesList from "@/pages/VehiclesList";
 import VehicleDetail from "@/pages/VehicleDetail";
@@ -51,16 +52,17 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider
-        attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <SettingsProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
           <Routes>
             <Route path="/" element={<Layout><Dashboard /></Layout>} />
             <Route path="/vehicles" element={<Layout><VehiclesList /></Layout>} />
@@ -87,10 +89,11 @@ function App() {
             <Route path="/insurance" element={<Layout><InsuranceListEnhanced /></Layout>} />
             <Route path="/test" element={<Layout><AcceptanceTestDashboard /></Layout>} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
+            </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </ThemeProvider>
+      </SettingsProvider>
     </QueryClientProvider>
   );
 }

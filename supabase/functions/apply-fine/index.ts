@@ -202,6 +202,27 @@ async function chargeFineToAccount(supabase: any, fineId: string): Promise<FineC
 
   console.log(`Charge entry created with ID: ${chargeEntry.id}, remaining: ${chargeEntry.remaining_amount}`);
 
+  // Create P&L cost entry for customer fine when charged (idempotent)
+  console.log(`Creating P&L cost entry for customer fine ${fineId}, amount: ${fine.amount}`);
+  const { error: pnlError } = await supabase
+    .from('pnl_entries')
+    .insert({
+      vehicle_id: fine.vehicle_id,
+      entry_date: fine.issue_date,
+      side: 'Cost',
+      category: 'Fines',
+      amount: fine.amount,
+      source_ref: fine.id,
+      customer_id: fine.customer_id
+    });
+
+  if (pnlError && !pnlError.message.includes('duplicate key')) {
+    console.error('Error creating P&L cost entry:', pnlError);
+    // Continue processing even if P&L entry fails - the charge should still work
+  } else {
+    console.log(`P&L cost entry created for fine ${fineId}: £${fine.amount}`);
+  }
+
   // Auto-allocate available credit (FIFO)
   const allocatedAmount = await allocateAvailableCredit(supabase, fine.customer_id, chargeEntry.id, chargeEntry.remaining_amount);
   
@@ -370,6 +391,23 @@ async function waiveFine(supabase: any, fineId: string): Promise<FineChargeResul
       remainingAmount: 0,
       error: `Fine is already ${fine.status.toLowerCase()}`
     };
+  }
+
+  // Remove P&L cost entry if this was a customer fine that was charged
+  if (fine.liability === 'Customer' && ['Charged', 'Paid'].includes(fine.status)) {
+    console.log(`Removing P&L cost entry for waived customer fine ${fineId}`);
+    const { error: removePnlError } = await supabase
+      .from('pnl_entries')
+      .delete()
+      .eq('source_ref', fine.id)
+      .eq('side', 'Cost')
+      .eq('category', 'Fines');
+
+    if (removePnlError) {
+      console.error('Error removing P&L cost entry:', removePnlError);
+    } else {
+      console.log(`P&L cost entry removed for waived fine ${fineId}`);
+    }
   }
 
   // Check if there were any payments applied to this fine

@@ -315,7 +315,7 @@ export default function VehiclesListEnhanced() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>

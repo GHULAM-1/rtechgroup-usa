@@ -21,6 +21,9 @@ verify_jwt = false
 [functions.dashboard-kpis]
 verify_jwt = false
 
+[functions.emergency-bootstrap]
+verify_jwt = false
+
 [functions.generate-insurance-reminders]
 verify_jwt = false
 

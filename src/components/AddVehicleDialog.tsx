@@ -94,10 +94,21 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       queryClient.invalidateQueries({ queryKey: ["vehicles-pl"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle-count"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle-pl-entries"] });
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Failed to add vehicle. Please try again.";
+      
+      // Check for unique constraint violation on registration number
+      if (error?.code === '23505' && error?.details?.includes('vehicles_reg_key')) {
+        errorMessage = `A vehicle with registration '${data.reg}' already exists. Please use a different registration number.`;
+      } else if (error?.code === '23505') {
+        errorMessage = "This vehicle registration number is already in use. Please check and try again.";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Error",
-        description: "Failed to add vehicle. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

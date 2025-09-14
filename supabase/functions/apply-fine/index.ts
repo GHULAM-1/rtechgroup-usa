@@ -372,6 +372,61 @@ async function waiveFine(supabase: any, fineId: string): Promise<FineChargeResul
     };
   }
 
+  // Check if there were any payments applied to this fine
+  // If so, we need to create negative P&L Revenue entries for refunds
+  let totalRefundAmount = 0;
+  
+  if (fine.customer_id) {
+    console.log(`Checking for applied payments to fine ${fineId}`);
+    
+    // Find payment applications for this fine's charges
+    const { data: appliedPayments, error: paymentsError } = await supabase
+      .from('payment_applications')
+      .select(`
+        amount_applied,
+        payment_id,
+        charge_entry_id,
+        ledger_entries!charge_entry_id(
+          reference,
+          vehicle_id,
+          customer_id
+        )
+      `)
+      .eq('ledger_entries.reference', `FINE-${fineId}`);
+
+    if (paymentsError) {
+      console.error('Error fetching applied payments:', paymentsError);
+    } else if (appliedPayments && appliedPayments.length > 0) {
+      console.log(`Found ${appliedPayments.length} payment applications to refund`);
+      
+      for (const application of appliedPayments) {
+        totalRefundAmount += application.amount_applied;
+        
+        // Create negative P&L Revenue entry for refund
+        const refundReference = `refund:${fineId}:${application.payment_id}:${Date.now()}`;
+        
+        const { error: refundPnlError } = await supabase
+          .from('pnl_entries')
+          .insert({
+            vehicle_id: application.ledger_entries.vehicle_id,
+            entry_date: new Date().toISOString().split('T')[0],
+            side: 'Revenue',
+            category: 'Fines',
+            amount: -Math.abs(application.amount_applied), // Negative for refund
+            reference: refundReference,
+            customer_id: application.ledger_entries.customer_id,
+            source_ref: fineId
+          });
+
+        if (refundPnlError && !refundPnlError.message.includes('duplicate key')) {
+          console.error('Error creating refund P&L entry:', refundPnlError);
+        } else {
+          console.log(`Refund P&L entry created: -£${application.amount_applied}`);
+        }
+      }
+    }
+  }
+
   const now = new Date().toISOString();
 
   const { error: updateError } = await supabase
@@ -395,7 +450,11 @@ async function waiveFine(supabase: any, fineId: string): Promise<FineChargeResul
     };
   }
 
-  console.log(`Fine ${fineId} successfully waived`);
+  if (totalRefundAmount > 0) {
+    console.log(`Fine ${fineId} successfully waived with £${totalRefundAmount} in P&L refunds`);
+  } else {
+    console.log(`Fine ${fineId} successfully waived (no payments to refund)`);
+  }
 
   return {
     success: true,

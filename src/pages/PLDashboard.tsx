@@ -342,7 +342,7 @@ const PLDashboard: React.FC = () => {
                   <TableHead className="text-right">Initial Fees</TableHead>
                   <TableHead className="text-right">Finance</TableHead>
                   <TableHead className="text-right">Services</TableHead>
-                  <TableHead className="text-right">Fines</TableHead>
+                  <TableHead className="text-right">Fines Cost</TableHead>
                   <TableHead className="text-right">Other</TableHead>
                   <TableHead className="text-right">Total Costs</TableHead>
                   <TableHead className="text-right">Net</TableHead>

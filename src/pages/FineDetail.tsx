@@ -7,10 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FineAppealDialog } from "@/components/FineAppealDialog";
 import { FineStatusBadge } from "@/components/FineStatusBadge";
+import { AuthorityPaymentDialog } from "@/components/AuthorityPaymentDialog";
 
 interface Fine {
   id: string;
@@ -51,6 +52,7 @@ const FineDetail = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAppealDialog, setShowAppealDialog] = useState(false);
+  const [showAuthorityPaymentDialog, setShowAuthorityPaymentDialog] = useState(false);
 
   const { data: fine, isLoading } = useQuery({
     queryKey: ["fine", id],
@@ -266,6 +268,15 @@ const FineDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
+          {/* Authority Payment Button - Available for all fines */}
+          <Button
+            variant="outline"
+            onClick={() => setShowAuthorityPaymentDialog(true)}
+          >
+            <Receipt className="h-4 w-4 mr-2" />
+            Record Authority Payment
+          </Button>
+
           {/* Admin Actions for Customer Liability Fines */}
           {fine.liability === 'Customer' && (
             <>

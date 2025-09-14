@@ -1501,6 +1501,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      backfill_rental_charges_first_month_only: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       backfill_rental_charges_full: {
         Args: Record<PropertyKey, never>
         Returns: undefined

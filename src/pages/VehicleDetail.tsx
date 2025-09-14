@@ -22,7 +22,7 @@ import { useVehicleEvents } from "@/hooks/useVehicleEvents";
 import { AddServiceRecordDialog } from "@/components/AddServiceRecordDialog";
 import { ServiceHistoryTable } from "@/components/ServiceHistoryTable";
 import { LastServiceCard } from "@/components/LastServiceCard";
-import { VehiclePlatesPanel } from "@/components/VehiclePlatesPanel";
+import { EnhancedVehiclePlatesPanel } from "@/components/EnhancedVehiclePlatesPanel";
 import { EditVehicleDialog } from "@/components/EditVehicleDialog";
 import { VehicleExpenseDialog } from "@/components/VehicleExpenseDialog";
 import { VehicleFileUpload } from "@/components/VehicleFileUpload";

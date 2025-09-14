@@ -21,7 +21,8 @@ import {
   Download,
   Play,
   Pause,
-  MoreHorizontal
+  MoreHorizontal,
+  ChevronRight
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -517,13 +518,38 @@ export default function RemindersPageEnhanced() {
                               <XCircle className="h-4 w-4 mr-2" />
                               Dismiss
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => snooze(reminder.id, 7)}
-                              disabled={['done', 'dismissed', 'expired'].includes(reminder.status)}
-                            >
-                              <Pause className="h-4 w-4 mr-2" />
-                              Snooze 1 week
-                            </DropdownMenuItem>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger 
+                                asChild
+                                disabled={['done', 'dismissed', 'expired'].includes(reminder.status)}
+                              >
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <Pause className="h-4 w-4 mr-2" />
+                                  Snooze
+                                  <ChevronRight className="h-4 w-4 ml-auto" />
+                                </DropdownMenuItem>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent side="right">
+                                <DropdownMenuItem onClick={() => snooze(reminder.id, 1)}>
+                                  1 day
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => snooze(reminder.id, 3)}>
+                                  3 days
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => snooze(reminder.id, 7)}>
+                                  1 week
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => snooze(reminder.id, 14)}>
+                                  2 weeks
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => snooze(reminder.id, 30)}>
+                                  1 month
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => snooze(reminder.id, 90)}>
+                                  3 months
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

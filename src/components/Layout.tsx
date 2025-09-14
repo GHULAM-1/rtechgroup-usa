@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
-import { Sidebar } from "./Sidebar";
 import { ThemeToggle } from "./ThemeToggle";
 import { HeaderSearch } from "./HeaderSearch";
+import { AppSidebar } from "./AppSidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -9,22 +10,22 @@ interface LayoutProps {
 
 export const Layout = ({ children }: LayoutProps) => {
   return (
-    <div className="app-shell">
-      {/* Global header spanning full width */}
-      <header className="app-header">
-        <div className="flex items-center justify-between h-full px-6 w-full">
-          <HeaderSearch />
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        {/* Global header spanning full width */}
+        <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+          <div className="flex items-center gap-4">
+            <SidebarTrigger />
+            <HeaderSearch />
+          </div>
           <ThemeToggle />
-        </div>
-      </header>
-      
-      {/* App body with sidebar and main content */}
-      <div className="app-body">
-        <Sidebar />
-        <main className="app-main p-6">
+        </header>
+        
+        <main className="p-6">
           {children}
         </main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };

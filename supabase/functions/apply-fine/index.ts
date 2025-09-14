@@ -365,6 +365,36 @@ async function allocateAvailableCredit(supabase: any, customerId: string, charge
 async function waiveFine(supabase: any, fineId: string): Promise<FineChargeResult> {
   console.log(`Waiving fine: ${fineId}`);
 
+  // Check for authority payments first
+  const { data: authorityPayments, error: authorityError } = await supabase
+    .from('authority_payments')
+    .select('id, amount')
+    .eq('fine_id', fineId);
+
+  if (authorityError) {
+    console.error('Error checking authority payments:', authorityError);
+    return {
+      success: false,
+      fineId,
+      status: 'error',
+      chargedAmount: 0,
+      remainingAmount: 0,
+      error: `Failed to check authority payments: ${authorityError.message}`
+    };
+  }
+
+  if (authorityPayments && authorityPayments.length > 0) {
+    const totalPaid = authorityPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    return {
+      success: false,
+      fineId,
+      status: 'error',
+      chargedAmount: 0,
+      remainingAmount: 0,
+      error: `Cannot waive fine - authority payment of £${totalPaid} has already been made. Use "Charge to Account" to recover costs from customer.`
+    };
+  }
+
   const { data: fine, error: fineError } = await supabase
     .from('fines')
     .select('*')

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban, Receipt } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban, Receipt, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FineAppealDialog } from "@/components/FineAppealDialog";
 import { FineStatusBadge } from "@/components/FineStatusBadge";
@@ -320,7 +320,7 @@ const FineDetail = () => {
                 </Button>
               )}
               
-              {fine.status === 'Open' && (
+              {fine.status === 'Open' && !hasAuthorityPayments && (
                 <>
                   <Button
                     variant="outline"
@@ -342,7 +342,7 @@ const FineDetail = () => {
                 </>
               )}
               
-              {fine.status === 'Appealed' && (
+              {fine.status === 'Appealed' && !hasAuthorityPayments && (
                 <Button
                   variant="outline"
                   onClick={() => waiveFine.mutate()}
@@ -351,6 +351,15 @@ const FineDetail = () => {
                   <Ban className="h-4 w-4 mr-2" />
                   {waiveFine.isPending ? 'Waiving...' : 'Resolve Appeal - Waive'}
                 </Button>
+              )}
+
+              {hasAuthorityPayments && (
+                <div className="mt-2 p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Authority payment recorded. Waive and Appeal options are no longer available.
+                  </p>
+                </div>
               )}
             </>
           )}

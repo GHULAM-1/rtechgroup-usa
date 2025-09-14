@@ -15,6 +15,7 @@ import { useVehicleServices } from "@/hooks/useVehicleServices";
 import { AddServiceRecordDialog } from "@/components/AddServiceRecordDialog";
 import { ServiceHistoryTable } from "@/components/ServiceHistoryTable";
 import { LastServiceCard } from "@/components/LastServiceCard";
+import { VehiclePlatesPanel } from "@/components/VehiclePlatesPanel";
 
 interface Vehicle {
   id: string;
@@ -182,7 +183,7 @@ export default function VehicleDetail() {
         if (entry.category === 'Finance') acc.cost_finance += amount;
         if (entry.category === 'Service') acc.cost_service += amount;
         if (entry.category === 'Fines') acc.cost_fines += amount;
-        if (entry.category === 'Other') acc.cost_other += amount;
+        if (entry.category === 'Plates') acc.cost_plates += amount;
       }
       return acc;
     },
@@ -195,6 +196,7 @@ export default function VehicleDetail() {
       cost_acquisition: 0,
       cost_finance: 0,
       cost_service: 0,
+      cost_plates: 0,
       cost_fines: 0,
       cost_other: 0,
     }
@@ -207,6 +209,7 @@ export default function VehicleDetail() {
     cost_acquisition: 0,
     cost_finance: 0,
     cost_service: 0,
+    cost_plates: 0,
     cost_fines: 0,
     cost_other: 0,
   };
@@ -242,13 +245,14 @@ export default function VehicleDetail() {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="expenses">Expenses</TabsTrigger>
           <TabsTrigger value="rentals">Rentals</TabsTrigger>
           <TabsTrigger value="fines">Fines</TabsTrigger>
           <TabsTrigger value="services">Services</TabsTrigger>
+          <TabsTrigger value="plates">Plates</TabsTrigger>
           <TabsTrigger value="pl">P&L</TabsTrigger>
           <TabsTrigger value="files">Files</TabsTrigger>
         </TabsList>
@@ -454,6 +458,12 @@ export default function VehicleDetail() {
                       <span className="text-sm">Cost (Service)</span>
                       <span className="text-sm font-medium text-red-600">
                         -£{(plSummary.cost_service || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm">Cost (Plates)</span>
+                      <span className="text-sm font-medium text-red-600">
+                        -£{(plSummary.cost_plates || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -705,6 +715,10 @@ export default function VehicleDetail() {
               isDeleting={isDeletingService}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="plates" className="mt-6">
+          <VehiclePlatesPanel vehicleId={id!} vehicleReg={vehicle.reg} />
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">

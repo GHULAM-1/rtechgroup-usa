@@ -804,36 +804,51 @@ export type Database = {
       plates: {
         Row: {
           assigned_vehicle_id: string | null
+          cost: number | null
           created_at: string | null
           document_name: string | null
           document_url: string | null
           id: string
           notes: string | null
+          order_date: string | null
           plate_number: string
           retention_doc_reference: string | null
+          status: string | null
+          supplier: string | null
           updated_at: string | null
+          vehicle_id: string | null
         }
         Insert: {
           assigned_vehicle_id?: string | null
+          cost?: number | null
           created_at?: string | null
           document_name?: string | null
           document_url?: string | null
           id?: string
           notes?: string | null
+          order_date?: string | null
           plate_number: string
           retention_doc_reference?: string | null
+          status?: string | null
+          supplier?: string | null
           updated_at?: string | null
+          vehicle_id?: string | null
         }
         Update: {
           assigned_vehicle_id?: string | null
+          cost?: number | null
           created_at?: string | null
           document_name?: string | null
           document_url?: string | null
           id?: string
           notes?: string | null
+          order_date?: string | null
           plate_number?: string
           retention_doc_reference?: string | null
+          status?: string | null
+          supplier?: string | null
           updated_at?: string | null
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -853,6 +868,27 @@ export type Database = {
           {
             foreignKeyName: "plates_assigned_vehicle_id_fkey"
             columns: ["assigned_vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "view_pl_by_vehicle"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "plates_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_pnl_rollup"
+            referencedColumns: ["vehicle_id"]
+          },
+          {
+            foreignKeyName: "plates_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plates_vehicle_id_fkey"
+            columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "view_pl_by_vehicle"
             referencedColumns: ["vehicle_id"]
@@ -1911,6 +1947,16 @@ export type Database = {
       }
       update_vehicle_last_service: {
         Args: { p_vehicle_id: string }
+        Returns: undefined
+      }
+      upsert_plate_pnl_entry: {
+        Args: {
+          p_cost: number
+          p_created_at: string
+          p_order_date: string
+          p_plate_id: string
+          p_vehicle_id: string
+        }
         Returns: undefined
       }
       upsert_service_pnl_entry: {

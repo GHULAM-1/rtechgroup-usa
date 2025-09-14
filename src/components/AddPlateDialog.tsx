@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -21,10 +22,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
 const plateSchema = z.object({
   plate_number: z.string().min(1, "Plate number is required").max(10, "Plate number too long"),
+  vehicle_id: z.string().min(1, "Vehicle is required"),
+  supplier: z.string().optional(),
+  order_date: z.string().optional(),
+  cost: z.string().optional(),
+  status: z.enum(["ordered", "received", "fitted"]).default("ordered"),
   retention_doc_reference: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -35,35 +42,70 @@ interface AddPlateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  preSelectedVehicleId?: string;
 }
 
 export const AddPlateDialog = ({
   open,
   onOpenChange,
   onSuccess,
+  preSelectedVehicleId,
 }: AddPlateDialogProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // Fetch vehicles for selection
+  const { data: vehicles } = useQuery({
+    queryKey: ["vehicles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("id, reg, make, model")
+        .order("reg");
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const form = useForm<PlateFormData>({
     resolver: zodResolver(plateSchema),
     defaultValues: {
       plate_number: "",
+      vehicle_id: preSelectedVehicleId || "",
+      supplier: "",
+      order_date: "",
+      cost: "",
+      status: "ordered",
       retention_doc_reference: "",
       notes: "",
     },
   });
 
+  // Update form when preSelectedVehicleId changes
+  useEffect(() => {
+    if (preSelectedVehicleId) {
+      form.setValue("vehicle_id", preSelectedVehicleId);
+    }
+  }, [preSelectedVehicleId, form]);
+
   const onSubmit = async (data: PlateFormData) => {
     setIsSubmitting(true);
     try {
+      const plateData: any = {
+        plate_number: data.plate_number.toUpperCase(),
+        vehicle_id: data.vehicle_id,
+        supplier: data.supplier || null,
+        order_date: data.order_date || null,
+        cost: data.cost ? parseFloat(data.cost) : 0,
+        status: data.status,
+        retention_doc_reference: data.retention_doc_reference || null,
+        notes: data.notes || null,
+      };
+
       const { error } = await supabase
         .from("plates")
-        .insert({
-          plate_number: data.plate_number.toUpperCase(),
-          retention_doc_reference: data.retention_doc_reference || null,
-          notes: data.notes || null,
-        });
+        .insert(plateData);
 
       if (error) {
         if (error.code === '23505') { // Unique constraint violation
@@ -77,7 +119,16 @@ export const AddPlateDialog = ({
         description: "Plate added successfully",
       });
 
-      form.reset();
+      form.reset({
+        plate_number: "",
+        vehicle_id: preSelectedVehicleId || "",
+        supplier: "",
+        order_date: "",
+        cost: "",
+        status: "ordered",
+        retention_doc_reference: "",
+        notes: "",
+      });
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -103,24 +154,125 @@ export const AddPlateDialog = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="plate_number"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Plate Number *</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g., ABC123"
-                      onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                      className="uppercase"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="plate_number"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Plate Number *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="e.g., ABC123"
+                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                        className="uppercase"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="vehicle_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vehicle *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a vehicle" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {vehicles?.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.reg} - {vehicle.make} {vehicle.model}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="supplier"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplier</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter supplier name" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="order_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Order Date</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="date" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="cost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cost (£)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type="number" 
+                        step="0.01"
+                        placeholder="0.00" 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ordered">Ordered</SelectItem>
+                        <SelectItem value="received">Received</SelectItem>
+                        <SelectItem value="fitted">Fitted</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

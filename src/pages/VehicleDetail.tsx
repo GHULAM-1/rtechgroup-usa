@@ -62,6 +62,7 @@ interface Vehicle {
   last_service_mileage?: number;
   // Security fields
   has_ghost?: boolean;
+  ghost_code?: string;
   has_tracker?: boolean;
   has_remote_immobiliser?: boolean;
   security_notes?: string;
@@ -594,6 +595,62 @@ export default function VehicleDetail() {
             </MetricCard>
             
             <LastServiceCard vehicle={vehicle} />
+
+            {/* Security Features */}
+            {(vehicle.has_ghost || vehicle.has_tracker || vehicle.has_remote_immobiliser || vehicle.security_notes) && (
+              <MetricCard 
+                title="Security Features"
+                icon={Shield}
+                badge={{ 
+                  text: [vehicle.has_ghost, vehicle.has_tracker, vehicle.has_remote_immobiliser].filter(Boolean).length > 0 ? "Secured" : "Basic", 
+                  variant: [vehicle.has_ghost, vehicle.has_tracker, vehicle.has_remote_immobiliser].filter(Boolean).length > 0 ? "default" : "secondary" 
+                }}
+              >
+                <div className="space-y-3">
+                  {vehicle.has_ghost && (
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium">Ghost Immobiliser</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {vehicle.ghost_code && `Code: ${'*'.repeat(vehicle.ghost_code.length)}`}
+                      </div>
+                    </div>
+                  )}
+                  {vehicle.has_tracker && (
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium">GPS Tracker</span>
+                      </div>
+                    </div>
+                  )}
+                  {vehicle.has_remote_immobiliser && (
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm font-medium">Remote Immobiliser</span>
+                      </div>
+                    </div>
+                  )}
+                  {vehicle.security_notes && (
+                    <>
+                      <MetricDivider />
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">Notes:</span> {vehicle.security_notes}
+                      </div>
+                    </>
+                  )}
+                  {!vehicle.has_ghost && !vehicle.has_tracker && !vehicle.has_remote_immobiliser && !vehicle.security_notes && (
+                    <div className="text-center text-muted-foreground py-4">
+                      <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No security features configured</p>
+                    </div>
+                  )}
+                </div>
+              </MetricCard>
+            )}
           </div>
         </TabsContent>
 

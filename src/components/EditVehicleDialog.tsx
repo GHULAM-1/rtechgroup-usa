@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Edit, Car, DollarSign, CalendarIcon } from "lucide-react";
+import { Edit, Car, DollarSign, CalendarIcon, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -94,6 +94,7 @@ interface EditVehicleDialogProps {
 export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showGhostCode, setShowGhostCode] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -134,42 +135,58 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
 
   const onSubmit = async (data: VehicleFormData) => {
     console.log('Form submission started', data);
+    console.log('Form validation state:', form.formState.errors);
     setLoading(true);
 
     try {
-      console.log('Sending update to Supabase...');
-      const { error } = await supabase
-        .from("vehicles")
-        .update({
-          reg: data.reg,
-          make: data.make,
-          model: data.model,
-          colour: data.colour,
-          acquisition_type: data.acquisition_type,
-          acquisition_date: data.acquisition_date.toISOString().split('T')[0],
-          // Include purchase price only for purchased vehicles
-          ...(data.acquisition_type === 'Purchase' && { purchase_price: data.purchase_price }),
-          // Add finance fields only if acquisition type is Finance
-          ...(data.acquisition_type === 'Finance' && {
-            monthly_payment: data.monthly_payment,
-            initial_payment: data.initial_payment,
-            term_months: data.term_months,
-            balloon: data.balloon,
-            finance_start_date: data.finance_start_date?.toISOString().split('T')[0],
-          }),
-          // Add MOT & TAX dates
-          mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
-          tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
-          // Security fields
-          has_ghost: data.has_ghost,
-          ghost_code: data.ghost_code || null,
-          has_tracker: data.has_tracker,
-          has_remote_immobiliser: data.has_remote_immobiliser,
-          security_notes: data.security_notes || null,
-        })
-        .eq('id', vehicle.id);
+      // Validate form first
+      const isValid = await form.trigger();
+      console.log('Form validation result:', isValid);
+      
+      if (!isValid) {
+        console.log('Form validation failed:', form.formState.errors);
+        setLoading(false);
+        return;
+      }
 
-      console.log('Supabase response:', { error });
+      console.log('Sending update to Supabase...');
+      const updateData = {
+        reg: data.reg,
+        make: data.make,
+        model: data.model,
+        colour: data.colour,
+        acquisition_type: data.acquisition_type,
+        acquisition_date: data.acquisition_date.toISOString().split('T')[0],
+        // Include purchase price only for purchased vehicles
+        ...(data.acquisition_type === 'Purchase' && { purchase_price: data.purchase_price }),
+        // Add finance fields only if acquisition type is Finance
+        ...(data.acquisition_type === 'Finance' && {
+          monthly_payment: data.monthly_payment,
+          initial_payment: data.initial_payment,
+          term_months: data.term_months,
+          balloon: data.balloon,
+          finance_start_date: data.finance_start_date?.toISOString().split('T')[0],
+        }),
+        // Add MOT & TAX dates
+        mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
+        tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
+        // Security fields
+        has_ghost: data.has_ghost,
+        ghost_code: data.ghost_code || null,
+        has_tracker: data.has_tracker,
+        has_remote_immobiliser: data.has_remote_immobiliser,
+        security_notes: data.security_notes || null,
+      };
+      
+      console.log('Update data:', updateData);
+      
+      const { data: result, error } = await supabase
+        .from("vehicles")
+        .update(updateData)
+        .eq('id', vehicle.id)
+        .select();
+
+      console.log('Supabase response:', { result, error });
       if (error) throw error;
 
       toast({
@@ -585,10 +602,26 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                       <FormItem>
                         <FormLabel>Ghost Immobiliser Code *</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter ghost immobiliser code" 
-                            {...field} 
-                          />
+                          <div className="relative">
+                            <Input 
+                              type={showGhostCode ? "text" : "password"}
+                              placeholder="Enter ghost immobiliser code" 
+                              {...field} 
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowGhostCode(!showGhostCode)}
+                            >
+                              {showGhostCode ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

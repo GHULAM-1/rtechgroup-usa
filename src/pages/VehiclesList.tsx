@@ -219,8 +219,9 @@ export default function VehiclesListEnhanced() {
       }
     });
 
+    console.log('Filtered and sorted vehicles:', filtered.map(v => ({ reg: v.reg, status: v.computed_status, sortField, sortDirection })));
     return filtered;
-  }, [enhancedVehicles, filters, sortField, sortDirection]);
+  }, [enhancedVehicles, filters, sortField, sortDirection, searchParams]);
 
   // Pagination
   const totalPages = Math.ceil(filteredVehicles.length / pageSize);

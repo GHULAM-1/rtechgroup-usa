@@ -70,7 +70,7 @@ const CustomersList = () => {
       for (const customer of customers) {
         const { data, error } = await supabase
           .from("ledger_entries")
-          .select("amount, type, due_date, payment_id")
+          .select("amount, type, due_date, payment_id, category")
           .eq("customer_id", customer.id);
         
         if (error) {
@@ -101,8 +101,9 @@ const CustomersList = () => {
             return sum;
           }
           
-          // For charges, only include if currently due
-          if (entry.type === 'Charge' && entry.due_date && new Date(entry.due_date) > new Date()) {
+          // For rental charges, only include if currently due
+          // For fine charges, include all (they're immediate debt once charged)
+          if (entry.type === 'Charge' && entry.category === 'Rental' && entry.due_date && new Date(entry.due_date) > new Date()) {
             return sum;
           }
           

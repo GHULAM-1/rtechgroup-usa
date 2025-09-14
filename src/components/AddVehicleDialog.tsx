@@ -19,7 +19,7 @@ const vehicleSchema = z.object({
   make: z.string().min(1, "Make is required"),
   model: z.string().min(1, "Model is required"),
   colour: z.string().min(1, "Colour is required"),
-  purchase_price: z.number().min(0, "Price must be positive"),
+  purchase_price: z.number().min(0, "Price must be positive").optional(),
   acquisition_date: z.date(),
   acquisition_type: z.enum(['Purchase', 'Finance']),
   // Finance fields (only required when acquisition_type is 'Finance')
@@ -33,11 +33,25 @@ const vehicleSchema = z.object({
     if (data.acquisition_type === 'Finance' && !data.monthly_payment) {
       return false;
     }
+    if (data.acquisition_type === 'Purchase' && !data.purchase_price) {
+      return false;
+    }
     return true;
   },
   {
     message: "Monthly payment is required for financed vehicles",
     path: ["monthly_payment"],
+  }
+).refine(
+  (data) => {
+    if (data.acquisition_type === 'Purchase' && !data.purchase_price) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: "Purchase price is required for purchased vehicles",
+    path: ["purchase_price"],
   }
 );
 
@@ -94,9 +108,10 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           model: data.model,
           colour: data.colour,
           acquisition_type: data.acquisition_type,
-          purchase_price: data.purchase_price,
           acquisition_date: data.acquisition_date.toISOString().split('T')[0],
           status: "Available",
+          // Include purchase price only for purchased vehicles
+          ...(data.acquisition_type === 'Purchase' && { purchase_price: data.purchase_price }),
           // Add finance fields only if acquisition type is Finance
           ...(data.acquisition_type === 'Finance' && {
             monthly_payment: data.monthly_payment,
@@ -227,7 +242,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${form.watch("acquisition_type") === "Purchase" ? "grid-cols-2" : "grid-cols-1"}`}>
               <FormField
                 control={form.control}
                 name="colour"
@@ -241,25 +256,27 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="purchase_price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Purchase Price (£)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0.00" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        className="input-focus"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {form.watch("acquisition_type") === "Purchase" && (
+                <FormField
+                  control={form.control}
+                  name="purchase_price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Price (£)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          className="input-focus"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <FormField

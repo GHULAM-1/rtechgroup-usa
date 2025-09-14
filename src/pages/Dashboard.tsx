@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock } from "lucide-react";
+import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock, TestTube } from "lucide-react";
+import { RentalAcceptanceTest } from "@/components/RentalAcceptanceTest";
 
 interface DashboardWidget {
   title: string;
@@ -281,6 +282,12 @@ const Dashboard = () => {
             <CardDescription>View in-app payment reminders and notifications</CardDescription>
           </CardHeader>
         </Card>
+      </div>
+
+      {/* Acceptance Tests */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold">System Tests</h2>
+        <RentalAcceptanceTest />
       </div>
     </div>
   );

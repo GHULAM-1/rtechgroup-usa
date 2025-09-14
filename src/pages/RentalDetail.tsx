@@ -10,7 +10,8 @@ import { FileText, ArrowLeft, DollarSign, Plus, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddPaymentDialog } from "@/components/AddPaymentDialog";
 import { useToast } from "@/hooks/use-toast";
-
+import { useRentalTotals } from "@/hooks/useRentalLedgerData";
+import { RentalLedger } from "@/components/RentalLedger";
 
 interface Rental {
   id: string;
@@ -20,16 +21,6 @@ interface Rental {
   status: string;
   customers: { id: string; name: string };
   vehicles: { id: string; reg: string; make: string; model: string };
-}
-
-interface LedgerEntry {
-  id: string;
-  entry_date: string;
-  due_date: string | null;
-  amount: number;
-  remaining_amount: number;
-  type: string;
-  category: string;
 }
 
 const RentalDetail = () => {
@@ -58,55 +49,7 @@ const RentalDetail = () => {
     enabled: !!id,
   });
 
-  const { data: ledgerEntries } = useQuery({
-    queryKey: ["rental-ledger", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("*")
-        .eq("rental_id", id)
-        .order("entry_date", { ascending: true });
-      
-      if (error) throw error;
-      return data as LedgerEntry[];
-    },
-    enabled: !!id,
-  });
-
-  const { data: paymentApplications } = useQuery({
-    queryKey: ["rental-payment-applications", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("payment_applications")
-        .select(`
-          *,
-          payments(amount, payment_date, method),
-          ledger_entries!charge_entry_id(amount, due_date, category)
-        `)
-        .in("charge_entry_id", ledgerEntries?.map(e => e.id) || []);
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!ledgerEntries?.length,
-  });
-
-
-  // Get total payments (cash received) from ledger entries
-  const { data: totalPayments } = useQuery({
-    queryKey: ["rental-total-payments", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("amount")
-        .eq("rental_id", id)
-        .eq("type", "Payment");
-      
-      if (error) throw error;
-      return Math.abs(data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0);
-    },
-    enabled: !!id,
-  });
+  const { data: rentalTotals } = useRentalTotals(id);
 
   if (isLoading) {
     return <div>Loading rental details...</div>;
@@ -116,17 +59,10 @@ const RentalDetail = () => {
     return <div>Rental not found</div>;
   }
 
-  // Calculate running balance (charges positive, payments negative)
-  let runningBalance = 0;
-  const entriesWithBalance = ledgerEntries?.map(entry => {
-    runningBalance += Number(entry.amount); // Charges are positive, payments are negative
-    return { ...entry, runningBalance };
-  }) || [];
-
-  // Calculate rental totals properly
-  const totalCharges = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  
-  const outstandingBalance = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
+  // Use the new totals from allocation-based calculations
+  const totalCharges = rentalTotals?.totalCharges || 0;
+  const totalPayments = rentalTotals?.totalPayments || 0;
+  const outstandingBalance = rentalTotals?.outstanding || 0;
 
 
   return (
@@ -206,7 +142,7 @@ const RentalDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              £{(totalPayments || 0).toLocaleString()}
+              £{totalPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -271,58 +207,8 @@ const RentalDetail = () => {
         </CardContent>
       </Card>
 
-      {/* Ledger */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            Ledger (Charges & Payments)
-          </CardTitle>
-          <CardDescription>Complete transaction history with running balance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {entriesWithBalance && entriesWithBalance.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                 <TableHeader>
-                   <TableRow>
-                     <TableHead>Date</TableHead>
-                     <TableHead>Type</TableHead>
-                     <TableHead>Category</TableHead>
-                     <TableHead>Due Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Running Balance</TableHead>
-                   </TableRow>
-                 </TableHeader>
-                <TableBody>
-                  {entriesWithBalance.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <Badge variant={entry.type === 'Charge' ? 'destructive' : 'default'}>
-                          {entry.type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{entry.category}</TableCell>
-                      <TableCell>
-                        {entry.due_date ? new Date(entry.due_date).toLocaleDateString() : '-'}
-                      </TableCell>
-                       <TableCell className={`text-right ${entry.type === 'Charge' ? 'text-red-600' : 'text-green-600'}`}>
-                         {entry.type === 'Payment' ? '+' : '-'}£{Math.abs(Number(entry.amount)).toLocaleString()}
-                       </TableCell>
-                        <TableCell className={`text-right font-medium ${entry.runningBalance > 0 ? 'text-red-600' : entry.runningBalance < 0 ? 'text-green-600' : 'text-gray-600'}`}>
-                          £{Math.abs(entry.runningBalance).toLocaleString()}
-                        </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <p className="text-center py-8 text-muted-foreground">No ledger entries found</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Enhanced Ledger */}
+      {id && <RentalLedger rentalId={id} />}
 
       {/* Add Payment Dialog */}
       {rental && (

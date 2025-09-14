@@ -1603,6 +1603,10 @@ export type Database = {
         Args: { rental_id_param: string }
         Returns: number
       }
+      has_upfront_finance_entry: {
+        Args: { v_id: string }
+        Returns: boolean
+      }
       hash_password: {
         Args: { password: string }
         Returns: string

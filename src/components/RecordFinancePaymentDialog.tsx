@@ -68,6 +68,17 @@ export const RecordFinancePaymentDialog = ({
       // Create stable reference for idempotency
       const reference = `FINPAY:${vehicleId}:${data.component}:${dateStr}:${data.amount}`;
 
+      // Check if vehicle has upfront finance P&L entry (prevents double-counting)
+      const { data: upfrontEntry } = await supabase
+        .from("pnl_entries")
+        .select("id")
+        .eq("vehicle_id", vehicleId)
+        .eq("category", "Acquisition")
+        .eq("source_ref", `FIN-UPFRONT:${vehicleId}`)
+        .single();
+
+      const hasUpfrontEntry = !!upfrontEntry;
+
       // Insert payment record
       const { data: payment, error: paymentError } = await supabase
         .from("payments")
@@ -99,7 +110,7 @@ export const RecordFinancePaymentDialog = ({
         throw paymentError;
       }
 
-      // Insert ledger entry (Cost)
+      // Insert ledger entry (Cost) - always record for cash flow tracking
       const { error: ledgerError } = await supabase
         .from("ledger_entries")
         .insert({
@@ -118,27 +129,30 @@ export const RecordFinancePaymentDialog = ({
         throw ledgerError;
       }
 
-      // Insert P&L entry (Cost)
-      const { error: plError } = await supabase
-        .from("pnl_entries")
-        .insert({
-          vehicle_id: vehicleId,
-          entry_date: dateStr,
-          side: 'Cost',
-          category: 'Finance',
-          amount: data.amount,
-          reference: reference,
-          source_ref: reference,
-          payment_id: payment.id,
-        });
+      // Only insert P&L entry if NO upfront entry exists (prevents double-counting)
+      if (!hasUpfrontEntry) {
+        const { error: plError } = await supabase
+          .from("pnl_entries")
+          .insert({
+            vehicle_id: vehicleId,
+            entry_date: dateStr,
+            side: 'Cost',
+            category: 'Finance',
+            amount: data.amount,
+            reference: reference,
+            source_ref: reference,
+            payment_id: payment.id,
+          });
 
-      if (plError && plError.code !== '23505') {
-        throw plError;
+        if (plError && plError.code !== '23505') {
+          throw plError;
+        }
       }
 
+      const plNote = hasUpfrontEntry ? " (P&L already includes upfront contract cost)" : "";
       toast({
         title: "Finance Payment Recorded",
-        description: `${data.component} payment of £${data.amount.toLocaleString()} recorded for ${vehicleReg}.`,
+        description: `${data.component} payment of £${data.amount.toLocaleString()} recorded for ${vehicleReg}.${plNote}`,
       });
 
       form.reset();

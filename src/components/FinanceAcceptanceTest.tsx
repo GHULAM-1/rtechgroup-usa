@@ -31,7 +31,6 @@ export const FinanceAcceptanceTest = () => {
         make: "Test",
         model: "Finance",
         colour: "Blue",
-        purchase_price: 15000,
         acquisition_date: new Date().toISOString().split('T')[0],
         acquisition_type: "Finance",
         monthly_payment: 300,
@@ -68,7 +67,33 @@ export const FinanceAcceptanceTest = () => {
           details: `Expected: £${expectedContractTotal.toLocaleString()}, Calculated: £${calculatedTotal.toLocaleString()}`
         });
 
-        // Test 2: Record deposit payment
+        // Test 2: Verify upfront P&L entry was created automatically
+        const { data: upfrontPL, error: plError } = await supabase
+          .from("pnl_entries")
+          .select("*")
+          .eq("vehicle_id", vehicle.id)
+          .eq("category", "Acquisition")
+          .eq("source_ref", `FIN-UPFRONT:${vehicle.id}`)
+          .single();
+
+        if (plError || !upfrontPL) {
+          testResults.push({
+            name: "Verify Upfront P&L Entry",
+            passed: false,
+            message: "Upfront P&L entry not created automatically",
+            details: plError?.message || "No upfront entry found"
+          });
+        } else {
+          const plAmountMatches = Number(upfrontPL.amount) === expectedContractTotal;
+          testResults.push({
+            name: "Verify Upfront P&L Entry",
+            passed: plAmountMatches,
+            message: `Upfront P&L entry: £${Number(upfrontPL.amount).toLocaleString()} (Expected: £${expectedContractTotal.toLocaleString()})`,
+            details: `Category: ${upfrontPL.category}, Side: ${upfrontPL.side}, Reference: ${upfrontPL.source_ref}`
+          });
+        }
+
+        // Test 3: Record finance payment (should NOT create P&L cost due to upfront entry)
         const depositRef = `FINPAY:${vehicle.id}:Deposit:${new Date().toISOString().split('T')[0]}:1000`;
         
         const { data: depositPayment, error: depositError } = await supabase
@@ -89,13 +114,13 @@ export const FinanceAcceptanceTest = () => {
 
         if (depositError) {
           testResults.push({
-            name: "Record Deposit Payment",
+            name: "Record Finance Payment",
             passed: false,
-            message: "Failed to record deposit payment",
+            message: "Failed to record finance payment",
             details: depositError.message
           });
         } else {
-          // Insert ledger entry
+          // Insert ledger entry (for cash flow tracking)
           await supabase.from("ledger_entries").insert({
             vehicle_id: vehicle.id,
             entry_date: new Date().toISOString().split('T')[0],
@@ -108,102 +133,50 @@ export const FinanceAcceptanceTest = () => {
             payment_id: depositPayment.id,
           });
 
-          // Insert P&L entry
-          await supabase.from("pnl_entries").insert({
-            vehicle_id: vehicle.id,
-            entry_date: new Date().toISOString().split('T')[0],
-            side: 'Cost',
-            category: 'Finance',
-            amount: 1000,
-            reference: depositRef,
-            source_ref: depositRef,
-            payment_id: depositPayment.id,
-          });
-
+          // Should NOT create incremental P&L entry (upfront entry already exists)
           testResults.push({
-            name: "Record Deposit Payment",
+            name: "Record Finance Payment",
             passed: true,
-            message: "Deposit payment recorded successfully",
-            details: "Payment, ledger, and P&L entries created"
+            message: "Finance payment recorded (ledger only, no P&L duplication)",
+            details: "Payment and ledger entries created, P&L avoided due to upfront entry"
           });
         }
 
-        // Test 3: Record monthly payment
-        const monthlyRef = `FINPAY:${vehicle.id}:Monthly:${new Date().toISOString().split('T')[0]}:300`;
-        
-        const { data: monthlyPayment, error: monthlyError } = await supabase
-          .from("payments")
-          .insert({
-            payment_type: 'Finance',
-            vehicle_id: vehicle.id,
-            payment_date: new Date().toISOString().split('T')[0],
-            amount: 300,
-            method: monthlyRef,
-            customer_id: null,
-            rental_id: null,
-            status: 'Applied',
-            remaining_amount: 0,
-          })
-          .select()
-          .single();
-
-        if (monthlyError) {
-          testResults.push({
-            name: "Record Monthly Payment",
-            passed: false,
-            message: "Failed to record monthly payment",
-            details: monthlyError.message
-          });
-        } else {
-          await supabase.from("ledger_entries").insert({
-            vehicle_id: vehicle.id,
-            entry_date: new Date().toISOString().split('T')[0],
-            type: 'Cost',
-            category: 'Finance',
-            amount: 300,
-            due_date: new Date().toISOString().split('T')[0],
-            remaining_amount: 0,
-            reference: monthlyRef,
-            payment_id: monthlyPayment.id,
-          });
-
-          await supabase.from("pnl_entries").insert({
-            vehicle_id: vehicle.id,
-            entry_date: new Date().toISOString().split('T')[0],
-            side: 'Cost',
-            category: 'Finance',
-            amount: 300,
-            reference: monthlyRef,
-            source_ref: monthlyRef,
-            payment_id: monthlyPayment.id,
-          });
-
-          testResults.push({
-            name: "Record Monthly Payment",
-            passed: true,
-            message: "Monthly payment recorded successfully",
-            details: "Payment, ledger, and P&L entries created"
-          });
-        }
-
-        // Test 4: Verify P&L shows finance costs
-        const { data: plEntries } = await supabase
+        // Test 4: Verify NO incremental P&L costs were added
+        const { data: incrementalPL } = await supabase
           .from("pnl_entries")
           .select("amount")
           .eq("vehicle_id", vehicle.id)
           .eq("side", "Cost")
           .eq("category", "Finance");
 
-        const totalFinanceCosts = plEntries?.reduce((sum, entry) => sum + Number(entry.amount), 0) || 0;
+        const hasIncrementalCosts = incrementalPL && incrementalPL.length > 0;
         
         testResults.push({
-          name: "Verify P&L Finance Costs",
-          passed: totalFinanceCosts === 1300,
-          message: `Finance costs in P&L: £${totalFinanceCosts.toLocaleString()}`,
-          details: "Expected £1,300 (£1,000 deposit + £300 monthly)"
+          name: "Verify No Incremental P&L Costs",
+          passed: !hasIncrementalCosts,
+          message: hasIncrementalCosts ? "Incremental finance costs found (should be prevented)" : "No incremental finance costs (correct)",
+          details: `Found ${incrementalPL?.length || 0} incremental Finance P&L entries (should be 0)`
         });
 
-        // Test 5: Verify customer balances unaffected
+        // Test 5: Verify total P&L shows only upfront acquisition cost
+        const { data: allPLEntries } = await supabase
+          .from("pnl_entries")
+          .select("amount, category")
+          .eq("vehicle_id", vehicle.id)
+          .eq("side", "Cost");
+
+        const totalCosts = allPLEntries?.reduce((sum, entry) => sum + Number(entry.amount), 0) || 0;
+        const onlyAcquisitionCost = totalCosts === expectedContractTotal;
+        
+        testResults.push({
+          name: "Verify Total P&L Costs",
+          passed: onlyAcquisitionCost,
+          message: `Total P&L costs: £${totalCosts.toLocaleString()} (Expected: £${expectedContractTotal.toLocaleString()})`,
+          details: `Cost breakdown: ${allPLEntries?.map(e => `${e.category}: £${Number(e.amount).toLocaleString()}`).join(', ')}`
+        });
+
+        // Test 6: Verify customer balances unaffected
         const { data: customerCharges } = await supabase
           .from("ledger_entries")
           .select("customer_id")
@@ -264,7 +237,7 @@ export const FinanceAcceptanceTest = () => {
           </Button>
         </CardTitle>
         <CardDescription>
-          Test vehicle finance workflow: create financed vehicle, record payments, verify P&L
+          Test upfront finance accounting: create financed vehicle (posts full contract cost immediately), record payments (no P&L impact), verify totals
         </CardDescription>
       </CardHeader>
       <CardContent>

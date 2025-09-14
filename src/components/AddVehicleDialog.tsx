@@ -414,7 +414,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 {/* Contract Total Display */}
                 {form.watch("monthly_payment") && (
                   <div className="p-3 bg-primary/10 rounded border">
-                    <div className="text-sm font-medium text-primary">Contract Total (Informational)</div>
+                    <div className="text-sm font-medium text-primary">Contract Total (Upfront P&L Accounting)</div>
                     <div className="text-lg font-bold">
                       £{(
                         (form.watch("initial_payment") || 0) + 
@@ -422,10 +422,14 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         (form.watch("balloon") || 0)
                       ).toLocaleString()}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground mb-2">
                       Initial: £{(form.watch("initial_payment") || 0).toLocaleString()} + 
                       Monthly: £{((form.watch("monthly_payment") || 0) * (form.watch("term_months") || 0)).toLocaleString()} + 
                       Balloon: £{(form.watch("balloon") || 0).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border-l-2 border-amber-300">
+                      <strong>Note:</strong> This financed vehicle's full contract total is posted immediately as an Acquisition cost for P&L reporting. 
+                      Ongoing finance payments won't affect P&L (to prevent double-counting).
                     </div>
                   </div>
                 )}

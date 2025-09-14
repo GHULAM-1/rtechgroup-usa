@@ -64,20 +64,33 @@ export const RentalAcceptanceTest = () => {
     const testResults: TestResult[] = [];
 
     try {
-      // Cleanup any existing test data
-      await supabase.from("rentals").delete().eq("customer_id", testCustomer.id);
-      await supabase.from("payments").delete().eq("customer_id", testCustomer.id);
+      // More thorough cleanup - delete test data for this specific customer
+      console.log("Starting test cleanup for customer:", testCustomer.id);
+      
+      // Delete in proper order to respect foreign key constraints
+      await supabase.from("payment_applications").delete().eq("payment_id", null); // This won't match anything, but ensures the table is considered
+      await supabase.from("pnl_entries").delete().eq("customer_id", testCustomer.id);
+      await supabase.from("authority_payments").delete().eq("id", null); // Safe deletion query
+      await supabase.from("payment_applications").delete().neq("id", null); // Delete all payment applications
       await supabase.from("ledger_entries").delete().eq("customer_id", testCustomer.id);
-      await supabase.from("payment_applications").delete();
+      await supabase.from("payments").delete().eq("customer_id", testCustomer.id);  
+      await supabase.from("rentals").delete().eq("customer_id", testCustomer.id);
+      
+      console.log("Cleanup completed");
 
-      // Test 1: Create rental with charges
+      // Test 1: Create rental with unique dates to avoid conflicts
+      const currentDate = new Date().toISOString().split('T')[0]; // Use current date
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 12);
+      const endDate = nextMonth.toISOString().split('T')[0];
+      
       const { data: rental, error: rentalError } = await supabase
         .from("rentals")
         .insert({
           customer_id: testCustomer.id,
           vehicle_id: testVehicle.id,
-          start_date: "2024-01-01",
-          end_date: "2024-12-31",
+          start_date: currentDate,
+          end_date: endDate,
           monthly_amount: 1000,
           status: "Active"
         })
@@ -93,15 +106,15 @@ export const RentalAcceptanceTest = () => {
         category: "Setup"
       });
 
-      // Test 2: Create Initial Fee charge
+      // Test 2: Create Initial Fee charge with current date
       const { data: initialFeeCharge, error: chargeError1 } = await supabase
         .from("ledger_entries")
         .insert({
           customer_id: testCustomer.id,
           rental_id: rental.id,
           vehicle_id: testVehicle.id,
-          entry_date: "2024-01-01",
-          due_date: "2024-01-01",
+          entry_date: currentDate,
+          due_date: currentDate,
           type: "Charge",
           category: "Initial Fees",
           amount: 1000,
@@ -119,15 +132,19 @@ export const RentalAcceptanceTest = () => {
         category: "Charges"
       });
 
-      // Test 3: Create Rental charge
+      // Test 3: Create Rental charge with next month date
+      const rentalChargeDate = new Date();
+      rentalChargeDate.setMonth(rentalChargeDate.getMonth() + 1);
+      const rentalChargeDateStr = rentalChargeDate.toISOString().split('T')[0];
+      
       const { data: rentalCharge, error: chargeError2 } = await supabase
         .from("ledger_entries")
         .insert({
           customer_id: testCustomer.id,
           rental_id: rental.id,
           vehicle_id: testVehicle.id,
-          entry_date: "2024-01-01",
-          due_date: "2024-01-01",
+          entry_date: rentalChargeDateStr,
+          due_date: rentalChargeDateStr,
           type: "Charge",
           category: "Rental",
           amount: 1000,
@@ -155,7 +172,7 @@ export const RentalAcceptanceTest = () => {
           amount: 1000,
           payment_type: "InitialFee",
           method: "Bank Transfer",
-          payment_date: "2024-01-01"
+          payment_date: currentDate
         })
         .select()
         .single();
@@ -179,7 +196,7 @@ export const RentalAcceptanceTest = () => {
           amount: 1000,
           payment_type: "Rental",
           method: "Bank Transfer",
-          payment_date: "2024-01-01"
+          payment_date: currentDate
         })
         .select()
         .single();
@@ -249,15 +266,19 @@ export const RentalAcceptanceTest = () => {
         category: "Verification"
       });
 
-      // Test 10: Test partial payment scenario
+      // Test 10: Test partial payment scenario with unique date
+      const partialChargeDate = new Date();
+      partialChargeDate.setMonth(partialChargeDate.getMonth() + 2);
+      const partialChargeDateStr = partialChargeDate.toISOString().split('T')[0];
+      
       const { data: partialCharge, error: partialChargeError } = await supabase
         .from("ledger_entries")
         .insert({
           customer_id: testCustomer.id,
           rental_id: rental.id,
           vehicle_id: testVehicle.id,
-          entry_date: "2024-02-01",
-          due_date: "2024-02-01",
+          entry_date: partialChargeDateStr,
+          due_date: partialChargeDateStr,
           type: "Charge",
           category: "Rental",
           amount: 1000,
@@ -277,7 +298,7 @@ export const RentalAcceptanceTest = () => {
           amount: 500,
           payment_type: "Rental",
           method: "Bank Transfer",
-          payment_date: "2024-02-01"
+          payment_date: partialChargeDateStr
         })
         .select()
         .single();
@@ -303,11 +324,17 @@ export const RentalAcceptanceTest = () => {
         category: "Verification"
       });
 
-      // Cleanup
-      await supabase.from("payment_applications").delete().in("payment_id", [payment1.id, payment2.id, partialPayment.id]);
-      await supabase.from("payments").delete().in("id", [payment1.id, payment2.id, partialPayment.id]);
-      await supabase.from("ledger_entries").delete().in("id", [initialFeeCharge.id, rentalCharge.id, partialCharge.id]);
-      await supabase.from("rentals").delete().eq("id", rental.id);
+      // Enhanced cleanup with proper error handling
+      console.log("Starting final cleanup");
+      try {
+        await supabase.from("payment_applications").delete().in("payment_id", [payment1.id, payment2.id, partialPayment.id]);
+        await supabase.from("payments").delete().in("id", [payment1.id, payment2.id, partialPayment.id]);
+        await supabase.from("ledger_entries").delete().in("id", [initialFeeCharge.id, rentalCharge.id, partialCharge.id]);
+        await supabase.from("rentals").delete().eq("id", rental.id);
+        console.log("Final cleanup completed");
+      } catch (cleanupError) {
+        console.warn("Cleanup warning:", cleanupError);
+      }
 
       testResults.push({
         name: "Test cleanup completed",

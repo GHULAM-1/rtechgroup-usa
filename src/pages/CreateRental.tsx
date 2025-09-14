@@ -324,9 +324,9 @@ const CreateRental = () => {
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="0.00"
+                          placeholder="Monthly rental amount"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -344,9 +344,9 @@ const CreateRental = () => {
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="0.00"
+                          placeholder="Initial fee amount"
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />

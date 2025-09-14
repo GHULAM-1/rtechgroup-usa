@@ -266,9 +266,9 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                       <FormControl>
                         <Input 
                           type="number" 
-                          placeholder="0.00" 
+                          placeholder="Enter amount" 
                           {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                           className="input-focus"
                         />
                       </FormControl>
@@ -317,13 +317,13 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                       <FormItem>
                         <FormLabel>Monthly Payment (£) *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            className="input-focus"
-                          />
+                      <Input 
+                        type="number" 
+                        placeholder="Balloon amount" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                        className="input-focus"
+                      />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -336,13 +336,13 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                       <FormItem>
                         <FormLabel>Initial Payment (£)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            className="input-focus"
-                          />
+                      <Input 
+                        type="number" 
+                        placeholder="Monthly payment" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                        className="input-focus"
+                      />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -377,13 +377,13 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                       <FormItem>
                         <FormLabel>Balloon Payment (£)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                            className="input-focus"
-                          />
+                      <Input 
+                        type="number" 
+                        placeholder="Balloon amount" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                        className="input-focus"
+                      />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

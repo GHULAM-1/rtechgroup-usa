@@ -205,14 +205,14 @@ export const RecordFinancePaymentDialog = ({
                   <FormItem>
                     <FormLabel>Amount (£)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        placeholder="0.00" 
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        className="input-focus"
-                      />
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="Enter amount" 
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
+                          className="input-focus"
+                        />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

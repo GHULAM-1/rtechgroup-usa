@@ -162,6 +162,8 @@ export type Database = {
       fines: {
         Row: {
           amount: number
+          appealed_at: string | null
+          charged_at: string | null
           created_at: string | null
           customer_id: string | null
           due_date: string
@@ -170,12 +172,16 @@ export type Database = {
           liability: string | null
           notes: string | null
           reference_no: string | null
+          resolved_at: string | null
           status: string | null
           type: string
           vehicle_id: string
+          waived_at: string | null
         }
         Insert: {
           amount: number
+          appealed_at?: string | null
+          charged_at?: string | null
           created_at?: string | null
           customer_id?: string | null
           due_date: string
@@ -184,12 +190,16 @@ export type Database = {
           liability?: string | null
           notes?: string | null
           reference_no?: string | null
+          resolved_at?: string | null
           status?: string | null
           type: string
           vehicle_id: string
+          waived_at?: string | null
         }
         Update: {
           amount?: number
+          appealed_at?: string | null
+          charged_at?: string | null
           created_at?: string | null
           customer_id?: string | null
           due_date?: string
@@ -198,9 +208,11 @@ export type Database = {
           liability?: string | null
           notes?: string | null
           reference_no?: string | null
+          resolved_at?: string | null
           status?: string | null
           type?: string
           vehicle_id?: string
+          waived_at?: string | null
         }
         Relationships: [
           {

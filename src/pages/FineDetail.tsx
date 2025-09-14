@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FineAppealDialog } from "@/components/FineAppealDialog";
+import { FineStatusBadge } from "@/components/FineStatusBadge";
 
 interface Fine {
   id: string;
@@ -154,36 +155,83 @@ const FineDetail = () => {
     },
   });
 
+  // New admin-controlled fine actions using the apply-fine edge function
+  const chargeFineToAccount = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('apply-fine', {
+        body: { fineId: id, action: 'charge' }
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to charge fine');
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Fine Charged",
+        description: `Fine has been charged to customer account. Status: ${data.status}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["fine", id] });
+      queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
+      queryClient.invalidateQueries({ queryKey: ["customers"] });
+    },
+    onError: (error: any) => {
+      console.error("Error charging fine:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to charge fine to account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const waiveFine = useMutation({
     mutationFn: async () => {
-      if (!fine) throw new Error("Fine not found");
-
-      // Call the void charge function
-      const { error: voidError } = await supabase.rpc('fine_void_charge', {
-        f_id: fine.id
+      const { data, error } = await supabase.functions.invoke('apply-fine', {
+        body: { fineId: id, action: 'waive' }
       });
-      if (voidError) throw voidError;
-
-      // Update fine status
-      const { error: updateError } = await supabase
-        .from("fines")
-        .update({ status: "Waived" })
-        .eq("id", fine.id);
-      if (updateError) throw updateError;
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to waive fine');
+      return data;
     },
     onSuccess: () => {
       toast({
         title: "Fine Waived",
-        description: "Fine has been waived and charges cleared.",
+        description: "Fine has been waived and will not be charged.",
       });
       queryClient.invalidateQueries({ queryKey: ["fine", id] });
       queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error waiving fine:", error);
       toast({
         title: "Error",
-        description: "Failed to waive fine. Please try again.",
+        description: error.message || "Failed to waive fine. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const markAsAppealed = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('apply-fine', {
+        body: { fineId: id, action: 'appeal' }
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to mark as appealed');
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Fine Appealed",
+        description: "Fine has been marked as appealed.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["fine", id] });
+    },
+    onError: (error: any) => {
+      console.error("Error marking fine as appealed:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark fine as appealed. Please try again.",
         variant: "destructive",
       });
     },
@@ -218,14 +266,53 @@ const FineDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          {fine.status === "Open" && (
-            <Button
-              variant="outline"
-              onClick={() => setShowAppealDialog(true)}
-            >
-              <Scale className="h-4 w-4 mr-2" />
-              Appeal / Waive
-            </Button>
+          {/* Admin Actions for Customer Liability Fines */}
+          {fine.liability === 'Customer' && (
+            <>
+              {(fine.status === 'Open' || fine.status === 'Appealed') && (
+                <Button
+                  onClick={() => chargeFineToAccount.mutate()}
+                  disabled={chargeFineToAccount.isPending}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  {chargeFineToAccount.isPending ? 'Charging...' : 'Charge to Account'}
+                </Button>
+              )}
+              
+              {fine.status === 'Open' && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => markAsAppealed.mutate()}
+                    disabled={markAsAppealed.isPending}
+                  >
+                    <Scale className="h-4 w-4 mr-2" />
+                    {markAsAppealed.isPending ? 'Processing...' : 'Mark as Appealed'}
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => waiveFine.mutate()}
+                    disabled={waiveFine.isPending}
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {waiveFine.isPending ? 'Waiving...' : 'Waive Fine'}
+                  </Button>
+                </>
+              )}
+              
+              {fine.status === 'Appealed' && (
+                <Button
+                  variant="outline"
+                  onClick={() => waiveFine.mutate()}
+                  disabled={waiveFine.isPending}
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  {waiveFine.isPending ? 'Waiving...' : 'Resolve Appeal - Waive'}
+                </Button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -248,16 +335,11 @@ const FineDetail = () => {
             <CardTitle className="text-lg">Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge 
-              variant={
-                fine.status === 'Paid' ? 'default' :
-                fine.status === 'Open' ? 'destructive' :
-                fine.status === 'Partially Paid' ? 'secondary' : 'outline'
-              }
-              className="text-lg px-3 py-1"
-            >
-              {fine.status}
-            </Badge>
+            <FineStatusBadge 
+              status={fine.status}
+              dueDate={fine.due_date}
+              remainingAmount={outstandingAmount}
+            />
           </CardContent>
         </Card>
 

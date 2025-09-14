@@ -11,33 +11,44 @@ export const FineStatusBadge = ({ status, dueDate, remainingAmount }: FineStatus
     if (status === 'Paid') return 'default';
     if (status === 'Appeal Successful' || status === 'Waived') return 'secondary';
     if (status === 'Appeal Rejected') return 'destructive';
-    if (status === 'Appeal Submitted') return 'outline';
+    if (status === 'Appeal Submitted' || status === 'Appealed') return 'outline';
+    if (status === 'Charged') return 'destructive';
     
-    // Check if overdue
-    const due = new Date(dueDate);
-    const today = new Date();
-    const isOverdue = due < today && remainingAmount > 0;
+    // Check if overdue for open fines
+    if (status === 'Open') {
+      const due = new Date(dueDate);
+      const today = new Date();
+      const isOverdue = due < today && remainingAmount > 0;
+      
+      if (isOverdue) return 'destructive';
+    }
     
-    if (isOverdue) return 'destructive';
     if (status === 'Partially Paid') return 'secondary';
     
     return 'outline';
   };
 
   const getDisplayText = () => {
-    const due = new Date(dueDate);
-    const today = new Date();
-    const isOverdue = due < today && remainingAmount > 0;
-    
     if (status === 'Appeal Successful') return 'Appeal Successful';
     if (status === 'Appeal Rejected') return 'Appeal Rejected';
     if (status === 'Appeal Submitted') return 'Appeal Submitted';
+    if (status === 'Appealed') return 'Appealed';
     if (status === 'Waived') return 'Waived';
     if (status === 'Paid') return 'Paid';
+    if (status === 'Charged') return 'Charged';
     if (status === 'Partially Paid') return 'Partially Paid';
     
-    if (isOverdue) return 'Overdue';
-    return 'Open';
+    // For Open status, check if overdue
+    if (status === 'Open') {
+      const due = new Date(dueDate);
+      const today = new Date();
+      const isOverdue = due < today && remainingAmount > 0;
+      
+      if (isOverdue) return 'Overdue';
+      return 'Open';
+    }
+    
+    return status || 'Open';
   };
 
   return (

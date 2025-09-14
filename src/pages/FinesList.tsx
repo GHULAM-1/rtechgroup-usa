@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Plus, Eye, Filter } from "lucide-react";
+import { FineStatusBadge } from "@/components/FineStatusBadge";
 
 interface Fine {
   id: string;
@@ -106,16 +107,11 @@ const FinesList = () => {
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge 
-                  variant={
-                    fine.status === 'Paid' ? 'default' :
-                    fine.status === 'Open' ? 'destructive' :
-                    fine.status === 'Partially Paid' ? 'secondary' :
-                    fine.status === 'Waived' ? 'outline' : 'secondary'
-                  }
-                >
-                  {fine.status}
-                </Badge>
+                <FineStatusBadge 
+                  status={fine.status}
+                  dueDate={fine.due_date}
+                  remainingAmount={fine.amount}
+                />
               </TableCell>
               <TableCell className="text-right font-medium">
                 £{Number(fine.amount).toLocaleString()}

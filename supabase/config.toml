@@ -1,5 +1,8 @@
 project_id = "wrogevjpvhvputrjhvvg"
 
+[functions.apply-fine]
+verify_jwt = true
+
 [functions.process-reminders]
 verify_jwt = false
 

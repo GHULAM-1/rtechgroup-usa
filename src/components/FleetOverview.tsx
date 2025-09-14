@@ -25,7 +25,8 @@ const StatusBadge = ({ status }: { status: string }) => {
   const variants = {
     Available: "badge-status bg-success-light text-success border-success",
     Rented: "badge-status bg-primary-light text-primary border-primary",
-    Sold: "badge-status bg-muted text-muted-foreground border-border"
+    Sold: "badge-status bg-muted text-muted-foreground border-border",
+    Disposed: "badge-status bg-muted text-muted-foreground border-border"
   };
   
   return (

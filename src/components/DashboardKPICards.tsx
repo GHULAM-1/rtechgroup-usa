@@ -163,7 +163,7 @@ export const DashboardKPICards = ({ data, isLoading, error }: DashboardKPICardsP
         tooltip="Rental charges past due date with remaining balance"
         onClick={() => navigate('/payments?filter=overdue')}
         isEmpty={data.overdue.count === 0}
-        emptyMessage="No overdue payments 🎉"
+        emptyMessage="No overdue payments"
       />
 
       {/* Due Today */}

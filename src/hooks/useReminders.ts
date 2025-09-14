@@ -40,9 +40,12 @@ export function useReminders(filters?: ReminderFilters) {
         .order('due_on', { ascending: true })
         .order('remind_on', { ascending: true });
 
-      // Apply filters
+      // If no status filter is applied, default to showing active reminders
       if (filters?.status && filters.status.length > 0) {
         query = query.in('status', filters.status);
+      } else {
+        // Default to showing active reminders (pending, sent, snoozed)
+        query = query.in('status', ['pending', 'sent', 'snoozed']);
       }
 
       if (filters?.severity && filters.severity.length > 0) {

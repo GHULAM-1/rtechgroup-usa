@@ -163,7 +163,7 @@ export default function RemindersPageEnhanced() {
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-xl font-semibold mb-2">Reminders</h1>
+          <h1 className="text-3xl font-bold mb-2">Reminders</h1>
           <p className="text-sm text-muted-foreground">
             Monitor and manage fleet compliance reminders and notifications
           </p>

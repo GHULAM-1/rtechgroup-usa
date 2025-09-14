@@ -710,13 +710,20 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                 Cancel
               </Button>
               <Button 
-                type="submit" 
+                type="button"
                 disabled={loading}
-                onClick={(e) => {
-                  console.log('Update button clicked', e);
+                onClick={async (e) => {
+                  console.log('=== UPDATE BUTTON CLICKED ===');
+                  console.log('Event:', e);
                   console.log('Form state:', form.formState);
                   console.log('Form values:', form.getValues());
                   console.log('Form errors:', form.formState.errors);
+                  console.log('Loading state:', loading);
+                  
+                  // Manually trigger the submit
+                  e.preventDefault();
+                  console.log('About to call onSubmit...');
+                  await onSubmit(form.getValues());
                 }}
               >
                 {loading ? "Updating..." : "Update Vehicle"}

@@ -6,7 +6,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { 
   AlertTriangle, 
   Calendar, 
-  DollarSign, 
+  PoundSterling, 
   Users, 
   Bell, 
   Info,
@@ -222,7 +222,7 @@ export const DashboardKPICards = ({ data, isLoading, error }: DashboardKPICardsP
         title="Finance Costs"
         value={formatCurrency(data.financeCosts.amount)}
         subtitle="Selected period"
-        icon={DollarSign}
+        icon={PoundSterling}
         variant="default"
         onClick={() => navigate('/pl-dashboard?category=Finance')}
         tooltip="Finance-related costs for the selected date range"

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Car, Users, FileText, AlertTriangle, Calendar, DollarSign, Plus, Bell, Clock, TestTube } from "lucide-react";
+import { Car, Users, FileText, AlertTriangle, Calendar, PoundSterling, Plus, Bell, Clock, TestTube } from "lucide-react";
 import { RentalAcceptanceTest } from "@/components/RentalAcceptanceTest";
 import { FinanceAcceptanceTest } from "@/components/FinanceAcceptanceTest";
 
@@ -202,7 +202,7 @@ const Dashboard = () => {
       title: "Upcoming (7 days)",
       value: `${upcoming?.count || 0}`,
       description: `£${(upcoming?.sum || 0).toLocaleString()} due within 7 days`,
-      icon: DollarSign,
+      icon: PoundSterling,
       color: "text-blue-500",
       href: "/charges?filter=upcoming"
     },
@@ -228,7 +228,7 @@ const Dashboard = () => {
       title: "Finance Costs",
       value: `£${(financeCosts || 0).toLocaleString()}`,
       description: "Total finance payments recorded",
-      icon: DollarSign,
+      icon: PoundSterling,
       color: "text-purple-500",
       href: "/vehicles"
     }
@@ -286,7 +286,7 @@ const Dashboard = () => {
         <Card className="card-hover cursor-pointer" onClick={() => navigate("/payments")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <PoundSterling className="h-5 w-5 text-primary" />
               Payment Processing
             </CardTitle>
             <CardDescription>Process payments and view history</CardDescription>

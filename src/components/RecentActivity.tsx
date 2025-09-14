@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Activity, DollarSign, Car, User } from "lucide-react";
+import { Activity, PoundSterling, Car, User } from "lucide-react";
 
 interface ActivityItem {
   id: string;
@@ -51,7 +51,7 @@ const mockActivities: ActivityItem[] = [
 
 const ActivityIcon = ({ type }: { type: string }) => {
   const icons = {
-    payment: DollarSign,
+    payment: PoundSterling,
     rental: User,
     vehicle: Car
   };

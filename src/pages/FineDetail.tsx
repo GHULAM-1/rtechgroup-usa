@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ArrowLeft, FileText, DollarSign, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban, Receipt, AlertCircle } from "lucide-react";
+import { AlertTriangle, ArrowLeft, FileText, PoundSterling, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban, Receipt, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FineAppealDialog } from "@/components/FineAppealDialog";
 import { FineStatusBadge } from "@/components/FineStatusBadge";
@@ -572,7 +572,7 @@ const FineDetail = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-primary" />
+                    <PoundSterling className="h-5 w-5 text-primary" />
                     Customer Ledger (Fine Charges & Payments)
                   </CardTitle>
                 </CardHeader>
@@ -717,7 +717,7 @@ const FineDetail = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-primary" />
+                    <PoundSterling className="h-5 w-5 text-primary" />
                     Business P&L Impact
                   </CardTitle>
                   <CardDescription>

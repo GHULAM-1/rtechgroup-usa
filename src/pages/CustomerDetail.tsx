@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, CreditCard, FileText, Plus, Upload, Car, AlertTriangle, Eye, Download, Edit, Trash2, User, Mail, Phone, CalendarPlus, DollarSign, FolderOpen, Receipt, CreditCard as PaymentIcon } from "lucide-react";
+import { ArrowLeft, CreditCard, FileText, Plus, Upload, Car, AlertTriangle, Eye, Download, Edit, Trash2, User, Mail, Phone, CalendarPlus, PoundSterling, FolderOpen, Receipt, CreditCard as PaymentIcon } from "lucide-react";
 import { TruncatedCell } from "@/components/TruncatedCell";
 import { EmptyState } from "@/components/EmptyState";
 import { useNavigate } from "react-router-dom";
@@ -122,7 +122,7 @@ const CustomerDetail = () => {
             Add Rental
           </Button>
           <Button variant="outline" onClick={() => setPaymentDialogOpen(true)}>
-            <DollarSign className="h-4 w-4 mr-2" />
+            <PoundSterling className="h-4 w-4 mr-2" />
             Add Payment
           </Button>
           <Button variant="outline" onClick={() => setFineDialogOpen(true)}>
@@ -168,7 +168,7 @@ const CustomerDetail = () => {
         <Card className="min-h-[140px] flex flex-col">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <DollarSign className="h-4 w-4 text-primary" />
+              <PoundSterling className="h-4 w-4 text-primary" />
               Account Status
             </CardTitle>
           </CardHeader>

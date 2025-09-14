@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Calendar, Hash, Car, FileText, ExternalLink, DollarSign } from "lucide-react";
+import { ArrowLeft, Calendar, Hash, Car, FileText, ExternalLink, PoundSterling } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
 
 interface PlateDetailData {
@@ -160,7 +160,7 @@ export default function PlateDetail() {
               <div>
                 <div className="text-sm text-muted-foreground">Cost</div>
                 <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <PoundSterling className="h-4 w-4 text-muted-foreground" />
                   £{plate.cost.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
                 </div>
               </div>

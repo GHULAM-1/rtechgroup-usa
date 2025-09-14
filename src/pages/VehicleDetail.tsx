@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, Car, FileText, DollarSign, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Car, FileText, PoundSterling, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
@@ -459,7 +459,7 @@ export default function VehicleDetail() {
             {vehicle.acquisition_type === 'Finance' && (
               <MetricCard 
                 title="Finance Information"
-                icon={DollarSign}
+                icon={PoundSterling}
                 badge={{ text: "Financed", variant: "outline" }}
               >
                 <div className="space-y-3">

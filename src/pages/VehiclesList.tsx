@@ -243,7 +243,7 @@ export default function VehiclesListEnhanced() {
   };
 
   const handleRowClick = (vehicleId: string) => {
-    navigate(`/vehicle/${vehicleId}`);
+    navigate(`/vehicles/${vehicleId}`);
   };
 
   const clearFilters = () => {
@@ -443,7 +443,7 @@ export default function VehiclesListEnhanced() {
                   >
                     <TableCell>
                       <Link 
-                        to={`/vehicle/${vehicle.id}`}
+                        to={`/vehicles/${vehicle.id}`}
                         className="font-bold text-primary hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -493,7 +493,7 @@ export default function VehiclesListEnhanced() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/vehicle/${vehicle.id}`);
+                          navigate(`/vehicles/${vehicle.id}`);
                         }}
                       >
                         <Eye className="h-4 w-4" />

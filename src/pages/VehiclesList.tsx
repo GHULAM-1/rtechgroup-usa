@@ -60,8 +60,17 @@ export default function VehiclesListEnhanced() {
     performance: (searchParams.get('performance') as PerformanceFilter) || 'all',
   });
 
-  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
-  const [pageSize, setPageSize] = useState(parseInt(searchParams.get('limit') || '25'));
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Sync pagination state with URL params
+  useEffect(() => {
+    const urlCurrentPage = parseInt(searchParams.get('page') || '1');
+    const urlPageSize = parseInt(searchParams.get('limit') || '25');
+    
+    setCurrentPage(urlCurrentPage);
+    setPageSize(urlPageSize);
+  }, [searchParams]);
 
   // Read sort params directly from URL
   const sortField = (searchParams.get('sort') as SortField) || 'reg';
@@ -242,6 +251,11 @@ export default function VehiclesListEnhanced() {
     const params = new URLSearchParams(searchParams);
     params.set('sort', field);
     params.set('dir', newDirection);
+    
+    // Reset to page 1 when sorting
+    params.delete('page');
+    setCurrentPage(1);
+    
     setSearchParams(params);
     
     // Debug logging

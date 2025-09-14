@@ -78,13 +78,33 @@ const PaymentsList = () => {
     },
   });
 
-  const { data: vehicles } = useQuery({
-    queryKey: ["vehicles-for-payment"],
+  const { data: customerVehicles } = useQuery({
+    queryKey: ["customer-vehicles", selectedCustomerId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vehicles").select("id, reg");
+      if (!selectedCustomerId) return [];
+      
+      const { data, error } = await supabase
+        .from("rentals")
+        .select("vehicles(id, reg)")
+        .eq("customer_id", selectedCustomerId);
+      
       if (error) throw error;
-      return data;
+      
+      // Extract unique vehicles and flatten the structure
+      const vehicles = data
+        ?.map(rental => rental.vehicles)
+        .filter(Boolean)
+        .reduce((unique, vehicle) => {
+          if (!unique.find(v => v.id === vehicle.id)) {
+            unique.push(vehicle);
+          }
+          return unique;
+        }, [])
+        .sort((a, b) => a.reg.localeCompare(b.reg));
+      
+      return vehicles || [];
     },
+    enabled: !!selectedCustomerId,
   });
 
   const { data: customerRentals } = useQuery({
@@ -297,11 +317,17 @@ const PaymentsList = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {vehicles?.map((vehicle) => (
-                                <SelectItem key={vehicle.id} value={vehicle.id}>
-                                  {vehicle.reg}
+                              {selectedCustomerId ? (
+                                customerVehicles?.map((vehicle) => (
+                                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                                    {vehicle.reg}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="" disabled>
+                                  Select customer first
                                 </SelectItem>
-                              ))}
+                              )}
                             </SelectContent>
                           </Select>
                           <FormMessage />

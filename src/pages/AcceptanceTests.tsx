@@ -1,4 +1,5 @@
 import { AcceptanceTestVehicleDisposal } from "@/components/AcceptanceTestVehicleDisposal";
+import { AcceptanceTestVehicleFiles } from "@/components/AcceptanceTestVehicleFiles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -20,11 +21,15 @@ export default function AcceptanceTests() {
           <Tabs defaultValue="disposal">
             <TabsList>
               <TabsTrigger value="disposal">Vehicle Disposal</TabsTrigger>
-              {/* Add more test categories as needed */}
+              <TabsTrigger value="files">Vehicle Files</TabsTrigger>
             </TabsList>
             
             <TabsContent value="disposal" className="mt-6">
               <AcceptanceTestVehicleDisposal />
+            </TabsContent>
+            
+            <TabsContent value="files" className="mt-6">
+              <AcceptanceTestVehicleFiles />
             </TabsContent>
           </Tabs>
         </CardContent>

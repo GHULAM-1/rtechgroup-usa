@@ -37,8 +37,31 @@ export function useVehicleFiles(vehicleId: string) {
   // Upload file mutation
   const uploadFileMutation = useMutation({
     mutationFn: async (file: File) => {
+      // Validate file type
+      const allowedTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/vnd.ms-powerpoint',
+        'text/plain',
+        'text/csv'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(`File type not supported. Please upload images, PDF, Word, Excel, PowerPoint, or text files.`);
+      }
+
+      // Validate file size (25MB max)
+      if (file.size > 25 * 1024 * 1024) {
+        throw new Error(`File size too large. Maximum size is 25MB.`);
+      }
+
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `vehicle/${vehicleId}/${fileName}`;
 
       // Upload to storage
@@ -122,21 +145,25 @@ export function useVehicleFiles(vehicleId: string) {
   // Download file function
   const downloadFile = async (file: VehicleFile) => {
     try {
+      // Create signed URL for download (valid for 1 hour)
       const { data, error } = await supabase.storage
         .from('vehicle-files')
-        .download(file.storage_path);
+        .createSignedUrl(file.storage_path, 3600);
 
       if (error) throw error;
 
-      // Create download link
-      const url = URL.createObjectURL(data);
+      if (!data?.signedUrl) {
+        throw new Error('Failed to create download URL');
+      }
+
+      // Create download link using signed URL
       const a = document.createElement('a');
-      a.href = url;
+      a.href = data.signedUrl;
       a.download = file.file_name;
+      a.target = '_blank';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (error: any) {
       toast({
         title: "Download Error",

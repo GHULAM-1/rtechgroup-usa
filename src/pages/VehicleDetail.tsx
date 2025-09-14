@@ -947,7 +947,7 @@ export default function VehicleDetail() {
 
         <TabsContent value="files" className="space-y-4">
           <div>
-            <h3 className="text-lg font-semibold">Vehicle Files</h3>
+            <h3 className="text-lg font-semibold">Vehicle Files {files.length > 0 && `(${files.length})`}</h3>
             <p className="text-sm text-muted-foreground">
               Upload and manage documents for this vehicle
             </p>
@@ -960,6 +960,8 @@ export default function VehicleDetail() {
             onDownload={downloadFile}
             isUploading={isUploadingFile}
             isDeleting={isDeletingFile}
+            canUpload={true} // TODO: Add role-based permissions when auth is implemented
+            canDelete={true} // TODO: Add role-based permissions when auth is implemented
           />
         </TabsContent>
       </Tabs>

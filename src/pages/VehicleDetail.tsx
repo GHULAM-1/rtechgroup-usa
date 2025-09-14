@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -96,6 +96,8 @@ export default function VehicleDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'overview';
 
   // Service management hook
   const {
@@ -296,7 +298,7 @@ export default function VehicleDetail() {
       </div>
 
       {/* Tabs with Sticky Navigation */}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList variant="sticky-evenly-spaced" className="mb-6">
           <TabsTrigger variant="evenly-spaced" value="overview">Overview</TabsTrigger>
           <TabsTrigger variant="evenly-spaced" value="history">History</TabsTrigger>

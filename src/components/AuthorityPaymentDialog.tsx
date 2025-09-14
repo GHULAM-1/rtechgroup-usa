@@ -100,6 +100,7 @@ export function AuthorityPaymentDialog({
       
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["fine", fineId] });
+      queryClient.invalidateQueries({ queryKey: ["authority-payments", fineId] });
       queryClient.invalidateQueries({ queryKey: ["pl-summary"] });
       queryClient.invalidateQueries({ queryKey: ["vehicle-pl"] });
       

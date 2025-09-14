@@ -46,6 +46,15 @@ interface LedgerEntry {
   category: string;
 }
 
+interface AuthorityPayment {
+  id: string;
+  payment_date: string;
+  amount: number;
+  payment_method: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 const FineDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -122,6 +131,21 @@ const FineDetail = () => {
     enabled: !!fine?.vehicle_id && fine?.liability === "Business",
   });
 
+  const { data: authorityPayments } = useQuery({
+    queryKey: ["authority-payments", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("authority_payments")
+        .select("*")
+        .eq("fine_id", id)
+        .order("payment_date", { ascending: false });
+      
+      if (error) throw error;
+      return data as AuthorityPayment[];
+    },
+    enabled: !!id,
+  });
+
   const appealSuccessfulMutation = useMutation({
     mutationFn: async () => {
       if (!fine) throw new Error("Fine not found");
@@ -175,6 +199,7 @@ const FineDetail = () => {
       queryClient.invalidateQueries({ queryKey: ["fine", id] });
       queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["authority-payments", id] });
     },
     onError: (error: any) => {
       console.error("Error charging fine:", error);
@@ -202,6 +227,7 @@ const FineDetail = () => {
       });
       queryClient.invalidateQueries({ queryKey: ["fine", id] });
       queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
+      queryClient.invalidateQueries({ queryKey: ["authority-payments", id] });
     },
     onError: (error: any) => {
       console.error("Error waiving fine:", error);
@@ -250,6 +276,9 @@ const FineDetail = () => {
   const totalCharges = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
   const totalPayments = ledgerEntries?.filter(e => e.type === 'Payment').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
   const outstandingAmount = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
+  
+  const totalAuthorityPayments = authorityPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+  const hasAuthorityPayments = authorityPayments && authorityPayments.length > 0;
 
   return (
     <div className="space-y-6">
@@ -270,11 +299,11 @@ const FineDetail = () => {
         <div className="flex gap-2">
           {/* Authority Payment Button - Available for all fines */}
           <Button
-            variant="outline"
+            variant={hasAuthorityPayments ? "secondary" : "outline"}
             onClick={() => setShowAuthorityPaymentDialog(true)}
           >
             <Receipt className="h-4 w-4 mr-2" />
-            Record Authority Payment
+            {hasAuthorityPayments ? "Add Authority Payment" : "Record Authority Payment"}
           </Button>
 
           {/* Admin Actions for Customer Liability Fines */}
@@ -356,12 +385,29 @@ const FineDetail = () => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Liability</CardTitle>
+            <CardTitle className="text-lg">Authority Payments</CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge variant={fine.liability === 'Customer' ? 'default' : 'secondary'} className="text-lg px-3 py-1">
-              {fine.liability}
-            </Badge>
+            {hasAuthorityPayments ? (
+              <div className="space-y-1">
+                <div className="text-2xl font-bold text-green-600">
+                  £{totalAuthorityPayments.toLocaleString()}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {totalAuthorityPayments >= fine.amount ? (
+                    <Badge variant="secondary" className="text-green-700 bg-green-100">
+                      Fully Paid
+                    </Badge>
+                  ) : (
+                    <span>of £{fine.amount.toLocaleString()} paid</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-2xl font-bold text-gray-400">
+                £0
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -562,52 +608,240 @@ const FineDetail = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Authority Payments Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="h-5 w-5 text-primary" />
+                    Authority Payments
+                    {hasAuthorityPayments && (
+                      <Badge variant="secondary" className="ml-2">
+                        £{totalAuthorityPayments.toLocaleString()} paid
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    Payments made directly to the issuing authority for this fine
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasAuthorityPayments ? (
+                    <div className="space-y-4">
+                      {/* Summary */}
+                      <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total Paid to Authority</p>
+                          <p className="text-xl font-bold text-green-600">£{totalAuthorityPayments.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Remaining Fine Amount</p>
+                          <p className={`text-xl font-bold ${totalAuthorityPayments >= fine.amount ? 'text-green-600' : 'text-orange-600'}`}>
+                            £{Math.max(0, fine.amount - totalAuthorityPayments).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Payments Table */}
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Payment Date</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Method</TableHead>
+                              <TableHead>Notes</TableHead>
+                              <TableHead>Recorded</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {authorityPayments.map((payment) => (
+                              <TableRow key={payment.id}>
+                                <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                                <TableCell className="text-green-600 font-semibold">
+                                  £{Number(payment.amount).toLocaleString()}
+                                </TableCell>
+                                <TableCell>{payment.payment_method || '-'}</TableCell>
+                                <TableCell className="max-w-xs truncate">
+                                  {payment.notes || '-'}
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {new Date(payment.created_at).toLocaleDateString()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      
+                      {totalAuthorityPayments >= fine.amount && (
+                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span className="text-green-800 font-medium">
+                            Fine fully paid to authority
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Receipt className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No authority payments recorded</h3>
+                      <p className="text-muted-foreground mb-4">
+                        No payments have been recorded as made directly to the issuing authority
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAuthorityPaymentDialog(true)}
+                      >
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Record First Payment
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </>
           ) : (
-            /* Business Liability P&L */
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                  Business P&L Impact
-                </CardTitle>
-                <CardDescription>
-                  This fine is a business liability and recorded as a cost
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {pnlEntries && pnlEntries.length > 0 ? (
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Side</TableHead>
-                          <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {pnlEntries.map((entry) => (
-                          <TableRow key={entry.id}>
-                            <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
-                            <TableCell>{entry.category}</TableCell>
-                            <TableCell>
-                              <Badge variant="destructive">{entry.side}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right text-red-600">
-                              £{Number(entry.amount).toLocaleString()}
-                            </TableCell>
+            <>
+              {/* Business Liability P&L */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-primary" />
+                    Business P&L Impact
+                  </CardTitle>
+                  <CardDescription>
+                    This fine is a business liability and recorded as a cost
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pnlEntries && pnlEntries.length > 0 ? (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Side</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ) : (
-                  <p className="text-center py-8 text-muted-foreground">No P&L entries found</p>
-                )}
-              </CardContent>
-            </Card>
+                        </TableHeader>
+                        <TableBody>
+                          {pnlEntries.map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
+                              <TableCell>{entry.category}</TableCell>
+                              <TableCell>
+                                <Badge variant="destructive">{entry.side}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right text-red-600">
+                                £{Number(entry.amount).toLocaleString()}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center py-8 text-muted-foreground">No P&L entries found</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Authority Payments Section for Business Liability */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="h-5 w-5 text-primary" />
+                    Authority Payments
+                    {hasAuthorityPayments && (
+                      <Badge variant="secondary" className="ml-2">
+                        £{totalAuthorityPayments.toLocaleString()} paid
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription>
+                    Payments made directly to the issuing authority for this fine
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasAuthorityPayments ? (
+                    <div className="space-y-4">
+                      {/* Summary */}
+                      <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total Paid to Authority</p>
+                          <p className="text-xl font-bold text-green-600">£{totalAuthorityPayments.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Remaining Fine Amount</p>
+                          <p className={`text-xl font-bold ${totalAuthorityPayments >= fine.amount ? 'text-green-600' : 'text-orange-600'}`}>
+                            £{Math.max(0, fine.amount - totalAuthorityPayments).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Payments Table */}
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Payment Date</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Method</TableHead>
+                              <TableHead>Notes</TableHead>
+                              <TableHead>Recorded</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {authorityPayments.map((payment) => (
+                              <TableRow key={payment.id}>
+                                <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                                <TableCell className="text-green-600 font-semibold">
+                                  £{Number(payment.amount).toLocaleString()}
+                                </TableCell>
+                                <TableCell>{payment.payment_method || '-'}</TableCell>
+                                <TableCell className="max-w-xs truncate">
+                                  {payment.notes || '-'}
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground">
+                                  {new Date(payment.created_at).toLocaleDateString()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      
+                      {totalAuthorityPayments >= fine.amount && (
+                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                          <span className="text-green-800 font-medium">
+                            Fine fully paid to authority
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Receipt className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No authority payments recorded</h3>
+                      <p className="text-muted-foreground mb-4">
+                        No payments have been recorded as made directly to the issuing authority
+                      </p>
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowAuthorityPaymentDialog(true)}
+                      >
+                        <Receipt className="h-4 w-4 mr-2" />
+                        Record First Payment
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
           )}
         </TabsContent>
       </Tabs>

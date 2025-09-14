@@ -235,7 +235,7 @@ export const EnhancedAssignPlateDialog = ({
                     </FormControl>
                     <SelectContent>
                       {vehiclesLoading ? (
-                        <SelectItem value="" disabled>Loading vehicles...</SelectItem>
+                        <SelectItem value="loading" disabled>Loading vehicles...</SelectItem>
                       ) : vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           <div className="flex items-center justify-between w-full">

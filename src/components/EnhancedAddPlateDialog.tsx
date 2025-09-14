@@ -92,7 +92,7 @@ export const EnhancedAddPlateDialog = ({
     resolver: zodResolver(plateSchema),
     defaultValues: {
       plate_number: editPlate?.plate_number || "",
-      vehicle_id: editPlate?.vehicle_id || preSelectedVehicleId || "",
+      vehicle_id: editPlate?.vehicle_id || preSelectedVehicleId || "none",
       supplier: editPlate?.supplier || "",
       order_date: editPlate?.order_date ? new Date(editPlate.order_date) : undefined,
       cost: editPlate?.cost || 0,
@@ -180,7 +180,7 @@ export const EnhancedAddPlateDialog = ({
       }
 
       // Business rule validations
-      if (data.status === 'assigned' && !data.vehicle_id) {
+      if (data.status === 'assigned' && (!data.vehicle_id || data.vehicle_id === 'none')) {
         form.setError("vehicle_id", { message: "Vehicle is required when status is Assigned" });
         setIsSubmitting(false);
         return;
@@ -216,7 +216,7 @@ export const EnhancedAddPlateDialog = ({
       // Prepare plate data
       const plateData = {
         plate_number: data.plate_number,
-        vehicle_id: data.vehicle_id || null,
+        vehicle_id: data.vehicle_id === 'none' ? null : data.vehicle_id || null,
         supplier: data.supplier || null,
         order_date: data.order_date?.toISOString().split('T')[0] || null,
         cost: data.cost,
@@ -237,7 +237,7 @@ export const EnhancedAddPlateDialog = ({
         if (error) throw error;
 
         // Log update event
-        if (data.vehicle_id) {
+        if (data.vehicle_id && data.vehicle_id !== 'none') {
           await supabase.from("vehicle_events").insert({
             vehicle_id: data.vehicle_id,
             event_type: "expense_added",
@@ -262,7 +262,7 @@ export const EnhancedAddPlateDialog = ({
         if (error) throw error;
 
         // Log creation event
-        if (data.vehicle_id) {
+        if (data.vehicle_id && data.vehicle_id !== 'none') {
           await supabase.from("vehicle_events").insert({
             vehicle_id: data.vehicle_id,
             event_type: "expense_added",
@@ -366,7 +366,7 @@ export const EnhancedAddPlateDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No Vehicle</SelectItem>
+                      <SelectItem value="none">No Vehicle</SelectItem>
                       {vehicles?.map((vehicle) => (
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           {vehicle.reg} - {vehicle.make} {vehicle.model}

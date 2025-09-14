@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,12 +15,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useOrgSettings } from '@/hooks/useOrgSettings';
-import { EnhancedSettingsTest } from '@/components/EnhancedSettingsTest';
+import { ComprehensiveTestingSuite } from '@/components/ComprehensiveTestingSuite';
 
 const Settings = () => {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('company');
   const [isBackfilling, setIsBackfilling] = useState(false);
+  
+  // Handle URL tab parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['company', 'reminders', 'maintenance', 'testing', 'integrations'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   
   // Use the new centralized settings hook
   const {
@@ -498,7 +508,7 @@ const Settings = () => {
 
         {/* Testing Tab */}
         <TabsContent value="testing">
-          <EnhancedSettingsTest />
+          <ComprehensiveTestingSuite />
         </TabsContent>
 
         {/* Integrations Tab */}

@@ -2,14 +2,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarIcon, Plus, TestTube } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 import { DashboardKPICards } from "@/components/DashboardKPICards";
 import { RecentActivity } from "@/components/RecentActivity";
 import { FleetOverview } from "@/components/FleetOverview";
 import { ComplianceOverviewCard } from "@/components/ComplianceOverviewCard";
-import { RentalAcceptanceTest } from "@/components/RentalAcceptanceTest";
-import { FinanceAcceptanceTest } from "@/components/FinanceAcceptanceTest";
-import { DashboardSystemTests } from "@/components/DashboardSystemTests";
 import { useDashboardKPIs } from "@/hooks/useDashboardKPIs";
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
 
@@ -119,13 +116,6 @@ const Dashboard = () => {
       {/* Recent Activity */}
       <div className="grid gap-6">
         <RecentActivity />
-      </div>
-
-      {/* System Tests */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <DashboardSystemTests />
-        <RentalAcceptanceTest />
-        <FinanceAcceptanceTest />
       </div>
     </div>
   );

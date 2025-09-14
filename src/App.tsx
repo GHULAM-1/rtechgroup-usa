@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
@@ -87,7 +87,7 @@ function App() {
             <Route path="/fines/new" element={<Layout><CreateFine /></Layout>} />
             <Route path="/fines/:id" element={<Layout><FineDetail /></Layout>} />
             <Route path="/insurance" element={<Layout><InsuranceListEnhanced /></Layout>} />
-            <Route path="/test" element={<Layout><AcceptanceTestDashboard /></Layout>} />
+            <Route path="/test" element={<Navigate to="/settings?tab=testing" replace />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
             </BrowserRouter>

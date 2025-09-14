@@ -66,11 +66,11 @@ const CustomersList = () => {
       
       const balanceMap: Record<string, CustomerBalance> = {};
       
-      // Get balance for each customer from ledger_entries directly
+      // Get balance for each customer from ledger_entries with proper filtering
       for (const customer of customers) {
         const { data, error } = await supabase
           .from("ledger_entries")
-          .select("amount")
+          .select("amount, type, due_date, payment_id")
           .eq("customer_id", customer.id);
         
         if (error) {
@@ -78,8 +78,36 @@ const CustomersList = () => {
           continue;
         }
         
-        // Calculate balance from ledger entries
-        const balance = data.reduce((sum, entry) => sum + entry.amount, 0);
+        // Get payment types to exclude Initial Fee payments from customer debt
+        const paymentIds = data
+          .filter(entry => entry.payment_id)
+          .map(entry => entry.payment_id);
+        
+        let initialFeePaymentIds: string[] = [];
+        if (paymentIds.length > 0) {
+          const { data: payments } = await supabase
+            .from("payments")
+            .select("id")
+            .in("id", paymentIds)
+            .eq("payment_type", "InitialFee");
+          
+          initialFeePaymentIds = payments?.map(p => p.id) || [];
+        }
+        
+        // Calculate balance with proper filtering
+        const balance = data.reduce((sum, entry) => {
+          // Skip Initial Fee payment entries (they're company revenue, not customer debt)
+          if (entry.payment_id && initialFeePaymentIds.includes(entry.payment_id)) {
+            return sum;
+          }
+          
+          // For charges, only include if currently due
+          if (entry.type === 'Charge' && entry.due_date && new Date(entry.due_date) > new Date()) {
+            return sum;
+          }
+          
+          return sum + entry.amount;
+        }, 0);
         
         // Determine status
         let status: 'In Credit' | 'Settled' | 'In Debt';

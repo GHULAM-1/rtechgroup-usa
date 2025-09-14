@@ -8,16 +8,45 @@ export const useCustomerBalance = (customerId: string | undefined) => {
     queryFn: async () => {
       if (!customerId) return null;
       
-      // Calculate balance directly from ledger_entries
+      // Calculate balance from ledger_entries - only include currently due charges
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("amount")
+        .select("amount, type, due_date, payment_id")
         .eq("customer_id", customerId);
       
       if (error) throw error;
       
-      // Sum all amounts (charges are positive, payments are negative)
-      const balance = data.reduce((sum, entry) => sum + entry.amount, 0);
+      // Get payment types to exclude Initial Fee payments from customer debt
+      const paymentIds = data
+        .filter(entry => entry.payment_id)
+        .map(entry => entry.payment_id);
+      
+      let initialFeePaymentIds: string[] = [];
+      if (paymentIds.length > 0) {
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("id")
+          .in("id", paymentIds)
+          .eq("payment_type", "InitialFee");
+        
+        initialFeePaymentIds = payments?.map(p => p.id) || [];
+      }
+      
+      // Sum amounts with proper filtering
+      const balance = data.reduce((sum, entry) => {
+        // Skip Initial Fee payment entries (they're company revenue, not customer debt)
+        if (entry.payment_id && initialFeePaymentIds.includes(entry.payment_id)) {
+          return sum;
+        }
+        
+        // For charges, only include if currently due
+        if (entry.type === 'Charge' && entry.due_date && new Date(entry.due_date) > new Date()) {
+          return sum;
+        }
+        
+        return sum + entry.amount;
+      }, 0);
+      
       return balance;
     },
     enabled: !!customerId,
@@ -33,18 +62,45 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
       
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("type, amount")
+        .select("type, amount, due_date, payment_id")
         .eq("customer_id", customerId);
       
       if (error) throw error;
       
-      // Calculate totals by type
+      // Get payment types to exclude Initial Fee payments from customer debt
+      const paymentIds = data
+        .filter(entry => entry.payment_id)
+        .map(entry => entry.payment_id);
+      
+      let initialFeePaymentIds: string[] = [];
+      if (paymentIds.length > 0) {
+        const { data: payments } = await supabase
+          .from("payments")
+          .select("id")
+          .in("id", paymentIds)
+          .eq("payment_type", "InitialFee");
+        
+        initialFeePaymentIds = payments?.map(p => p.id) || [];
+      }
+      
+      // Calculate totals by type with proper filtering
       let totalCharges = 0;
       let totalPayments = 0;
       let balance = 0;
       
       data.forEach(entry => {
+        // Skip Initial Fee payment entries (they're company revenue, not customer debt)
+        if (entry.payment_id && initialFeePaymentIds.includes(entry.payment_id)) {
+          return;
+        }
+        
+        // For charges, only include if currently due
+        if (entry.type === 'Charge' && entry.due_date && new Date(entry.due_date) > new Date()) {
+          return;
+        }
+        
         balance += entry.amount;
+        
         if (entry.type === 'Charge') {
           totalCharges += entry.amount;
         } else if (entry.type === 'Payment') {

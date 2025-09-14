@@ -126,11 +126,17 @@ export const EnhancedAddPlateDialog = ({
   const checkPlateUniqueness = async (plateNumber: string): Promise<string | true> => {
     if (!plateNumber || plateNumber === editPlate?.plate_number) return true;
     
-    const { data, error } = await supabase
+    let query = supabase
       .from("plates")
       .select("id")
-      .eq("plate_number", plateNumber.toUpperCase().replace(/\s+/g, ''))
-      .neq("id", editPlate?.id || "");
+      .eq("plate_number", plateNumber.toUpperCase().replace(/\s+/g, ''));
+    
+    // Only apply neq filter when editing an existing plate
+    if (editPlate?.id) {
+      query = query.neq("id", editPlate.id);
+    }
+    
+    const { data, error } = await query;
     
     if (error) return "Error checking plate number";
     return data.length === 0 ? true : "This plate number already exists";

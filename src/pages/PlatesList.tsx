@@ -52,7 +52,7 @@ const PlatesList = () => {
         .from("plates")
         .select(`
           *,
-          vehicles:vehicle_id(id, reg, make, model)
+          vehicles!plates_vehicle_id_fkey(id, reg, make, model)
         `);
       
       // Apply vehicle filter if provided

@@ -22,7 +22,7 @@ export interface OrgSettings {
 export const useOrgSettings = () => {
   const queryClient = useQueryClient();
 
-  // Fetch settings query
+  // Fetch settings query with fallback defaults
   const {
     data: settings,
     isLoading,
@@ -31,24 +31,52 @@ export const useOrgSettings = () => {
   } = useQuery({
     queryKey: ['org-settings'],
     queryFn: async (): Promise<OrgSettings> => {
-      const { data, error } = await supabase.functions.invoke('settings', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log('Fetching org settings...');
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('settings', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (error) {
-        console.error('Settings fetch error:', error);
-        throw new Error(`Failed to fetch settings: ${error.message}`);
+        if (error) {
+          console.error('Settings edge function error:', error);
+          throw new Error(`Settings API error: ${error.message}`);
+        }
+
+        if (!data) {
+          console.error('No data returned from settings function');
+          throw new Error('No settings data received');
+        }
+
+        console.log('Settings loaded successfully:', data);
+        return data;
+      } catch (err) {
+        console.error('Settings fetch failed:', err);
+        throw err;
       }
-
-      return data;
     },
     staleTime: 30 * 1000, // 30 seconds
-    refetchInterval: 60 * 1000, // Refetch every minute
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchInterval: false, // Disable auto-refetch to avoid spam
+    retry: (failureCount, error) => {
+      console.log(`Settings fetch retry ${failureCount}:`, error);
+      return failureCount < 2; // Only retry twice
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+    // Add fallback default settings if fetch fails
+    placeholderData: {
+      org_id: 'placeholder',
+      company_name: 'Fleet Management System',
+      timezone: 'Europe/London',
+      currency_code: 'GBP',
+      date_format: 'DD/MM/YYYY',
+      reminder_due_today: true,
+      reminder_overdue_1d: true,
+      reminder_overdue_multi: true,
+      reminder_due_soon_2d: false,
+    } as OrgSettings,
   });
 
   // Update settings mutation

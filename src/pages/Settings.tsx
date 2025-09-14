@@ -25,6 +25,7 @@ const Settings = () => {
   const {
     settings,
     isLoading,
+    error,
     updateCompanyProfile,
     toggleReminder,
     isUpdating
@@ -129,8 +130,62 @@ const Settings = () => {
     }
   };
 
-  if (isLoading) {
-    return <div>Loading settings...</div>;
+  // Show error state with fallback
+  if (error && !settings) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-foreground">Settings</h1>
+            <p className="text-muted-foreground mt-1">
+              Configure your fleet management system
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              <div>
+                <h3 className="font-medium">Failed to load settings</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {error.message || 'Unable to connect to settings service'}
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Reload Page
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isLoading && !settings) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-foreground">Settings</h1>
+            <p className="text-muted-foreground mt-1">
+              Configure your fleet management system
+            </p>
+          </div>
+        </div>
+        <Card>
+          <CardContent className="p-6 flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span>Loading settings...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   return (

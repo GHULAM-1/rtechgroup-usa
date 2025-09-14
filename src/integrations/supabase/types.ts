@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_users: {
+        Row: {
+          auth_user_id: string
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          must_change_password: boolean
+          name: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+          must_change_password?: boolean
+          name?: string | null
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          must_change_password?: boolean
+          name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       authority_payments: {
         Row: {
           amount: number
@@ -1589,6 +1667,7 @@ export type Database = {
       }
       users: {
         Row: {
+          auth_user_id: string | null
           created_at: string | null
           id: string
           last_login: string | null
@@ -1599,6 +1678,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          auth_user_id?: string | null
           created_at?: string | null
           id?: string
           last_login?: string | null
@@ -1609,6 +1689,7 @@ export type Database = {
           username: string
         }
         Update: {
+          auth_user_id?: string | null
           created_at?: string | null
           id?: string
           last_login?: string | null
@@ -2414,6 +2495,18 @@ export type Database = {
       get_rental_credit: {
         Args: { rental_id_param: string }
         Returns: number
+      }
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: string
+      }
+      has_any_role: {
+        Args: { _roles: string[]; _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: { _role: string; _user_id: string }
+        Returns: boolean
       }
       has_upfront_finance_entry: {
         Args: { v_id: string }

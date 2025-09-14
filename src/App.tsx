@@ -7,6 +7,8 @@ import { ThemeProvider } from "next-themes";
 import { useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthGuard } from "@/components/AuthGuard";
 import Dashboard from "@/pages/Dashboard";
 import VehiclesList from "@/pages/VehiclesList";
 import VehicleDetail from "@/pages/VehicleDetail";
@@ -33,6 +35,8 @@ import CreateFine from "@/pages/CreateFine";
 import FineDetail from "@/pages/FineDetail";
 import RemindersPageNew from "@/pages/RemindersPageNew";
 import InsuranceListEnhanced from "@/pages/InsuranceListEnhanced";
+import Login from "@/pages/Login";
+import UsersManagement from "@/pages/UsersManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,43 +58,46 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SettingsProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout><Dashboard /></Layout>} />
-            <Route path="/vehicles" element={<Layout><VehiclesList /></Layout>} />
-            <Route path="/vehicles/:id" element={<Layout><VehicleDetail /></Layout>} />
-            <Route path="/customers" element={<Layout><CustomersList /></Layout>} />
-            <Route path="/customers/:id" element={<Layout><CustomerDetail /></Layout>} />
-            <Route path="/rentals" element={<Layout><RentalsList /></Layout>} />
-            <Route path="/rentals/new" element={<Layout><CreateRental /></Layout>} />
-            <Route path="/rentals/:id" element={<Layout><RentalDetail /></Layout>} />
-            <Route path="/payments" element={<Layout><PaymentsList /></Layout>} />
-            <Route path="/payments/:id" element={<Layout><PaymentDetail /></Layout>} />
-            <Route path="/charges" element={<Layout><ChargesList /></Layout>} />
-            <Route path="/plates" element={<Layout><PlatesListEnhanced /></Layout>} />
-            <Route path="/plates/:id" element={<Layout><PlateDetail /></Layout>} />
-            <Route path="/pl-dashboard" element={<Layout><PLDashboard /></Layout>} />
-            <Route path="/pl-dashboard/monthly/:month" element={<Layout><MonthlyPLDrilldown /></Layout>} />
-            <Route path="/reminders-new" element={<Layout><RemindersPageNew /></Layout>} />
-            <Route path="/reminders" element={<Layout><RemindersPageEnhanced /></Layout>} />
-            <Route path="/settings/reminders" element={<Layout><ReminderSettings /></Layout>} />
-            <Route path="/reports" element={<Layout><Reports /></Layout>} />
-            <Route path="/settings" element={<Layout><Settings /></Layout>} />
-            <Route path="/fines-old" element={<Layout><FinesPage /></Layout>} />
-            <Route path="/fines" element={<Layout><FinesList /></Layout>} />
-            <Route path="/fines/new" element={<Layout><CreateFine /></Layout>} />
-            <Route path="/fines/:id" element={<Layout><FineDetail /></Layout>} />
-            <Route path="/insurance" element={<Layout><InsuranceListEnhanced /></Layout>} />
+      <AuthProvider>
+        <SettingsProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<AuthGuard><Layout><Dashboard /></Layout></AuthGuard>} />
+            <Route path="/vehicles" element={<AuthGuard><Layout><VehiclesList /></Layout></AuthGuard>} />
+            <Route path="/vehicles/:id" element={<AuthGuard><Layout><VehicleDetail /></Layout></AuthGuard>} />
+            <Route path="/customers" element={<AuthGuard><Layout><CustomersList /></Layout></AuthGuard>} />
+            <Route path="/customers/:id" element={<AuthGuard><Layout><CustomerDetail /></Layout></AuthGuard>} />
+            <Route path="/rentals" element={<AuthGuard><Layout><RentalsList /></Layout></AuthGuard>} />
+            <Route path="/rentals/new" element={<AuthGuard><Layout><CreateRental /></Layout></AuthGuard>} />
+            <Route path="/rentals/:id" element={<AuthGuard><Layout><RentalDetail /></Layout></AuthGuard>} />
+            <Route path="/payments" element={<AuthGuard><Layout><PaymentsList /></Layout></AuthGuard>} />
+            <Route path="/payments/:id" element={<AuthGuard><Layout><PaymentDetail /></Layout></AuthGuard>} />
+            <Route path="/charges" element={<AuthGuard><Layout><ChargesList /></Layout></AuthGuard>} />
+            <Route path="/plates" element={<AuthGuard><Layout><PlatesListEnhanced /></Layout></AuthGuard>} />
+            <Route path="/plates/:id" element={<AuthGuard><Layout><PlateDetail /></Layout></AuthGuard>} />
+            <Route path="/pl-dashboard" element={<AuthGuard><Layout><PLDashboard /></Layout></AuthGuard>} />
+            <Route path="/pl-dashboard/monthly/:month" element={<AuthGuard><Layout><MonthlyPLDrilldown /></Layout></AuthGuard>} />
+            <Route path="/reminders-new" element={<AuthGuard><Layout><RemindersPageNew /></Layout></AuthGuard>} />
+            <Route path="/reminders" element={<AuthGuard><Layout><RemindersPageEnhanced /></Layout></AuthGuard>} />
+            <Route path="/settings/reminders" element={<AuthGuard><Layout><ReminderSettings /></Layout></AuthGuard>} />
+            <Route path="/reports" element={<AuthGuard><Layout><Reports /></Layout></AuthGuard>} />
+            <Route path="/settings" element={<AuthGuard><Layout><Settings /></Layout></AuthGuard>} />
+            <Route path="/settings/users" element={<AuthGuard requiredRoles={['head_admin']}><Layout><UsersManagement /></Layout></AuthGuard>} />
+            <Route path="/fines-old" element={<AuthGuard><Layout><FinesPage /></Layout></AuthGuard>} />
+            <Route path="/fines" element={<AuthGuard><Layout><FinesList /></Layout></AuthGuard>} />
+            <Route path="/fines/new" element={<AuthGuard><Layout><CreateFine /></Layout></AuthGuard>} />
+            <Route path="/fines/:id" element={<AuthGuard><Layout><FineDetail /></Layout></AuthGuard>} />
+            <Route path="/insurance" element={<AuthGuard><Layout><InsuranceListEnhanced /></Layout></AuthGuard>} />
             <Route path="/test" element={<Navigate to="/settings?tab=testing" replace />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
@@ -98,6 +105,7 @@ function App() {
           </TooltipProvider>
         </ThemeProvider>
       </SettingsProvider>
+    </AuthProvider>
     </QueryClientProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { HeaderSearch } from "./HeaderSearch";
+import { UserMenu } from "./UserMenu";
 import { AppSidebar } from "./AppSidebar";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 
@@ -17,8 +18,9 @@ export const Layout = ({ children }: LayoutProps) => {
         <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
           <HeaderSearch />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
+            <UserMenu />
           </div>
         </header>
         

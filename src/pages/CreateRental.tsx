@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { addMonths, isAfter, isBefore, subYears } from "date-fns";
+import { addMonths, isAfter, isBefore, subYears, startOfDay } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ const CreateRental = () => {
   const [submitError, setSubmitError] = useState<string>("");
 
   const today = new Date();
+  const todayAtMidnight = startOfDay(today);
   const defaultEndDate = addMonths(today, 12); // 12 months from today
 
   const form = useForm<RentalFormData>({
@@ -230,7 +231,7 @@ const CreateRental = () => {
   const yearAgo = subYears(new Date(), 1);
   
   // Check if start date is in the past
-  const isPastStartDate = watchedValues.start_date && isBefore(watchedValues.start_date, today);
+  const isPastStartDate = watchedValues.start_date && isBefore(watchedValues.start_date, todayAtMidnight);
 
   return (
     <div className="space-y-6">

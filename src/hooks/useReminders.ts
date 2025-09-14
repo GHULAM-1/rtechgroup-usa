@@ -120,47 +120,49 @@ export function useReminderStats() {
       const today = new Date().toISOString().split('T')[0];
       
       // Get counts for different reminder states
-      const { data: pendingCount, error: pendingError } = await supabase
+      const { count: pendingCount, error: pendingError } = await supabase
         .from('reminders')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'pending')
         .lte('remind_on', today);
 
-      const { data: snoozedDueCount, error: snoozedError } = await supabase
+      const { count: snoozedDueCount, error: snoozedError } = await supabase
         .from('reminders')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('status', 'snoozed')
         .lte('snooze_until', today);
 
-      const { data: criticalCount, error: criticalError } = await supabase
+      const { count: criticalCount, error: criticalError } = await supabase
         .from('reminders')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('severity', 'critical')
         .in('status', ['pending', 'sent'])
         .lte('remind_on', today);
 
-      const { data: totalActiveCount, error: totalError } = await supabase
+      const { count: totalActiveCount, error: totalError } = await supabase
         .from('reminders')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .in('status', ['pending', 'sent', 'snoozed']);
 
       if (pendingError || snoozedError || criticalError || totalError) {
-        console.error('Error fetching reminder stats');
+        console.error('Error fetching reminder stats:', { pendingError, snoozedError, criticalError, totalError });
         throw new Error('Failed to fetch reminder stats');
       }
 
-      const pendingDue = (pendingCount?.length || 0);
-      const snoozedDue = (snoozedDueCount?.length || 0);
+      const pendingDue = pendingCount || 0;
+      const snoozedDue = snoozedDueCount || 0;
       const due = pendingDue + snoozedDue;
 
       return {
-        total: totalActiveCount?.length || 0,
+        total: totalActiveCount || 0,
         due: due,
-        critical: criticalCount?.length || 0,
+        critical: criticalCount || 0,
         pending: pendingDue,
         snoozed: snoozedDue
       };
     },
+    staleTime: 30 * 1000, // Cache for 30 seconds
+    refetchInterval: 60 * 1000, // Refetch every minute
   });
 }
 
@@ -180,32 +182,52 @@ export function useReminderActions() {
       snoozeUntil?: string; 
       note?: string;
     }) => {
+      console.log('Updating reminder:', { id, status, snoozeUntil, note });
+      
       const updateData: any = { status };
       if (snoozeUntil) {
         updateData.snooze_until = snoozeUntil;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('reminders')
         .update(updateData)
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
       if (error) {
-        throw new Error('Failed to update reminder');
+        console.error('Failed to update reminder:', error);
+        throw new Error(`Failed to update reminder: ${error.message}`);
       }
 
-      // Log the action
-      await supabase
-        .from('reminder_actions')
-        .insert({
-          reminder_id: id,
-          action: status,
-          note: note || `Reminder marked as ${status}`
-        });
+      console.log('Reminder updated successfully:', data);
+
+      // Log the action - with better error handling
+      try {
+        const { data: actionData, error: actionError } = await supabase
+          .from('reminder_actions')
+          .insert({
+            reminder_id: id,
+            action: status,
+            note: note || `Reminder marked as ${status}`
+          })
+          .select();
+
+        if (actionError) {
+          console.error('Failed to log reminder action:', actionError);
+          // Don't throw here - the main action succeeded
+        } else {
+          console.log('Action logged successfully:', actionData);
+        }
+      } catch (actionErr) {
+        console.error('Error logging action:', actionErr);
+        // Continue - main action succeeded
+      }
 
       return { id, status };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Mutation successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['reminders'] });
       queryClient.invalidateQueries({ queryKey: ['reminder-stats'] });
       toast({
@@ -214,6 +236,7 @@ export function useReminderActions() {
       });
     },
     onError: (error) => {
+      console.error('Mutation failed:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -255,34 +278,54 @@ export function useReminderActions() {
       snoozeUntil?: string;
       note?: string;
     }) => {
+      console.log('Bulk updating reminders:', { ids, action, snoozeUntil, note });
+      
       const updateData: any = { status: action };
       if (snoozeUntil) {
         updateData.snooze_until = snoozeUntil;
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('reminders')
         .update(updateData)
-        .in('id', ids);
+        .in('id', ids)
+        .select();
 
       if (error) {
-        throw new Error('Failed to update reminders');
+        console.error('Failed to bulk update reminders:', error);
+        throw new Error(`Failed to update reminders: ${error.message}`);
       }
 
-      // Log actions for each reminder
-      const actions = ids.map(id => ({
-        reminder_id: id,
-        action: action,
-        note: note || `Bulk ${action} operation`
-      }));
+      console.log('Bulk update successful:', data);
 
-      await supabase
-        .from('reminder_actions')
-        .insert(actions);
+      // Log actions for each reminder - with better error handling
+      try {
+        const actions = ids.map(id => ({
+          reminder_id: id,
+          action: action,
+          note: note || `Bulk ${action} operation`
+        }));
+
+        const { data: actionData, error: actionError } = await supabase
+          .from('reminder_actions')
+          .insert(actions)
+          .select();
+
+        if (actionError) {
+          console.error('Failed to log bulk actions:', actionError);
+          // Don't throw - main operation succeeded
+        } else {
+          console.log('Bulk actions logged successfully:', actionData);
+        }
+      } catch (actionErr) {
+        console.error('Error logging bulk actions:', actionErr);
+        // Continue - main operation succeeded
+      }
 
       return { ids, action };
     },
     onSuccess: (data) => {
+      console.log('Bulk mutation successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['reminders'] });
       queryClient.invalidateQueries({ queryKey: ['reminder-stats'] });
       toast({
@@ -291,6 +334,7 @@ export function useReminderActions() {
       });
     },
     onError: (error) => {
+      console.error('Bulk mutation failed:', error);
       toast({
         title: "Error",
         description: error.message,

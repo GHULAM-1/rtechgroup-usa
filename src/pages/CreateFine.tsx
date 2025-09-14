@@ -50,31 +50,76 @@ const CreateFine = () => {
     },
   });
 
-  // Get vehicles and customers for form dropdowns
-  const { data: vehicles } = useQuery({
-    queryKey: ["vehicles-for-fine"],
+  // Fetch active rentals for customer-vehicle sync
+  const { data: activeRentals } = useQuery({
+    queryKey: ["active-rentals"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("vehicles")
-        .select("id, reg, make, model")
-        .order("reg");
+        .from("rentals")
+        .select(`
+          id,
+          customer_id,
+          vehicle_id,
+          customers!inner(id, name),
+          vehicles!inner(id, reg, make, model)
+        `)
+        .eq("status", "Active")
+        .order("customers(name)");
+
       if (error) throw error;
-      return data;
+
+      return data.map(rental => ({
+        rental_id: rental.id,
+        customer_id: rental.customer_id,
+        customer_name: (rental.customers as any).name,
+        vehicle_id: rental.vehicle_id,
+        vehicle_reg: (rental.vehicles as any).reg,
+        vehicle_make: (rental.vehicles as any).make,
+        vehicle_model: (rental.vehicles as any).model,
+      }));
     },
   });
 
-  const { data: customers } = useQuery({
-    queryKey: ["customers-for-fine"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("customers")
-        .select("id, name")
-        .eq("status", "Active")
-        .order("name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const selectedCustomerId = form.watch("customer_id");
+  const selectedVehicleId = form.watch("vehicle_id");
+
+  // Get unique customers from active rentals
+  const customers = activeRentals?.reduce((acc, rental) => {
+    if (!acc.find(c => c.id === rental.customer_id)) {
+      acc.push({
+        id: rental.customer_id,
+        name: rental.customer_name,
+      });
+    }
+    return acc;
+  }, [] as Array<{ id: string; name: string }>);
+
+  // Get vehicles filtered by selected customer
+  const availableVehicles = selectedCustomerId
+    ? activeRentals?.filter(rental => rental.customer_id === selectedCustomerId)
+    : activeRentals;
+
+  // Handle customer selection - auto-select vehicle if only one option
+  const handleCustomerChange = (customerId: string) => {
+    form.setValue("customer_id", customerId);
+    const customerVehicles = activeRentals?.filter(rental => rental.customer_id === customerId);
+    
+    if (customerVehicles?.length === 1) {
+      form.setValue("vehicle_id", customerVehicles[0].vehicle_id);
+    } else {
+      form.setValue("vehicle_id", "");
+    }
+  };
+
+  // Handle vehicle selection - auto-select customer
+  const handleVehicleChange = (vehicleId: string) => {
+    form.setValue("vehicle_id", vehicleId);
+    const rental = activeRentals?.find(rental => rental.vehicle_id === vehicleId);
+    
+    if (rental) {
+      form.setValue("customer_id", rental.customer_id);
+    }
+  };
 
   const createFineMutation = useMutation({
     mutationFn: async (data: FineFormData) => {
@@ -222,16 +267,17 @@ const CreateFine = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Vehicle *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={handleVehicleChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select vehicle" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {vehicles?.map((vehicle) => (
-                            <SelectItem key={vehicle.id} value={vehicle.id}>
-                              {vehicle.reg} ({vehicle.make} {vehicle.model})
+                          {availableVehicles?.map((rental) => (
+                            <SelectItem key={rental.vehicle_id} value={rental.vehicle_id}>
+                              {rental.vehicle_reg} ({rental.vehicle_make} {rental.vehicle_model})
+                              {!selectedCustomerId && ` - ${rental.customer_name}`}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -250,7 +296,7 @@ const CreateFine = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Customer *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <Select onValueChange={handleCustomerChange} value={field.value || ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select customer" />

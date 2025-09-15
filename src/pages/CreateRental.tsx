@@ -58,7 +58,7 @@ const CreateRental = () => {
       monthly_amount: undefined,
       initial_fee: undefined,
     },
-    mode: "onBlur", // Validate on blur for better UX
+    mode: "onChange", // Validate on change for real-time feedback
   });
 
   // Watch form values for live updates
@@ -227,7 +227,7 @@ const CreateRental = () => {
   };
 
   // Form validation state
-  const isFormValid = form.formState.isValid && !form.formState.isValidating;
+  const isFormValid = form.formState.isValid;
   const yearAgo = subYears(new Date(), 1);
   
   // Check if start date is in the past

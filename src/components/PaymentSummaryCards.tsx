@@ -40,27 +40,27 @@ export const PaymentSummaryCards = () => {
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <Card>
+      <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40 transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Today's Payments</CardTitle>
-          <CreditCard className="h-4 w-4 text-muted-foreground" />
+          <CreditCard className="h-4 w-4 text-success" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">£{summaryData?.todaysTotal?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}</div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40 transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">This Month</CardTitle>
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <TrendingUp className="h-4 w-4 text-success" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">£{summaryData?.monthsTotal?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}</div>
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-card hover:bg-accent/50 border shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Payment Count</CardTitle>
           <Hash className="h-4 w-4 text-muted-foreground" />

@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,8 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
+  const navigate = useNavigate();
+  
   // Calculate operational profit (revenue minus operational costs, excluding acquisition)
   const operationalProfit = pl ? Number(pl.total_revenue) - Number(pl.total_costs) : 0;
   const isOperationalProfit = operationalProfit > 0;
@@ -45,8 +48,12 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
   const totalPL = operationalProfit - (vehicle.purchase_price || 0);
   const isTotalProfit = totalPL > 0;
 
+  const handleClick = () => {
+    navigate(`/vehicles/${vehicle.id}`);
+  };
+
   return (
-    <Card className="card-hover shadow-card transition-all duration-300 hover:scale-102 cursor-pointer">
+    <Card className="card-hover shadow-card transition-all duration-300 hover:scale-102 cursor-pointer" onClick={handleClick}>
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 min-w-0 flex-1">

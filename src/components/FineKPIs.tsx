@@ -72,10 +72,10 @@ export const FineKPIs = () => {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
+      <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:border-warning/40 transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Open Fines</CardTitle>
-          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <AlertTriangle className="h-4 w-4 text-warning" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{kpiData?.openFines || 0}</div>
@@ -85,10 +85,10 @@ export const FineKPIs = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Outstanding Amount</CardTitle>
-          <PoundSterling className="h-4 w-4 text-muted-foreground" />
+          <PoundSterling className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">£{kpiData?.outstandingAmount?.toLocaleString() || 0}</div>
@@ -98,10 +98,10 @@ export const FineKPIs = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:border-warning/40 transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Due This Week</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <Calendar className="h-4 w-4 text-warning" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{kpiData?.dueThisWeek || 0}</div>
@@ -111,10 +111,10 @@ export const FineKPIs = () => {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-200 cursor-pointer hover:shadow-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-          <Clock className="h-4 w-4 text-muted-foreground" />
+          <Clock className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-destructive">{kpiData?.overdue || 0}</div>

@@ -37,8 +37,13 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
-  const netProfit = pl ? Number(pl.total_revenue) - Number(pl.total_costs) : 0;
-  const isProfit = netProfit > 0;
+  // Calculate operational profit (revenue minus operational costs, excluding acquisition)
+  const operationalProfit = pl ? Number(pl.total_revenue) - Number(pl.total_costs) : 0;
+  const isOperationalProfit = operationalProfit > 0;
+  
+  // Total P&L including acquisition cost
+  const totalPL = operationalProfit - (vehicle.purchase_price || 0);
+  const isTotalProfit = totalPL > 0;
 
   return (
     <Card className="card-hover shadow-card transition-all duration-300 hover:scale-102 cursor-pointer">
@@ -49,8 +54,12 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
               <Car className="h-4 w-4 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-base sm:text-lg font-semibold truncate">{vehicle.reg}</CardTitle>
-              <CardDescription className="text-xs sm:text-sm truncate">{vehicle.make} {vehicle.model}</CardDescription>
+              <CardTitle className="text-base sm:text-lg font-semibold truncate" title={vehicle.reg}>
+                {vehicle.reg || 'No Registration'}
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm truncate" title={`${vehicle.make} ${vehicle.model}`}>
+                {vehicle.make} {vehicle.model}
+              </CardDescription>
             </div>
           </div>
           <div className="shrink-0">
@@ -58,31 +67,53 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-2 text-xs sm:text-sm">
         <div className="flex justify-between items-center">
-          <span className="text-metadata text-muted-foreground">Acquisition</span>
+          <span className="text-muted-foreground">Acquisition</span>
           <span className="font-medium">£{(vehicle.purchase_price || 0).toLocaleString()}</span>
         </div>
-        {pl && (
+        {pl ? (
           <>
             <div className="flex justify-between items-center">
-              <span className="text-metadata text-muted-foreground">Revenue</span>
-              <span className="font-medium text-green-600">£{Number(pl.total_revenue).toLocaleString()}</span>
+              <span className="text-muted-foreground">Revenue</span>
+              <span className="font-medium text-emerald-600">£{Number(pl.total_revenue).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-metadata text-muted-foreground">Net P&L</span>
+              <span className="text-muted-foreground">Op. Costs</span>
+              <span className="font-medium text-orange-600">£{Number(pl.total_costs).toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Op. Profit</span>
               <div className="flex items-center gap-1">
-                {isProfit ? (
-                  <TrendingUp className="h-3 w-3 text-green-600" />
+                {isOperationalProfit ? (
+                  <TrendingUp className="h-3 w-3 text-emerald-600" />
                 ) : (
                   <TrendingDown className="h-3 w-3 text-red-600" />
                 )}
-                <span className={`font-medium ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-                  £{Math.abs(netProfit).toLocaleString()}
+                <span className={`font-medium ${isOperationalProfit ? 'text-emerald-600' : 'text-red-600'}`}>
+                  £{Math.abs(operationalProfit).toLocaleString()}
+                </span>
+              </div>
+            </div>
+            <hr className="border-border/50" />
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground font-medium">Total P&L</span>
+              <div className="flex items-center gap-1">
+                {isTotalProfit ? (
+                  <TrendingUp className="h-4 w-4 text-emerald-600" />
+                ) : (
+                  <TrendingDown className="h-4 w-4 text-red-600" />
+                )}
+                <span className={`font-semibold ${isTotalProfit ? 'text-emerald-600' : 'text-red-600'}`}>
+                  £{Math.abs(totalPL).toLocaleString()}
                 </span>
               </div>
             </div>
           </>
+        ) : (
+          <div className="text-center py-2">
+            <span className="text-muted-foreground text-xs">No P&L data available</span>
+          </div>
         )}
       </CardContent>
     </Card>

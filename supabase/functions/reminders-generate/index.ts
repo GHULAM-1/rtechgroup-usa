@@ -311,6 +311,22 @@ serve(async (req) => {
           remindDate.setDate(motDate.getDate() - bestRule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];
 
+          // Check if reminder already exists and is snoozed - if so, don't overwrite
+          const { data: existingReminder } = await supabase
+            .from('reminders')
+            .select('id, status')
+            .eq('rule_code', bestRule.rule_code)
+            .eq('object_type', 'Vehicle')
+            .eq('object_id', vehicle.id)
+            .eq('due_on', vehicle.mot_due_date)
+            .eq('remind_on', remindDateStr)
+            .single();
+
+          // Skip if reminder exists and is snoozed
+          if (existingReminder && existingReminder.status === 'snoozed') {
+            continue;
+          }
+
           const { error: reminderError } = await supabase
             .from('reminders')
             .upsert({
@@ -367,6 +383,22 @@ serve(async (req) => {
           remindDate.setDate(taxDate.getDate() - bestRule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];
 
+          // Check if reminder already exists and is snoozed - if so, don't overwrite
+          const { data: existingReminder } = await supabase
+            .from('reminders')
+            .select('id, status')
+            .eq('rule_code', bestRule.rule_code)
+            .eq('object_type', 'Vehicle')
+            .eq('object_id', vehicle.id)
+            .eq('due_on', vehicle.tax_due_date)
+            .eq('remind_on', remindDateStr)
+            .single();
+
+          // Skip if reminder exists and is snoozed
+          if (existingReminder && existingReminder.status === 'snoozed') {
+            continue;
+          }
+
           const { error: reminderError } = await supabase
             .from('reminders')
             .upsert({
@@ -409,6 +441,22 @@ serve(async (req) => {
               due_date: vehicle.acquisition_date,
               days_until: daysSinceAcquisition
             };
+
+            // Check if reminder already exists and is snoozed - if so, don't overwrite
+            const { data: existingReminder } = await supabase
+              .from('reminders')
+              .select('id, status')
+              .eq('rule_code', rule.rule_code)
+              .eq('object_type', 'Vehicle')
+              .eq('object_id', vehicle.id)
+              .eq('due_on', today)
+              .eq('remind_on', remindDateStr)
+              .single();
+
+            // Skip if reminder exists and is snoozed
+            if (existingReminder && existingReminder.status === 'snoozed') {
+              continue;
+            }
 
             const { error: reminderError } = await supabase
               .from('reminders')
@@ -480,6 +528,22 @@ serve(async (req) => {
             if (reminderDate >= today) {
               const reminderDateStr = reminderDate.toISOString().split('T')[0];
               const verificationDateStr = nextVerificationDate.toISOString().split('T')[0];
+
+              // Check if reminder already exists and is snoozed - if so, don't overwrite
+              const { data: existingReminder } = await supabase
+                .from('reminders')
+                .select('id, status')
+                .eq('rule_code', verificationRule.rule_code)
+                .eq('object_type', 'Rental')
+                .eq('object_id', rental.id)
+                .eq('due_on', verificationDateStr)
+                .eq('remind_on', reminderDateStr)
+                .single();
+
+              // Skip if reminder exists and is snoozed
+              if (existingReminder && existingReminder.status === 'snoozed') {
+                continue;
+              }
 
               const { error: reminderError } = await supabase
                 .from('reminders')
@@ -554,6 +618,22 @@ serve(async (req) => {
             oldest_due_date: oldestCharge.due_date,
             days_overdue: daysSinceOldest
           };
+
+          // Check if reminder already exists and is snoozed - if so, don't overwrite
+          const { data: existingReminder } = await supabase
+            .from('reminders')
+            .select('id, status')
+            .eq('rule_code', appropriateRule.rule_code)
+            .eq('object_type', 'Rental')
+            .eq('object_id', rentalId)
+            .eq('due_on', oldestCharge.due_date)
+            .eq('remind_on', today)
+            .single();
+
+          // Skip if reminder exists and is snoozed
+          if (existingReminder && existingReminder.status === 'snoozed') {
+            continue;
+          }
 
           const { error: reminderError } = await supabase
             .from('reminders')

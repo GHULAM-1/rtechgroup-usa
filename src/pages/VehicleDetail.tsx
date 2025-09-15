@@ -28,7 +28,7 @@ import { AddServiceRecordDialog } from "@/components/AddServiceRecordDialog";
 import { ServiceHistoryTable } from "@/components/ServiceHistoryTable";
 import { LastServiceCard } from "@/components/LastServiceCard";
 import { EnhancedVehiclePlatesPanel } from "@/components/EnhancedVehiclePlatesPanel";
-import { EditVehicleDialog } from "@/components/EditVehicleDialog";
+import { EditVehicleDialogEnhanced as EditVehicleDialog } from "@/components/EditVehicleDialogEnhanced";
 import { VehicleExpenseDialog } from "@/components/VehicleExpenseDialog";
 import { VehicleFileUpload } from "@/components/VehicleFileUpload";
 import { VehicleCompliancePanel } from "@/components/VehicleCompliancePanel";

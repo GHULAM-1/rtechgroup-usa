@@ -24,7 +24,10 @@ interface MetricItemProps {
 
 export function MetricCard({ title, icon: Icon, children, className, badge }: MetricCardProps) {
   return (
-    <Card className={cn("min-h-[180px] flex flex-col", className)}>
+    <Card className={cn(
+      "min-h-[180px] flex flex-col bg-card hover:bg-accent/50 border transition-all duration-200 cursor-pointer hover:shadow-md",
+      className
+    )}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           {Icon && <Icon className="h-4 w-4" />}

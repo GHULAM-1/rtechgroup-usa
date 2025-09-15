@@ -529,11 +529,20 @@ const PLDashboard: React.FC = () => {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {summaryCards.map((card, index) => (
-          <Card key={index} className="shadow-sm">
+          <Card key={index} className={cn(
+            "shadow-sm transition-all duration-200 cursor-pointer hover:shadow-md",
+            card.title === 'Revenue' ? "bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40" :
+            card.title === 'Costs' ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:border-warning/40" :
+            card.title === 'Net Profit' && card.trend === 'positive' ? "bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40" :
+            card.title === 'Net Profit' && card.trend === 'negative' ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20 hover:border-destructive/40" :
+            "bg-card hover:bg-accent/50 border"
+          )}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <card.icon className={cn(
                 "h-4 w-4",
+                card.title === 'Revenue' ? "text-success" :
+                card.title === 'Costs' ? "text-warning" :
                 card.title === 'Net Profit' && card.trend === 'positive' ? "text-success" :
                 card.title === 'Net Profit' && card.trend === 'negative' ? "text-destructive" :
                 "text-muted-foreground"

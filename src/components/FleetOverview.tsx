@@ -43,17 +43,19 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
   return (
     <Card className="card-hover shadow-card transition-all duration-300 hover:scale-102 cursor-pointer">
       <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
               <Car className="h-4 w-4 text-primary" />
             </div>
-            <div>
-              <CardTitle className="text-lg font-semibold">{vehicle.reg}</CardTitle>
-              <CardDescription className="text-metadata">{vehicle.make} {vehicle.model}</CardDescription>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-base sm:text-lg font-semibold truncate">{vehicle.reg}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm truncate">{vehicle.make} {vehicle.model}</CardDescription>
             </div>
           </div>
-          <StatusBadge status={vehicle.status} />
+          <div className="shrink-0">
+            <StatusBadge status={vehicle.status} />
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
@@ -155,7 +157,7 @@ export const FleetOverview = () => {
       </CardHeader>
       <CardContent>
         {vehicles && vehicles.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {vehicles.map((vehicle) => (
               <VehicleCard 
                 key={vehicle.id} 

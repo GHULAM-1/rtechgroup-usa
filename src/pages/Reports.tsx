@@ -294,14 +294,14 @@ const Reports = () => {
         </Button>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Filters Sidebar */}
-        <div className="w-80 flex-shrink-0">
+        <div className="w-full lg:w-80 lg:flex-shrink-0">
           <FilterSidebar filters={filters} onFiltersChange={setFilters} />
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {!selectedReport ? (
             <>
               {showAgingDetail ? (
@@ -332,7 +332,7 @@ const Reports = () => {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {reportCards.map((report) => (
                       <ReportCard
                         key={report.id}

@@ -48,36 +48,37 @@ export function ComplianceOverviewCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="min-w-0 flex-1">
             <CardTitle className="text-sm">Fleet Compliance</CardTitle>
-            <CardDescription>Overall compliance status</CardDescription>
+            <CardDescription className="text-xs">Overall compliance status</CardDescription>
           </div>
-          <Badge variant={getStatusColor()} className="flex items-center gap-1">
+          <Badge variant={getStatusColor()} className="flex items-center gap-1 shrink-0 self-start sm:self-auto">
             {getStatusIcon()}
-            {getStatusText()}
+            <span className="hidden xs:inline">{getStatusText()}</span>
+            <span className="xs:hidden">{getStatusText().split(' ')[0]}</span>
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold text-destructive">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-destructive truncate">
               {stats?.critical || 0}
             </div>
-            <div className="text-xs text-muted-foreground">Critical</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Critical</div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-primary">
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-primary truncate">
               {stats?.due || 0}
             </div>
-            <div className="text-xs text-muted-foreground">Due Today</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Due Today</div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-muted-foreground">
+          <div className="min-w-0">
+            <div className="text-lg sm:text-2xl font-bold text-muted-foreground truncate">
               {stats?.total || 0}
             </div>
-            <div className="text-xs text-muted-foreground">Total Active</div>
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Total Active</div>
           </div>
         </div>
         

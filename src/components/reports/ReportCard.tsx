@@ -42,28 +42,30 @@ export const ReportCard: React.FC<ReportCardProps> = ({
       )}
       onClick={onClick}
     >
-      <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-        <div className="flex items-center space-x-2">
-          <div className="p-2 rounded-md bg-primary/10">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between space-y-2 sm:space-y-0 pb-3">
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <div className="p-2 rounded-md bg-primary/10 shrink-0">
             <Icon className="h-4 w-4 text-primary" />
           </div>
-          <CardTitle className="text-sm font-semibold">{title}</CardTitle>
+          <CardTitle className="text-sm font-semibold truncate">{title}</CardTitle>
         </div>
       </CardHeader>
       
       <CardContent className="space-y-3">
-        <div>
-          <div className="text-2xl font-bold text-foreground">{value}</div>
-          <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+        <div className="min-w-0">
+          <div className="text-lg sm:text-2xl font-bold text-foreground truncate" title={value}>{value}</div>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate" title={subtitle}>{subtitle}</p>
         </div>
         
         {metadata && (
-          <Badge variant="secondary" className="text-xs">
-            {metadata}
-          </Badge>
+          <div className="flex flex-wrap gap-1">
+            <Badge variant="secondary" className="text-[10px] sm:text-xs truncate max-w-full" title={metadata}>
+              {metadata}
+            </Badge>
+          </div>
         )}
         
-        <CardDescription className="text-xs line-clamp-2">
+        <CardDescription className="text-[10px] sm:text-xs line-clamp-2">
           {description}
         </CardDescription>
         

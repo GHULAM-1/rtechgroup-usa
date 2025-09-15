@@ -67,6 +67,35 @@ function formatDate(date: Date): string {
   return format(date, 'yyyy-MM-dd');
 }
 
+// Smart rule selection: pick the most appropriate rule based on days remaining
+function selectBestRule(daysUntilDue: number, rulePrefix: string): ReminderRule | null {
+  const rules = REMINDER_SOURCES.find(s => s.type === 'Vehicle')?.rules.filter(r => r.code.includes(rulePrefix)) || [];
+  
+  // Sort rules by leadDays descending (30, 14, 7, 0)
+  const sortedRules = rules.sort((a, b) => b.leadDays - a.leadDays);
+  
+  // Select the most appropriate rule based on days remaining
+  for (const rule of sortedRules) {
+    if (daysUntilDue >= rule.leadDays) {
+      return rule;
+    }
+  }
+  
+  // If overdue (negative days), use the 0D rule
+  return rules.find(r => r.leadDays === 0) || null;
+}
+
+// Clean up duplicate reminders for a specific vehicle and event type
+async function cleanupDuplicateReminders(vehicleId: string, eventType: 'MOT' | 'TAX'): Promise<void> {
+  await supabase
+    .from('reminders')
+    .delete()
+    .eq('object_type', 'Vehicle')
+    .eq('object_id', vehicleId)
+    .like('rule_code', `%${eventType}%`)
+    .in('status', ['pending', 'snoozed']);
+}
+
 export async function generateVehicleReminders(): Promise<number> {
   let generated = 0;
   const today = getToday();
@@ -84,14 +113,21 @@ export async function generateVehicleReminders(): Promise<number> {
   }
   
   for (const vehicle of vehicles || []) {
-    // MOT reminders
+    // MOT reminders - smart rule selection
     if (vehicle.mot_due_date) {
       const motDate = parseISO(vehicle.mot_due_date);
-      const rules = REMINDER_SOURCES.find(s => s.type === 'Vehicle')?.rules.filter(r => r.code.includes('MOT')) || [];
+      const daysUntilDue = Math.ceil((motDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
-      for (const rule of rules) {
-        const remindDate = subDays(motDate, rule.leadDays);
+      // Clean up existing MOT reminders first
+      await cleanupDuplicateReminders(vehicle.id, 'MOT');
+      
+      // Select the best rule based on days remaining
+      const bestRule = selectBestRule(daysUntilDue, 'MOT');
+      
+      if (bestRule) {
+        const remindDate = subDays(motDate, bestRule.leadDays);
         
+        // Only create if remind date has passed
         if (format(remindDate, 'yyyy-MM-dd') <= formatDate(today)) {
           const context: ReminderContext = {
             vehicle_id: vehicle.id,
@@ -99,18 +135,18 @@ export async function generateVehicleReminders(): Promise<number> {
             make: vehicle.make,
             model: vehicle.model,
             due_date: vehicle.mot_due_date,
-            days_until: rule.leadDays
+            days_until: Math.max(0, daysUntilDue)
           };
           
           const created = await upsertReminder({
-            rule_code: rule.code,
+            rule_code: bestRule.code,
             object_type: 'Vehicle',
             object_id: vehicle.id,
-            title: getTitleTemplate(rule.code, context),
-            message: getMessageTemplate(rule.code, context),
+            title: getTitleTemplate(bestRule.code, context),
+            message: getMessageTemplate(bestRule.code, context),
             due_on: vehicle.mot_due_date,
             remind_on: formatDate(remindDate),
-            severity: getSeverityForRule(rule.code),
+            severity: getSeverityForRule(bestRule.code),
             context
           });
           
@@ -119,14 +155,21 @@ export async function generateVehicleReminders(): Promise<number> {
       }
     }
     
-    // TAX reminders
+    // TAX reminders - smart rule selection
     if (vehicle.tax_due_date) {
       const taxDate = parseISO(vehicle.tax_due_date);
-      const rules = REMINDER_SOURCES.find(s => s.type === 'Vehicle')?.rules.filter(r => r.code.includes('TAX')) || [];
+      const daysUntilDue = Math.ceil((taxDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       
-      for (const rule of rules) {
-        const remindDate = subDays(taxDate, rule.leadDays);
+      // Clean up existing TAX reminders first
+      await cleanupDuplicateReminders(vehicle.id, 'TAX');
+      
+      // Select the best rule based on days remaining
+      const bestRule = selectBestRule(daysUntilDue, 'TAX');
+      
+      if (bestRule) {
+        const remindDate = subDays(taxDate, bestRule.leadDays);
         
+        // Only create if remind date has passed
         if (format(remindDate, 'yyyy-MM-dd') <= formatDate(today)) {
           const context: ReminderContext = {
             vehicle_id: vehicle.id,
@@ -134,18 +177,18 @@ export async function generateVehicleReminders(): Promise<number> {
             make: vehicle.make,
             model: vehicle.model,
             due_date: vehicle.tax_due_date,
-            days_until: rule.leadDays
+            days_until: Math.max(0, daysUntilDue)
           };
           
           const created = await upsertReminder({
-            rule_code: rule.code,
+            rule_code: bestRule.code,
             object_type: 'Vehicle',
             object_id: vehicle.id,
-            title: getTitleTemplate(rule.code, context),
-            message: getMessageTemplate(rule.code, context),
+            title: getTitleTemplate(bestRule.code, context),
+            message: getMessageTemplate(bestRule.code, context),
             due_on: vehicle.tax_due_date,
             remind_on: formatDate(remindDate),
-            severity: getSeverityForRule(rule.code),
+            severity: getSeverityForRule(bestRule.code),
             context
           });
           

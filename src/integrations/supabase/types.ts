@@ -1889,6 +1889,7 @@ export type Database = {
           finance_start_date: string | null
           ghost_code: string | null
           has_ghost: boolean | null
+          has_logbook: boolean
           has_remote_immobiliser: boolean | null
           has_tracker: boolean | null
           id: string
@@ -1924,6 +1925,7 @@ export type Database = {
           finance_start_date?: string | null
           ghost_code?: string | null
           has_ghost?: boolean | null
+          has_logbook?: boolean
           has_remote_immobiliser?: boolean | null
           has_tracker?: boolean | null
           id?: string
@@ -1959,6 +1961,7 @@ export type Database = {
           finance_start_date?: string | null
           ghost_code?: string | null
           has_ghost?: boolean | null
+          has_logbook?: boolean
           has_remote_immobiliser?: boolean | null
           has_tracker?: boolean | null
           id?: string

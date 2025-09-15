@@ -69,6 +69,8 @@ interface Vehicle {
   has_tracker?: boolean;
   has_remote_immobiliser?: boolean;
   security_notes?: string;
+  // Logbook field
+  has_logbook?: boolean;
   // Disposal fields
   is_disposed?: boolean;
   disposal_date?: string;
@@ -457,13 +459,19 @@ export default function VehicleDetail() {
                       dueDate={vehicle.mot_due_date}
                       type="MOT"
                     />
-                    <MOTTaxStatusChip 
-                      dueDate={vehicle.tax_due_date}
-                      type="TAX"
-                    />
-                  </div>
-                </div>
-              </div>
+                     <MOTTaxStatusChip 
+                       dueDate={vehicle.tax_due_date}
+                       type="TAX"
+                     />
+                     {vehicle.has_logbook && (
+                       <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                         <span>Has Logbook</span>
+                       </div>
+                     )}
+                   </div>
+                 </div>
+               </div>
             </MetricCard>
 
             {/* Finance Information Card - Only show for financed vehicles */}

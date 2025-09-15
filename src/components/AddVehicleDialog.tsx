@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Car, PoundSterling, CalendarIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,6 +32,8 @@ const vehicleSchema = z.object({
   // MOT & TAX fields
   mot_due_date: z.date().optional(),
   tax_due_date: z.date().optional(),
+  // Logbook field
+  has_logbook: z.boolean().default(false),
 }).refine(
   (data) => {
     if (data.acquisition_type === 'Finance' && !data.contract_total) {
@@ -70,6 +73,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       colour: "",
       acquisition_date: new Date(),
       acquisition_type: "Purchase",
+      has_logbook: false,
     },
   });
 
@@ -100,6 +104,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
         acquisition_date: data.acquisition_date.toISOString().split('T')[0],
         mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
         tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
+        has_logbook: data.has_logbook,
       };
 
       // Add type-specific fields
@@ -434,6 +439,28 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 </div>
               </div>
             )}
+
+            {/* Logbook Section */}
+            <FormField
+              control={form.control}
+              name="has_logbook"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Has Logbook</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Vehicle has a physical logbook
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

@@ -42,6 +42,8 @@ const vehicleSchema = z.object({
   has_tracker: z.boolean().default(false),
   has_remote_immobiliser: z.boolean().default(false),
   security_notes: z.string().optional(),
+  // Logbook field
+  has_logbook: z.boolean().default(false),
 }).refine(
   (data) => {
     if (data.acquisition_type === 'Purchase' && !data.purchase_price) {
@@ -90,6 +92,8 @@ interface Vehicle {
   has_tracker?: boolean;
   has_remote_immobiliser?: boolean;
   security_notes?: string;
+  // Logbook field
+  has_logbook?: boolean;
   // Disposal fields
   is_disposed?: boolean;
   disposal_date?: string;
@@ -136,6 +140,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
       has_tracker: vehicle.has_tracker || false,
       has_remote_immobiliser: vehicle.has_remote_immobiliser || false,
       security_notes: vehicle.security_notes || "",
+      has_logbook: vehicle.has_logbook || false,
     },
   });
 
@@ -193,6 +198,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
         has_tracker: data.has_tracker,
         has_remote_immobiliser: data.has_remote_immobiliser,
         security_notes: data.security_notes || null,
+        has_logbook: data.has_logbook,
       };
       
       console.log('Update data:', updateData);
@@ -728,6 +734,28 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                 />
               </div>
             </div>
+
+            {/* Logbook Section */}
+            <FormField
+              control={form.control}
+              name="has_logbook"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel>Has Logbook</FormLabel>
+                    <div className="text-sm text-muted-foreground">
+                      Vehicle has a physical logbook
+                    </div>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button variant="outline" type="button" onClick={() => {

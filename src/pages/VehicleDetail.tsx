@@ -463,9 +463,9 @@ export default function VehicleDetail() {
                 
                 {/* Compliance Status */}
                 <MetricDivider />
-                <div className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground mb-2">Compliance Status</div>
-                  <div className="flex flex-wrap gap-2">
+                <div className="space-y-3">
+                  <div className="text-xs font-medium text-muted-foreground">Compliance Status</div>
+                  <div className="grid grid-cols-2 gap-2">
                     <MOTTaxStatusChip 
                       dueDate={vehicle.mot_due_date}
                       type="MOT"
@@ -486,11 +486,11 @@ export default function VehicleDetail() {
                       spareKeyNotes={vehicle.spare_key_notes}
                     />
                     {vehicle.has_logbook && (
-                       <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                         <span>Has Logbook</span>
-                       </div>
-                     )}
+                      <Badge variant="default" className="flex items-center gap-1 bg-green-100 text-green-700 hover:bg-green-200">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Has Logbook</span>
+                      </Badge>
+                    )}
                    </div>
                  </div>
                </div>

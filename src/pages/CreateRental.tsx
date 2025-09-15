@@ -25,8 +25,8 @@ const rentalSchema = z.object({
   vehicle_id: z.string().min(1, "Vehicle is required"),
   start_date: z.date(),
   end_date: z.date(),
-  monthly_amount: z.number().min(1, "Monthly amount must be at least £1"),
-  initial_fee: z.number().min(0, "Initial fee cannot be negative").optional(),
+  monthly_amount: z.coerce.number().min(1, "Monthly amount must be at least £1"),
+  initial_fee: z.coerce.number().min(0, "Initial fee cannot be negative").optional(),
 }).refine((data) => {
   const monthAfterStart = addMonths(data.start_date, 1);
   return isAfter(data.end_date, monthAfterStart) || data.end_date.getTime() === monthAfterStart.getTime();

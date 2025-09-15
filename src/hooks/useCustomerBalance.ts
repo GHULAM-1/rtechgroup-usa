@@ -11,7 +11,7 @@ export const useCustomerBalance = (customerId: string | undefined) => {
       // Calculate balance from ledger_entries - only include currently due charges
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("amount, type, due_date, payment_id, category")
+        .select("id, amount, type, due_date, payment_id, category")
         .eq("customer_id", customerId);
       
       if (error) throw error;
@@ -32,6 +32,44 @@ export const useCustomerBalance = (customerId: string | undefined) => {
         initialFeePaymentIds = payments?.map(p => p.id) || [];
       }
       
+      // Get payment applications to understand what payments were applied to future charges
+      const paymentEntries = data.filter(entry => entry.type === 'Payment' && entry.payment_id);
+      let paymentApplications: Record<string, number> = {}; // payment_id -> amount applied to future charges
+      
+      if (paymentEntries.length > 0) {
+        const { data: applications } = await supabase
+          .from("payment_applications")
+          .select(`
+            payment_id,
+            amount_applied,
+            charge_entry_id
+          `)
+          .in("payment_id", paymentEntries.map(p => p.payment_id!));
+        
+        if (applications) {
+          // Get the charge entries that these payments were applied to
+          const chargeEntryIds = applications.map(app => app.charge_entry_id);
+          const { data: chargeEntries } = await supabase
+            .from("ledger_entries")
+            .select("id, due_date, category")
+            .in("id", chargeEntryIds);
+          
+          if (chargeEntries) {
+            // Calculate how much of each payment was applied to future rental charges
+            applications.forEach(app => {
+              const chargeEntry = chargeEntries.find(c => c.id === app.charge_entry_id);
+              if (chargeEntry && 
+                  chargeEntry.category === 'Rental' && 
+                  chargeEntry.due_date && 
+                  new Date(chargeEntry.due_date) > new Date()) {
+                // This payment was applied to a future rental charge
+                paymentApplications[app.payment_id] = (paymentApplications[app.payment_id] || 0) + app.amount_applied;
+              }
+            });
+          }
+        }
+      }
+      
       // Sum amounts with proper filtering
       const balance = data.reduce((sum, entry) => {
         // Skip Initial Fee payment entries (they're company revenue, not customer debt)
@@ -42,6 +80,18 @@ export const useCustomerBalance = (customerId: string | undefined) => {
         // For rental charges, only include if currently due
         // For fine charges, include all (they're immediate debt once charged)
         if (entry.type === 'Charge' && entry.category === 'Rental' && entry.due_date && new Date(entry.due_date) > new Date()) {
+          return sum;
+        }
+        
+        // For payment entries, exclude amounts that were applied to future charges
+        if (entry.type === 'Payment' && entry.payment_id) {
+          const appliedToFutureCharges = paymentApplications[entry.payment_id] || 0;
+          const currentPaymentAmount = Math.abs(entry.amount) - appliedToFutureCharges;
+          
+          // Only include the portion NOT applied to future charges
+          if (currentPaymentAmount > 0) {
+            return sum - currentPaymentAmount; // Payments are negative in ledger
+          }
           return sum;
         }
         
@@ -63,7 +113,7 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
       
       const { data, error } = await supabase
         .from("ledger_entries")
-        .select("type, amount, due_date, payment_id, category")
+        .select("id, type, amount, due_date, payment_id, category")
         .eq("customer_id", customerId);
       
       if (error) throw error;
@@ -84,6 +134,44 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
         initialFeePaymentIds = payments?.map(p => p.id) || [];
       }
       
+      // Get payment applications to understand what payments were applied to future charges
+      const paymentEntries = data.filter(entry => entry.type === 'Payment' && entry.payment_id);
+      let paymentApplications: Record<string, number> = {}; // payment_id -> amount applied to future charges
+      
+      if (paymentEntries.length > 0) {
+        const { data: applications } = await supabase
+          .from("payment_applications")
+          .select(`
+            payment_id,
+            amount_applied,
+            charge_entry_id
+          `)
+          .in("payment_id", paymentEntries.map(p => p.payment_id!));
+        
+        if (applications) {
+          // Get the charge entries that these payments were applied to
+          const chargeEntryIds = applications.map(app => app.charge_entry_id);
+          const { data: chargeEntries } = await supabase
+            .from("ledger_entries")
+            .select("id, due_date, category")
+            .in("id", chargeEntryIds);
+          
+          if (chargeEntries) {
+            // Calculate how much of each payment was applied to future rental charges
+            applications.forEach(app => {
+              const chargeEntry = chargeEntries.find(c => c.id === app.charge_entry_id);
+              if (chargeEntry && 
+                  chargeEntry.category === 'Rental' && 
+                  chargeEntry.due_date && 
+                  new Date(chargeEntry.due_date) > new Date()) {
+                // This payment was applied to a future rental charge
+                paymentApplications[app.payment_id] = (paymentApplications[app.payment_id] || 0) + app.amount_applied;
+              }
+            });
+          }
+        }
+      }
+      
       // Calculate totals by type with proper filtering
       let totalCharges = 0;
       let totalPayments = 0;
@@ -101,18 +189,28 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
           return;
         }
         
-        balance += entry.amount;
-        
-        if (entry.type === 'Charge') {
-          totalCharges += entry.amount;
-        } else if (entry.type === 'Payment') {
-          totalPayments += Math.abs(entry.amount); // Show payments as positive for display
+        // For payment entries, exclude amounts that were applied to future charges
+        if (entry.type === 'Payment' && entry.payment_id) {
+          const appliedToFutureCharges = paymentApplications[entry.payment_id] || 0;
+          const currentPaymentAmount = Math.abs(entry.amount) - appliedToFutureCharges;
+          
+          // Only include the portion NOT applied to future charges
+          if (currentPaymentAmount > 0) {
+            balance -= currentPaymentAmount; // Payments are negative in ledger
+            totalPayments += currentPaymentAmount;
+          }
+        } else {
+          balance += entry.amount;
+          
+          if (entry.type === 'Charge') {
+            totalCharges += entry.amount;
+          }
         }
       });
       
       // Determine status
       let status: 'In Credit' | 'Settled' | 'In Debt';
-      if (balance === 0) {
+      if (Math.abs(balance) < 0.01) { // Handle floating point precision
         status = 'Settled';
       } else if (balance > 0) {
         status = 'In Debt';

@@ -250,9 +250,9 @@ const FineDetail = () => {
 
   return (
     <TooltipProvider>
-      <div className="space-y-6 max-w-7xl mx-auto p-6 pt-8">
+      <div className="space-y-10 max-w-7xl mx-auto p-6 pt-8">
         {/* Enhanced Header */}
-        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 mb-2">
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={() => navigate("/fines")}>
               <ArrowLeft className="h-4 w-4 mr-2" />

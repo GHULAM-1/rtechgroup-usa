@@ -138,44 +138,6 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
         initialFeePaymentIds = payments?.map(p => p.id) || [];
       }
       
-      // Get payment applications to understand what payments were applied to future charges
-      const paymentEntries = data.filter(entry => entry.type === 'Payment' && entry.payment_id);
-      let paymentApplications: Record<string, number> = {}; // payment_id -> amount applied to future charges
-      
-      if (paymentEntries.length > 0) {
-        const { data: applications } = await supabase
-          .from("payment_applications")
-          .select(`
-            payment_id,
-            amount_applied,
-            charge_entry_id
-          `)
-          .in("payment_id", paymentEntries.map(p => p.payment_id!));
-        
-        if (applications) {
-          // Get the charge entries that these payments were applied to
-          const chargeEntryIds = applications.map(app => app.charge_entry_id);
-          const { data: chargeEntries } = await supabase
-            .from("ledger_entries")
-            .select("id, due_date, category")
-            .in("id", chargeEntryIds);
-          
-          if (chargeEntries) {
-            // Calculate how much of each payment was applied to future rental charges
-            applications.forEach(app => {
-              const chargeEntry = chargeEntries.find(c => c.id === app.charge_entry_id);
-              if (chargeEntry && 
-                  chargeEntry.category === 'Rental' && 
-                  chargeEntry.due_date && 
-                  new Date(chargeEntry.due_date) > new Date()) {
-                // This payment was applied to a future rental charge
-                paymentApplications[app.payment_id] = (paymentApplications[app.payment_id] || 0) + app.amount_applied;
-              }
-            });
-          }
-        }
-      }
-      
       // Calculate totals by type with proper filtering
       let totalCharges = 0;
       let totalPayments = 0;
@@ -193,16 +155,11 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
           return;
         }
         
-        // For payment entries, exclude amounts that were applied to future charges
+        // For payment entries, count the full payment amount regardless of what charges it was applied to
         if (entry.type === 'Payment' && entry.payment_id) {
-          const appliedToFutureCharges = paymentApplications[entry.payment_id] || 0;
-          const currentPaymentAmount = Math.abs(entry.amount) - appliedToFutureCharges;
-          
-          // Only include the portion NOT applied to future charges
-          if (currentPaymentAmount > 0) {
-            balance -= currentPaymentAmount; // Payments are negative in ledger
-            totalPayments += currentPaymentAmount;
-          }
+          const fullPaymentAmount = Math.abs(entry.amount);
+          balance -= fullPaymentAmount; // Payments reduce the balance
+          totalPayments += fullPaymentAmount;
         } else {
           balance += entry.amount;
           
@@ -228,8 +185,7 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
         absoluteBalance: Math.abs(balance),
         status,
         totalCharges,
-        totalPayments,
-        paymentApplications
+        totalPayments
       });
       
       return {

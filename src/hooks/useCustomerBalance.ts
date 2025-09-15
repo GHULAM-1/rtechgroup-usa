@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const useCustomerBalance = (customerId: string | undefined) => {
   return useQuery({
     queryKey: ["customer-balance", customerId],
+    staleTime: 0, // Force fresh data
+    gcTime: 0, // Clear cache immediately
     queryFn: async () => {
       if (!customerId) return null;
       
@@ -110,6 +112,8 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
     queryKey: ["customer-balance-status", customerId],
     queryFn: async () => {
       if (!customerId) return null;
+      
+      console.log('🔍 Fetching balance for customer:', customerId);
       
       const { data, error } = await supabase
         .from("ledger_entries")
@@ -218,6 +222,16 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
         status = 'In Credit';
       }
       
+      console.log('💰 Balance calculation result:', {
+        customerId,
+        balance,
+        absoluteBalance: Math.abs(balance),
+        status,
+        totalCharges,
+        totalPayments,
+        paymentApplications
+      });
+      
       return {
         balance: Math.abs(balance), // Always return positive for display
         status,
@@ -226,6 +240,8 @@ export const useCustomerBalanceWithStatus = (customerId: string | undefined) => 
       };
     },
     enabled: !!customerId,
+    staleTime: 0, // Force fresh data
+    gcTime: 0, // Clear cache immediately
   });
 };
 

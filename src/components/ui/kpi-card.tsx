@@ -31,7 +31,7 @@ export const KPICard = React.forwardRef<HTMLDivElement, KPICardProps>(
     }
 
     return (
-      <Card ref={ref} className={cn("h-[120px]", className)}>
+      <Card ref={ref} className={cn("h-[120px] hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer", className)}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">{title}</CardTitle>
           {icon && <div className="h-4 w-4 text-muted-foreground">{icon}</div>}

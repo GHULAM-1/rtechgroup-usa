@@ -126,11 +126,10 @@ export function useReminderStats() {
         .eq('status', 'pending')
         .lte('remind_on', today);
 
-      const { count: snoozedDueCount, error: snoozedError } = await supabase
+      const { count: snoozedTotalCount, error: snoozedError } = await supabase
         .from('reminders')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'snoozed')
-        .lte('snooze_until', today);
+        .eq('status', 'snoozed');
 
       const { count: criticalCount, error: criticalError } = await supabase
         .from('reminders')
@@ -150,15 +149,15 @@ export function useReminderStats() {
       }
 
       const pendingDue = pendingCount || 0;
-      const snoozedDue = snoozedDueCount || 0;
-      const due = pendingDue + snoozedDue;
+      const snoozedTotal = snoozedTotalCount || 0;
+      const due = pendingDue; // Only pending reminders are "due"
 
       return {
         total: totalActiveCount || 0,
         due: due,
         critical: criticalCount || 0,
         pending: pendingDue,
-        snoozed: snoozedDue
+        snoozed: snoozedTotal
       };
     },
     staleTime: 30 * 1000, // Cache for 30 seconds

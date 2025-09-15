@@ -255,6 +255,48 @@ export default function ReminderSettings() {
                 </SelectContent>
               </Select>
             </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Warranty Due Today</Label>
+                <p className="text-sm text-muted-foreground">
+                  Notify when warranty expires today
+                </p>
+              </div>
+              <Switch
+                checked={settings.reminder_warranty_due_today === true}
+                onCheckedChange={() => handleToggle("reminder_warranty_due_today", settings.reminder_warranty_due_today === true)}
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Warranty Expiring Soon</Label>
+                <p className="text-sm text-muted-foreground">
+                  Notify when warranty expires in 30 days
+                </p>
+              </div>
+              <Switch
+                checked={settings.reminder_warranty_expiring_soon === true}
+                onCheckedChange={() => handleToggle("reminder_warranty_expiring_soon", settings.reminder_warranty_expiring_soon === true)}
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Warranty Expired</Label>
+                <p className="text-sm text-muted-foreground">
+                  Notify when warranty has expired
+                </p>
+              </div>
+              <Switch
+                checked={settings.reminder_warranty_expired === true}
+                onCheckedChange={() => handleToggle("reminder_warranty_expired", settings.reminder_warranty_expired === true)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

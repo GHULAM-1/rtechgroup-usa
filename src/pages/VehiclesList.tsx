@@ -15,6 +15,7 @@ import { AddVehicleDialog } from "@/components/AddVehicleDialog";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
+import { WarrantyStatusChip } from "@/components/WarrantyStatusChip";
 import { NetPLChip } from "@/components/NetPLChip";
 import { VehiclePhotoThumbnail } from "@/components/VehiclePhotoThumbnail";
 import { computeVehicleStatus, VehicleStatus, VehiclePLData, formatCurrency } from "@/lib/vehicleUtils";
@@ -30,13 +31,15 @@ interface Vehicle {
   purchase_price?: number;
   mot_due_date?: string;
   tax_due_date?: string;
+  warranty_start_date?: string;
+  warranty_end_date?: string;
   is_disposed: boolean;
   disposal_date?: string;
   status: string;
   photo_url?: string;
 }
 
-type SortField = 'reg' | 'make_model' | 'acquisition_type' | 'status' | 'mot_due_date' | 'tax_due_date' | 'net_profit';
+type SortField = 'reg' | 'make_model' | 'acquisition_type' | 'status' | 'mot_due_date' | 'tax_due_date' | 'warranty_end_date' | 'net_profit';
 type SortDirection = 'asc' | 'desc';
 type PerformanceFilter = 'all' | 'profitable' | 'loss';
 
@@ -446,9 +449,15 @@ export default function VehiclesListEnhanced() {
                     <div className="flex items-center gap-2">
                       TAX Due
                       {getSortIcon('tax_due_date')}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer text-right" onClick={() => handleSort('net_profit')}>
+                     </div>
+                   </TableHead>
+                   <TableHead className="cursor-pointer" onClick={() => handleSort('warranty_end_date')}>
+                     <div className="flex items-center gap-2">
+                       Warranty
+                       {getSortIcon('warranty_end_date')}
+                     </div>
+                   </TableHead>
+                   <TableHead className="cursor-pointer text-right" onClick={() => handleSort('net_profit')}>
                     <div className="flex items-center justify-end gap-2">
                       Net P&L
                       {getSortIcon('net_profit')}
@@ -509,6 +518,18 @@ export default function VehiclesListEnhanced() {
                       <MOTTaxStatusChip 
                         dueDate={vehicle.tax_due_date} 
                         type="TAX" 
+                        compact 
+                      />
+                     </TableCell>
+                     <TableCell>
+                       <WarrantyStatusChip 
+                         dueDate={vehicle.warranty_end_date} 
+                         compact 
+                       />
+                     </TableCell>
+                    <TableCell>
+                      <WarrantyStatusChip 
+                        dueDate={vehicle.warranty_end_date} 
                         compact 
                       />
                     </TableCell>

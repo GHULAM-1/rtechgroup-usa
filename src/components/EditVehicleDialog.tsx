@@ -36,6 +36,9 @@ const vehicleSchema = z.object({
   // MOT & TAX fields
   mot_due_date: z.date().optional(),
   tax_due_date: z.date().optional(),
+  // Warranty fields
+  warranty_start_date: z.date().optional(),
+  warranty_end_date: z.date().optional(),
   // Security fields
   has_ghost: z.boolean().default(false),
   ghost_code: z.string().optional(),
@@ -87,6 +90,8 @@ interface Vehicle {
   finance_start_date?: string;
   mot_due_date?: string;
   tax_due_date?: string;
+  warranty_start_date?: string;
+  warranty_end_date?: string;
   has_ghost?: boolean;
   ghost_code?: string;
   has_tracker?: boolean;
@@ -135,6 +140,8 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
       finance_start_date: vehicle.finance_start_date ? new Date(vehicle.finance_start_date) : undefined,
       mot_due_date: vehicle.mot_due_date ? new Date(vehicle.mot_due_date) : undefined,
       tax_due_date: vehicle.tax_due_date ? new Date(vehicle.tax_due_date) : undefined,
+      warranty_start_date: vehicle.warranty_start_date ? new Date(vehicle.warranty_start_date) : undefined,
+      warranty_end_date: vehicle.warranty_end_date ? new Date(vehicle.warranty_end_date) : undefined,
       has_ghost: vehicle.has_ghost || false,
       ghost_code: vehicle.ghost_code || "",
       has_tracker: vehicle.has_tracker || false,
@@ -192,6 +199,9 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
         // Add MOT & TAX dates
         mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
         tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
+        // Add warranty dates
+        warranty_start_date: data.warranty_start_date?.toISOString().split('T')[0],
+        warranty_end_date: data.warranty_end_date?.toISOString().split('T')[0],
         // Security fields
         has_ghost: data.has_ghost,
         ghost_code: data.ghost_code || null,
@@ -442,6 +452,89 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                               format(field.value, "PPP")
                             ) : (
                               <span>Pick TAX due date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Warranty Due Dates */}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="warranty_start_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Warranty Start Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick warranty start</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="warranty_end_date"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Warranty End Date</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick warranty end</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>

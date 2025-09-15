@@ -422,6 +422,68 @@ serve(async (req) => {
         }
       }
 
+      // Generate WARRANTY reminders
+      if (vehicle.warranty_end_date) {
+        const warrantyDate = new Date(vehicle.warranty_end_date);
+        
+        for (const rule of rules.filter(r => r.rule_code.startsWith('WARRANTY_'))) {
+          const diffDays = differenceInDays(warrantyDate, today);
+          
+          if (diffDays === rule.lead_days) {
+            const remindDate = new Date(warrantyDate);
+            remindDate.setDate(warrantyDate.getDate() - rule.lead_days);
+            const remindDateStr = remindDate.toISOString().split('T')[0];
+
+            // Check if reminder already exists and is snoozed - if so, don't overwrite
+            const { data: existingReminder } = await supabase
+              .from('reminders')
+              .select('id, status')
+              .eq('rule_code', rule.rule_code)
+              .eq('object_type', 'Vehicle')
+              .eq('object_id', vehicle.id)
+              .eq('due_on', vehicle.warranty_end_date)
+              .eq('remind_on', remindDateStr)
+              .single();
+
+            // Skip if reminder exists and is snoozed
+            if (existingReminder && existingReminder.status === 'snoozed') {
+              continue;
+            }
+
+            const context: ReminderContext = {
+              vehicle_id: vehicle.id,
+              reg: vehicle.reg,
+              make: vehicle.make,
+              model: vehicle.model,
+              due_date: vehicle.warranty_end_date
+            };
+
+            const { error: reminderError } = await supabase
+              .from('reminders')
+              .upsert({
+                rule_code: rule.rule_code,
+                object_type: 'Vehicle',
+                object_id: vehicle.id,
+                title: getTitleTemplate(rule.rule_code, context),
+                message: getMessageTemplate(rule.rule_code, context),
+                severity: getSeverityForRule(rule.rule_code),
+                due_on: vehicle.warranty_end_date,
+                remind_on: remindDateStr,
+                context: context,
+                status: 'pending'
+              }, {
+                onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
+              });
+
+            if (reminderError) {
+              console.error('Error creating WARRANTY reminder:', reminderError);
+            } else {
+              totalGenerated++;
+            }
+          }
+        }
+      }
+
       // Immobiliser reminders - for vehicles without immobilisers
       if (!vehicle.has_remote_immobiliser && vehicle.acquisition_date && rulesByType['Immobiliser']) {
         const acquisitionDate = new Date(vehicle.acquisition_date);

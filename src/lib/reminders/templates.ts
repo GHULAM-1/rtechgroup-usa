@@ -51,6 +51,12 @@ export function getTitleTemplate(ruleCode: string, context: ReminderContext): st
     VEH_TAX_7D: (ctx) => `TAX due soon — ${ctx.reg} (7 days)`,
     VEH_TAX_0D: (ctx) => `TAX due today — ${ctx.reg}`,
     
+    // Vehicle WARRANTY reminders
+    VEH_WARRANTY_30D: (ctx) => `Warranty expiring — ${ctx.reg} (30 days)`,
+    VEH_WARRANTY_14D: (ctx) => `Warranty expiring — ${ctx.reg} (14 days)`,
+    VEH_WARRANTY_7D: (ctx) => `Warranty expiring — ${ctx.reg} (7 days)`,
+    VEH_WARRANTY_0D: (ctx) => `Warranty expires today — ${ctx.reg}`,
+    
     // Insurance expiry reminders
     INS_EXP_30D: (ctx) => `Insurance expiring — ${ctx.customer_name} (${ctx.reg}) (30 days)`,
     INS_EXP_14D: (ctx) => `Insurance expiring — ${ctx.customer_name} (${ctx.reg}) (14 days)`,
@@ -100,6 +106,12 @@ export function getMessageTemplate(ruleCode: string, context: ReminderContext): 
     VEH_TAX_14D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew immediately.`,
     VEH_TAX_7D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew urgently!`,
     VEH_TAX_0D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
+    
+    // Vehicle WARRANTY reminders
+    VEH_WARRANTY_30D: (ctx) => `Warranty for ${ctx.reg} (${ctx.make} ${ctx.model}) expires on ${ctx.due_date}. Consider renewal.`,
+    VEH_WARRANTY_14D: (ctx) => `Warranty for ${ctx.reg} (${ctx.make} ${ctx.model}) expires on ${ctx.due_date}. Review coverage.`,
+    VEH_WARRANTY_7D: (ctx) => `Warranty for ${ctx.reg} (${ctx.make} ${ctx.model}) expires on ${ctx.due_date}. Check renewal options!`,
+    VEH_WARRANTY_0D: (ctx) => `Warranty for ${ctx.reg} (${ctx.make} ${ctx.model}) expires today (${ctx.due_date}). Review coverage immediately!`,
     
     // Insurance expiry reminders
     INS_EXP_30D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires on ${ctx.due_date}. Contact ${ctx.provider} to renew.`,

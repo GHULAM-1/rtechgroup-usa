@@ -1955,6 +1955,8 @@ export type Database = {
           tax_due_date: string | null
           term_months: number | null
           updated_at: string
+          warranty_end_date: string | null
+          warranty_start_date: string | null
           year: number | null
         }
         Insert: {
@@ -1991,6 +1993,8 @@ export type Database = {
           tax_due_date?: string | null
           term_months?: number | null
           updated_at?: string
+          warranty_end_date?: string | null
+          warranty_start_date?: string | null
           year?: number | null
         }
         Update: {
@@ -2027,6 +2031,8 @@ export type Database = {
           tax_due_date?: string | null
           term_months?: number | null
           updated_at?: string
+          warranty_end_date?: string | null
+          warranty_start_date?: string | null
           year?: number | null
         }
         Relationships: []

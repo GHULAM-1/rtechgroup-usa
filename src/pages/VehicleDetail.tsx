@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
+import { WarrantyStatusChip } from "@/components/WarrantyStatusChip";
 import { MetricCard, MetricItem, MetricDivider } from "@/components/MetricCard";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { EmptyState } from "@/components/EmptyState";
@@ -60,6 +61,9 @@ interface Vehicle {
   // MOT & TAX fields
   mot_due_date?: string;
   tax_due_date?: string;
+  // Warranty fields
+  warranty_start_date?: string;
+  warranty_end_date?: string;
   // Service fields
   last_service_date?: string;
   last_service_mileage?: number;
@@ -463,7 +467,10 @@ export default function VehicleDetail() {
                        dueDate={vehicle.tax_due_date}
                        type="TAX"
                      />
-                     {vehicle.has_logbook && (
+                    <WarrantyStatusChip 
+                      dueDate={vehicle.warranty_end_date}
+                    />
+                    {vehicle.has_logbook && (
                        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                          <span>Has Logbook</span>

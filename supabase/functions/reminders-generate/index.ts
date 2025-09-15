@@ -24,6 +24,8 @@ interface ReminderContext {
   oldest_due_date?: string;
   days_until?: number;
   days_overdue?: number;
+  acquisition_date?: string;
+  days_since_acquisition?: number;
 }
 
 function getTitleTemplate(ruleCode: string, context: ReminderContext): string {
@@ -61,6 +63,12 @@ function getTitleTemplate(ruleCode: string, context: ReminderContext): string {
     RENT_1D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (1 day)`,
     RENT_7D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (7 days)`,
     RENT_14D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (14 days)`,
+    
+    // Immobilizer reminders
+    IMM_FIT_30D: (ctx) => `Fit immobilizer — ${ctx.reg} (30 days since acquisition)`,
+    IMM_FIT_14D: (ctx) => `Fit immobilizer — ${ctx.reg} (14 days since acquisition)`,
+    IMM_FIT_7D: (ctx) => `Fit immobilizer — ${ctx.reg} (7 days since acquisition)`,
+    IMM_FIT_0D: (ctx) => `Fit immobilizer — ${ctx.reg} (overdue)`,
     
     // Legacy codes for backward compatibility
     VEH_MOT_30D: (ctx) => `MOT due soon — ${ctx.reg} (30 days)`,
@@ -131,6 +139,12 @@ function getMessageTemplate(ruleCode: string, context: ReminderContext): string 
     RENT_1D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
     RENT_7D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
     RENT_14D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
+    
+    // Immobilizer reminders
+    IMM_FIT_30D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) acquired on ${ctx.due_date} needs an immobilizer fitted. Please schedule installation.`,
+    IMM_FIT_14D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) has been without an immobilizer for ${ctx.days_until || 0} days. Schedule fitting urgently.`,
+    IMM_FIT_7D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) urgently needs an immobilizer fitted - ${ctx.days_until || 0} days since acquisition.`,
+    IMM_FIT_0D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) is overdue for immobilizer fitting - acquired ${ctx.days_until || 0} days ago. Immediate action required!`,
     
     // Legacy codes for backward compatibility
     VEH_MOT_30D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test soon.`,
@@ -256,11 +270,11 @@ serve(async (req) => {
       return acc;
     }, {} as Record<string, any[]>);
 
-    // 3. Generate Vehicle MOT/TAX reminders
+    // 3. Generate Vehicle MOT/TAX/Immobilizer reminders
     const { data: vehicles } = await supabase
       .from('vehicles')
-      .select('id, reg, make, model, mot_due_date, tax_due_date')
-      .or('mot_due_date.not.is.null,tax_due_date.not.is.null')
+      .select('id, reg, make, model, mot_due_date, tax_due_date, has_remote_immobiliser, acquisition_date')
+      .or('mot_due_date.not.is.null,tax_due_date.not.is.null,has_remote_immobiliser.eq.false')
       .eq('is_disposed', false);
 
     for (const vehicle of vehicles || []) {
@@ -335,6 +349,50 @@ serve(async (req) => {
                 title: getTitleTemplate(rule.rule_code, context),
                 message: getMessageTemplate(rule.rule_code, context),
                 due_on: vehicle.tax_due_date,
+                remind_on: remindDateStr,
+                severity: rule.severity,
+                context: context,
+                status: 'pending'
+              }, {
+                onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
+              });
+
+            if (!reminderError) {
+              totalGenerated++;
+            }
+          }
+        }
+      }
+
+      // Immobilizer reminders - for vehicles without immobilizers
+      if (!vehicle.has_remote_immobiliser && vehicle.acquisition_date && rulesByType['Immobilizer']) {
+        const acquisitionDate = new Date(vehicle.acquisition_date);
+        const daysSinceAcquisition = Math.ceil((new Date().getTime() - acquisitionDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        for (const rule of rulesByType['Immobilizer']) {
+          const remindDate = new Date(acquisitionDate);
+          remindDate.setDate(acquisitionDate.getDate() + rule.lead_days);
+          const remindDateStr = remindDate.toISOString().split('T')[0];
+
+          if (remindDateStr <= today) {
+            const context: ReminderContext = {
+              vehicle_id: vehicle.id,
+              reg: vehicle.reg,
+              make: vehicle.make,
+              model: vehicle.model,
+              due_date: vehicle.acquisition_date,
+              days_until: daysSinceAcquisition
+            };
+
+            const { error: reminderError } = await supabase
+              .from('reminders')
+              .upsert({
+                rule_code: rule.rule_code,
+                object_type: 'Vehicle',
+                object_id: vehicle.id,
+                title: getTitleTemplate(rule.rule_code, context),
+                message: getMessageTemplate(rule.rule_code, context),
+                due_on: today, // Due immediately since it's overdue
                 remind_on: remindDateStr,
                 severity: rule.severity,
                 context: context,

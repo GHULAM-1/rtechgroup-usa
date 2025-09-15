@@ -8,14 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, RotateCcw, Car, Shield, AlertTriangle, FileText, PoundSterling, Settings2 } from 'lucide-react';
+import { Loader2, RotateCcw, Car, Shield, AlertTriangle, FileText, PoundSterling, Settings2, KeyRound } from 'lucide-react';
 import { useReminderRulesByCategory, useReminderRuleActions, type ReminderRule } from '@/hooks/useReminderRules';
 
 const categoryIcons = {
   'Vehicle': Car,
   'Insurance': Shield,
   'Financial': PoundSterling,
-  'Document': FileText
+  'Document': FileText,
+  'Immobilizer': KeyRound
 };
 
 const severityColors = {
@@ -231,12 +232,12 @@ const ReminderRulesConfig: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue={Object.keys(groupedRules)[0]} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full auto-cols-fr" style={{ gridTemplateColumns: `repeat(${Object.keys(groupedRules).length}, 1fr)` }}>
             {Object.entries(groupedRules).map(([category]) => {
-              const Icon = categoryIcons[category as keyof typeof categoryIcons];
+              const Icon = categoryIcons[category as keyof typeof categoryIcons] || Settings2;
               return (
                 <TabsTrigger key={category} value={category} className="flex items-center gap-2">
-                  {Icon && <Icon className="h-4 w-4" />}
+                  <Icon className="h-4 w-4" />
                   {category}
                 </TabsTrigger>
               );
@@ -256,11 +257,12 @@ const ReminderRulesConfig: React.FC = () => {
                     {rules.filter(r => r.is_enabled).length} active
                   </Badge>
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  {ruleType === 'Expiry' ? 'Reminders sent before insurance policies expire' :
-                   ruleType === 'Verification' ? 'Recurring reminders to verify insurance is still active during rentals' :
-                   `Configure ${ruleType.toLowerCase()} reminder settings`}
-                </p>
+                 <p className="text-xs text-muted-foreground">
+                   {ruleType === 'Expiry' ? 'Reminders sent before insurance policies expire' :
+                    ruleType === 'Verification' ? 'Recurring reminders to verify insurance is still active during rentals' :
+                    ruleType === 'Immobilizer' ? 'Reminders to fit immobilizers on vehicles that don\'t have them' :
+                    `Configure ${ruleType.toLowerCase()} reminder settings`}
+                 </p>
               </div>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {rules.map((rule) => (

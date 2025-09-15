@@ -33,6 +33,8 @@ export interface ReminderContext {
   // Other
   days_until?: number;
   days_overdue?: number;
+  acquisition_date?: string;
+  days_since_acquisition?: number;
 }
 
 export function getTitleTemplate(ruleCode: string, context: ReminderContext): string {
@@ -73,6 +75,12 @@ export function getTitleTemplate(ruleCode: string, context: ReminderContext): st
     FINE_DUE_14D: (ctx) => `Fine due soon — ${ctx.reg} (${ctx.reference}) (14 days)`,
     FINE_DUE_7D: (ctx) => `Fine due soon — ${ctx.reg} (${ctx.reference}) (7 days)`,
     FINE_DUE_0D: (ctx) => `Fine due today — ${ctx.reg} (${ctx.reference})`,
+    
+    // Immobilizer fitting reminders
+    IMM_FIT_30D: (ctx) => `Fit immobilizer — ${ctx.reg} (30 days since acquisition)`,
+    IMM_FIT_14D: (ctx) => `Fit immobilizer — ${ctx.reg} (14 days since acquisition)`,
+    IMM_FIT_7D: (ctx) => `Fit immobilizer — ${ctx.reg} (7 days since acquisition)`,
+    IMM_FIT_0D: (ctx) => `Fit immobilizer — ${ctx.reg} (overdue)`,
   };
   
   const template = templates[ruleCode];
@@ -117,6 +125,12 @@ export function getMessageTemplate(ruleCode: string, context: ReminderContext): 
     FINE_DUE_14D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due on ${ctx.due_date}. Prepare payment or appeal.`,
     FINE_DUE_7D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due on ${ctx.due_date}. Urgent action required!`,
     FINE_DUE_0D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due today (${ctx.due_date}). Immediate payment required!`,
+    
+    // Immobilizer fitting reminders
+    IMM_FIT_30D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) acquired on ${ctx.acquisition_date} needs an immobilizer fitted. Please schedule installation.`,
+    IMM_FIT_14D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) has been without an immobilizer for ${ctx.days_since_acquisition} days. Schedule fitting urgently.`,
+    IMM_FIT_7D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) urgently needs an immobilizer fitted - ${ctx.days_since_acquisition} days since acquisition.`,
+    IMM_FIT_0D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) is overdue for immobilizer fitting - acquired ${ctx.days_since_acquisition} days ago. Immediate action required!`,
   };
   
   const template = templates[ruleCode];

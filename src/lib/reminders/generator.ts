@@ -27,7 +27,11 @@ export const REMINDER_SOURCES: GenerationSource[] = [
       { code: 'VEH_TAX_30D', leadDays: 30 },
       { code: 'VEH_TAX_14D', leadDays: 14 },
       { code: 'VEH_TAX_7D', leadDays: 7 },
-      { code: 'VEH_TAX_0D', leadDays: 0 }
+      { code: 'VEH_TAX_0D', leadDays: 0 },
+      { code: 'IMM_FIT_30D', leadDays: 30 },
+      { code: 'IMM_FIT_14D', leadDays: 14 },
+      { code: 'IMM_FIT_7D', leadDays: 7 },
+      { code: 'IMM_FIT_0D', leadDays: 0 }
     ]
   },
   {
@@ -69,11 +73,25 @@ function formatDate(date: Date): string {
 
 // Smart rule selection: pick the most appropriate rule based on days remaining
 function selectBestRule(daysUntilDue: number, rulePrefix: string): ReminderRule | null {
-  const rules = REMINDER_SOURCES.find(s => s.type === 'Vehicle')?.rules.filter(r => r.code.includes(rulePrefix)) || [];
+  const vehicleSource = REMINDER_SOURCES.find(s => s.type === 'Vehicle');
+  const rules = vehicleSource?.rules.filter(r => r.code.includes(rulePrefix)) || [];
   
   // Sort rules by leadDays descending (30, 14, 7, 0)
   const sortedRules = rules.sort((a, b) => b.leadDays - a.leadDays);
   
+  // For immobilizer reminders, we check days since acquisition, not until due
+  if (rulePrefix === 'IMM_FIT') {
+    // For immobilizers, find the right rule based on days since acquisition
+    for (const rule of sortedRules) {
+      if (daysUntilDue >= rule.leadDays) {
+        return rule;
+      }
+    }
+    // If none matched, use the immediate rule (0 days)
+    return rules.find(r => r.leadDays === 0) || null;
+  }
+  
+  // For other types (MOT, TAX), use the original logic
   // Select the most appropriate rule based on days remaining
   for (const rule of sortedRules) {
     if (daysUntilDue >= rule.leadDays) {
@@ -100,11 +118,11 @@ export async function generateVehicleReminders(): Promise<number> {
   let generated = 0;
   const today = getToday();
   
-  // Get vehicles with MOT or TAX dates
+  // Get vehicles with MOT or TAX dates, or without immobilizers
   const { data: vehicles, error } = await supabase
     .from('vehicles')
-    .select('id, reg, make, model, mot_due_date, tax_due_date')
-    .or('mot_due_date.not.is.null,tax_due_date.not.is.null')
+    .select('id, reg, make, model, mot_due_date, tax_due_date, has_remote_immobiliser, acquisition_date')
+    .or('mot_due_date.not.is.null,tax_due_date.not.is.null,has_remote_immobiliser.eq.false')
     .eq('is_disposed', false);
     
   if (error) {
@@ -189,6 +207,54 @@ export async function generateVehicleReminders(): Promise<number> {
             due_on: vehicle.tax_due_date,
             remind_on: formatDate(remindDate),
             severity: getSeverityForRule(bestRule.code),
+            context
+          });
+          
+          if (created) generated++;
+        }
+      }
+    }
+
+    // Immobilizer reminders - for vehicles without immobilizers
+    if (!vehicle.has_remote_immobiliser && vehicle.acquisition_date) {
+      const acquisitionDate = parseISO(vehicle.acquisition_date);
+      const daysSinceAcquisition = Math.ceil((today.getTime() - acquisitionDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Clean up existing immobilizer reminders first
+      await supabase
+        .from('reminders')
+        .delete()
+        .eq('object_type', 'Vehicle')
+        .eq('object_id', vehicle.id)
+        .like('rule_code', '%IMM_FIT%')
+        .in('status', ['pending', 'snoozed']);
+      
+      // Select the best rule based on days since acquisition
+      const immobilizerRule = selectBestRule(daysSinceAcquisition, 'IMM_FIT');
+      
+      if (immobilizerRule) {
+        const remindDate = addDays(acquisitionDate, immobilizerRule.leadDays);
+        
+        // Only create if remind date has passed
+        if (format(remindDate, 'yyyy-MM-dd') <= formatDate(today)) {
+          const context: ReminderContext = {
+            vehicle_id: vehicle.id,
+            reg: vehicle.reg,
+            make: vehicle.make,
+            model: vehicle.model,
+            acquisition_date: vehicle.acquisition_date,
+            days_since_acquisition: daysSinceAcquisition
+          };
+          
+          const created = await upsertReminder({
+            rule_code: immobilizerRule.code,
+            object_type: 'Vehicle',
+            object_id: vehicle.id,
+            title: getTitleTemplate(immobilizerRule.code, context),
+            message: getMessageTemplate(immobilizerRule.code, context),
+            due_on: formatDate(today), // Due immediately since it's overdue
+            remind_on: formatDate(remindDate),
+            severity: getSeverityForRule(immobilizerRule.code),
             context
           });
           

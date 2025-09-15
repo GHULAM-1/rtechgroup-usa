@@ -178,6 +178,12 @@ export function useReminderRuleActions() {
         { rule_type: 'Rental', lead_days: 1, severity: 'warning', is_enabled: true },
         { rule_type: 'Rental', lead_days: 7, severity: 'warning', is_enabled: true },
         { rule_type: 'Rental', lead_days: 14, severity: 'critical', is_enabled: true },
+        
+        // Immobilizer reminders
+        { rule_type: 'Immobilizer', lead_days: 0, severity: 'critical', is_enabled: true },
+        { rule_type: 'Immobilizer', lead_days: 7, severity: 'warning', is_enabled: true },
+        { rule_type: 'Immobilizer', lead_days: 14, severity: 'warning', is_enabled: true },
+        { rule_type: 'Immobilizer', lead_days: 30, severity: 'info', is_enabled: true },
       ];
 
       const results = [];

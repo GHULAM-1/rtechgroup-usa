@@ -23,14 +23,14 @@ import UsersManagement from '@/pages/UsersManagement';
 const Settings = () => {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState('company');
+  const [activeTab, setActiveTab] = useState('reminders');
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [showDataCleanupDialog, setShowDataCleanupDialog] = useState(false);
   
   // Handle URL tab parameter
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['company', 'reminders', 'maintenance', 'testing', 'integrations', 'users'].includes(tabParam)) {
+    if (tabParam && ['reminders', 'maintenance', 'testing', 'integrations', 'users'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -216,11 +216,7 @@ const Settings = () => {
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
-          <TabsTrigger value="company" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Company Profile
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="reminders" className="flex items-center gap-2">
             <Bell className="h-4 w-4" />
             Reminders
@@ -242,101 +238,6 @@ const Settings = () => {
             Users
           </TabsTrigger>
         </TabsList>
-
-        {/* Company Profile Tab */}
-        <TabsContent value="company">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                Company Profile
-              </CardTitle>
-              <CardDescription>
-                Configure your company information and regional settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleCompanyProfileSubmit} className="space-y-6">
-                <div className="grid gap-6 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="company_name">Company Name</Label>
-                    <Input
-                      id="company_name"
-                      name="company_name"
-                      defaultValue={settings?.company_name}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone">Timezone</Label>
-                    <Select name="timezone" defaultValue={settings?.timezone}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select timezone" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Europe/London">Europe/London (GMT)</SelectItem>
-                        <SelectItem value="Europe/Paris">Europe/Paris (CET)</SelectItem>
-                        <SelectItem value="America/New_York">America/New_York (EST)</SelectItem>
-                        <SelectItem value="America/Los_Angeles">America/Los_Angeles (PST)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="currency">Currency</Label>
-                    <Select name="currency" defaultValue={settings?.currency_code}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GBP">British Pound (GBP)</SelectItem>
-                        <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                        
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="date_format">Date Format</Label>
-                    <Select name="date_format" defaultValue={settings?.date_format}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select date format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="logo">Company Logo</Label>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Upload your company logo (coming soon)
-                    </p>
-                    <Button type="button" variant="outline" disabled>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Logo
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button type="submit" disabled={isUpdating}>
-                    <Save className="h-4 w-4 mr-2" />
-                    {isUpdating ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         {/* Reminders Tab */}
         <TabsContent value="reminders">

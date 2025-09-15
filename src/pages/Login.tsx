@@ -89,7 +89,14 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <img 
+              src="/rtechgroup-logo.png" 
+              alt="RTECHGROUP UK Logo" 
+              className="h-16 w-auto object-contain"
+            />
+          </div>
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
           <CardDescription>
             Enter your email and password to access the fleet management system

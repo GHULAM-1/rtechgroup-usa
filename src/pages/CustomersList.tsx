@@ -592,9 +592,10 @@ const CustomersList = () => {
                               status={balanceData.status} 
                               totalCharges={balanceData.totalCharges}
                               totalPayments={balanceData.totalPayments}
+                              size="small"
                             />
                           ) : (
-                            <CustomerBalanceChip balance={0} status="Settled" />
+                            <CustomerBalanceChip balance={0} status="Settled" size="small" />
                           )}
                         </TableCell>
                         <TableCell className="text-right">

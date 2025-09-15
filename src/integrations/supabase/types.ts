@@ -2380,6 +2380,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      backfill_payment_rental_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          payments_skipped: number
+          payments_updated: number
+        }[]
+      }
       backfill_rental_charges_first_month_only: {
         Args: Record<PropertyKey, never>
         Returns: undefined

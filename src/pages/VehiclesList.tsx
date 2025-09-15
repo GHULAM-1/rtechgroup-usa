@@ -365,7 +365,7 @@ export default function VehiclesListEnhanced() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -506,18 +506,20 @@ export default function VehiclesListEnhanced() {
                       {getSortIcon('tax_due_date')}
                      </div>
                    </TableHead>
-                   <TableHead className="cursor-pointer" onClick={() => handleSort('warranty_end_date')}>
-                     <div className="flex items-center gap-2">
-                       Warranty
-                       {getSortIcon('warranty_end_date')}
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('warranty_end_date')}>
+                      <div className="flex items-center gap-2">
+                        Warranty
+                        {getSortIcon('warranty_end_date')}
+                      </div>
+                    </TableHead>
+                    <TableHead>Service Plan</TableHead>
+                    <TableHead>Spare Key</TableHead>
+                    <TableHead className="cursor-pointer text-right" onClick={() => handleSort('net_profit')}>
+                     <div className="flex items-center justify-end gap-2">
+                       Net P&L
+                       {getSortIcon('net_profit')}
                      </div>
                    </TableHead>
-                   <TableHead className="cursor-pointer text-right" onClick={() => handleSort('net_profit')}>
-                    <div className="flex items-center justify-end gap-2">
-                      Net P&L
-                      {getSortIcon('net_profit')}
-                    </div>
-                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -575,46 +577,44 @@ export default function VehiclesListEnhanced() {
                         type="TAX" 
                         compact 
                       />
-                     </TableCell>
-                     <TableCell>
-                       <WarrantyStatusChip 
-                         dueDate={vehicle.warranty_end_date} 
-                         compact 
+                      </TableCell>
+                      <TableCell>
+                        <WarrantyStatusChip 
+                          dueDate={vehicle.warranty_end_date} 
+                          compact 
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <ServicePlanChip hasServicePlan={vehicle.has_service_plan || false} compact />
+                      </TableCell>
+                      <TableCell>
+                        <SpareKeyChip 
+                          hasSpareKey={vehicle.has_spare_key || false}
+                          spareKeyHolder={vehicle.spare_key_holder}
+                          spareKeyNotes={vehicle.spare_key_notes}
+                          compact
+                        />
+                      </TableCell>
+                     <TableCell className="text-right">
+                       <NetPLChip
+                         revenue={vehicle.pl_data.total_revenue}
+                         costs={vehicle.pl_data.total_costs}
+                         net={vehicle.pl_data.net_profit}
+                         compact
                        />
                      </TableCell>
-                    <TableCell>
-                      <WarrantyStatusChip 
-                        dueDate={vehicle.warranty_end_date} 
-                        compact 
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <NetPLChip
-                        revenue={vehicle.pl_data.total_revenue}
-                        costs={vehicle.pl_data.total_costs}
-                        net={vehicle.pl_data.net_profit}
-                        compact
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/vehicles/${vehicle.id}`);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                <ServicePlanChip hasServicePlan={vehicle.has_service_plan || false} compact />
-                <SpareKeyChip 
-                  hasSpareKey={vehicle.has_spare_key || false}
-                  spareKeyHolder={vehicle.spare_key_holder}
-                  spareKeyNotes={vehicle.spare_key_notes}
-                  compact
-                />
-              </TableCell>
+                     <TableCell className="text-right">
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           navigate(`/vehicles/${vehicle.id}`);
+                         }}
+                       >
+                         <Eye className="h-4 w-4" />
+                       </Button>
+                     </TableCell>
                    </TableRow>
                    );
                  })}

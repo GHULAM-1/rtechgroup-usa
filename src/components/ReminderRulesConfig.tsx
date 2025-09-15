@@ -8,13 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, RotateCcw, Car, Shield, AlertTriangle, FileText, DollarSign, Settings2 } from 'lucide-react';
+import { Loader2, RotateCcw, Car, Shield, AlertTriangle, FileText, PoundSterling, Settings2 } from 'lucide-react';
 import { useReminderRulesByCategory, useReminderRuleActions, type ReminderRule } from '@/hooks/useReminderRules';
 
 const categoryIcons = {
   'Vehicle': Car,
   'Insurance': Shield,
-  'Financial': DollarSign,
+  'Financial': PoundSterling,
   'Document': FileText
 };
 

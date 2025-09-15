@@ -32,7 +32,7 @@ export const CustomerBalanceChip = ({
   const getBadgeClasses = () => {
     switch (status) {
       case 'In Credit':
-        return 'bg-success text-success-foreground hover:bg-success/80';
+        return 'bg-green-500 text-white hover:bg-green-600 font-medium';
       case 'Settled':
         return 'bg-muted text-muted-foreground hover:bg-muted/80';
       case 'In Debt':
@@ -46,7 +46,9 @@ export const CustomerBalanceChip = ({
 
   const displayText = balance === 0 
     ? 'Settled' 
-    : `${status} (${formatCurrency(balance)})`;
+    : status === 'In Credit'
+      ? `In Credit ${formatCurrency(balance)}`
+      : `${status} ${formatCurrency(balance)}`;
 
   const tooltipContent = totalCharges !== undefined && totalPayments !== undefined
     ? `Charges ${formatCurrency(totalCharges)} • Payments ${formatCurrency(totalPayments)}`

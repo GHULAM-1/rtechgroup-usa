@@ -1,59 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Activity, PoundSterling, Car, User } from "lucide-react";
-
-interface ActivityItem {
-  id: string;
-  type: "payment" | "rental" | "vehicle";
-  description: string;
-  amount?: number;
-  customer?: string;
-  time: string;
-  status: "success" | "pending" | "warning";
-}
-
-const mockActivities: ActivityItem[] = [
-  {
-    id: "1",
-    type: "payment",
-    description: "Monthly payment received",
-    amount: 1200,
-    customer: "John Smith",
-    time: "2 hours ago",
-    status: "success"
-  },
-  {
-    id: "2", 
-    type: "rental",
-    description: "New rental agreement signed",
-    customer: "Sarah Johnson",
-    time: "5 hours ago",
-    status: "success"
-  },
-  {
-    id: "3",
-    type: "vehicle",
-    description: "Audi A4 returned from rental",
-    time: "1 day ago",
-    status: "pending"
-  },
-  {
-    id: "4",
-    type: "payment",
-    description: "Payment overdue",
-    amount: 950,
-    customer: "Mike Wilson",
-    time: "2 days ago",
-    status: "warning"
-  }
-];
+import { Activity, PoundSterling, Car, User, Settings } from "lucide-react";
+import { useRecentActivity } from "@/hooks/useRecentActivity";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ActivityIcon = ({ type }: { type: string }) => {
   const icons = {
     payment: PoundSterling,
     rental: User,
-    vehicle: Car
+    vehicle: Car,
+    system: Settings
   };
   
   const Icon = icons[type as keyof typeof icons];
@@ -75,6 +31,8 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 export const RecentActivity = () => {
+  const { data: activities = [], isLoading } = useRecentActivity();
+
   return (
     <Card className="shadow-card rounded-lg">
       <CardHeader>
@@ -84,30 +42,54 @@ export const RecentActivity = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {mockActivities.map((activity) => (
-            <div key={activity.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-all duration-200">
-              <div className="p-2 bg-gradient-subtle rounded-full">
-                <ActivityIcon type={activity.type} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">{activity.description}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  {activity.customer && (
-                    <span className="text-metadata text-muted-foreground">{activity.customer}</span>
-                  )}
-                  {activity.amount && (
-                    <span className="text-metadata font-semibold text-success">£{activity.amount}</span>
-                  )}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 p-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-3/4 mb-2" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+                <div className="text-right">
+                  <Skeleton className="h-5 w-16 mb-1" />
+                  <Skeleton className="h-3 w-12" />
                 </div>
               </div>
-              <div className="text-right">
-                <StatusBadge status={activity.status} />
-                <p className="text-metadata text-muted-foreground mt-1">{activity.time}</p>
+            ))}
+          </div>
+        ) : activities.length === 0 ? (
+          <div className="text-center py-8">
+            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-sm text-muted-foreground">No recent activity</p>
+            <p className="text-xs text-muted-foreground mt-1">Activity will appear here as you use the system</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {activities.map((activity) => (
+              <div key={activity.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-all duration-200">
+                <div className="p-2 bg-gradient-subtle rounded-full">
+                  <ActivityIcon type={activity.type} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{activity.description}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {activity.customer && (
+                      <span className="text-metadata text-muted-foreground">{activity.customer}</span>
+                    )}
+                    {activity.amount && (
+                      <span className="text-metadata font-semibold text-success">£{activity.amount}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <StatusBadge status={activity.status} />
+                  <p className="text-metadata text-muted-foreground mt-1">{activity.time}</p>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

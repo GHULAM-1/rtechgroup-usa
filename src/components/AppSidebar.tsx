@@ -95,8 +95,8 @@ export function AppSidebar() {
                     tooltip={collapsed ? item.name : undefined}
                   >
                     <NavLink to={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.name}</span>}
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className={collapsed ? "sr-only" : ""}>{item.name}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -118,12 +118,12 @@ export function AppSidebar() {
                     tooltip={collapsed ? item.name : undefined}
                   >
                     <NavLink to={item.href} className="flex items-center justify-between w-full">
-                      <div className="flex items-center gap-2">
-                        <item.icon className="h-4 w-4" />
-                        {!collapsed && <span>{item.name}</span>}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span className={collapsed ? "sr-only" : "truncate"}>{item.name}</span>
                       </div>
                       {!collapsed && item.badge !== undefined && item.badge > 0 && (
-                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-destructive rounded-full">
+                        <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-destructive rounded-full shrink-0">
                           {item.badge}
                         </span>
                       )}
@@ -153,8 +153,8 @@ export function AppSidebar() {
                     tooltip={collapsed ? item.name : undefined}
                   >
                     <NavLink to={item.href}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.name}</span>}
+                      <item.icon className="h-4 w-4 shrink-0" />
+                      <span className={collapsed ? "sr-only" : ""}>{item.name}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

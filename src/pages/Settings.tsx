@@ -510,6 +510,28 @@ const Settings = () => {
                   </div>
                 )}
               </div>
+
+              <Separator />
+
+              {/* Data Cleanup Section */}
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-destructive">Clean Test Data</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Permanently remove all test data including customers, vehicles, rentals, payments, and related records. 
+                    User accounts and system settings will be preserved.
+                  </p>
+                </div>
+                
+                <Button 
+                  variant="destructive" 
+                  onClick={() => setShowDataCleanupDialog(true)}
+                  className="w-fit"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clean Test Data
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

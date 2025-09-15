@@ -345,7 +345,7 @@ const FineDetail = () => {
           <KPICard
             title="Fine Amount"
             value={`£${Number(fine.amount).toLocaleString()}`}
-            valueClassName="text-destructive-foreground"
+            valueClassName="text-destructive dark:text-destructive"
             icon={<PoundSterling className="h-4 w-4" />}
             className="bg-destructive/10 border-destructive/20"
           />
@@ -368,7 +368,7 @@ const FineDetail = () => {
           <KPICard
             title="Authority Payments"
             value={hasAuthorityPayments ? `£${totalAuthorityPayments.toLocaleString()}` : "£0"}
-            valueClassName={hasAuthorityPayments ? "text-success-foreground" : "text-muted-foreground"}
+            valueClassName={hasAuthorityPayments ? "text-success dark:text-success" : "text-muted-foreground"}
             subtitle={hasAuthorityPayments ? `of £${fine.amount.toLocaleString()}` : undefined}
             icon={<Receipt className="h-4 w-4" />}
             className={hasAuthorityPayments ? "bg-success/10 border-success/20" : "bg-muted/30 border-muted-foreground/20"}
@@ -377,7 +377,7 @@ const FineDetail = () => {
           <KPICard
             title="Days Until Due"
             value={getDaysUntilDueDisplay()}
-            valueClassName={getDaysUntilDueColor() === "text-red-600" ? "text-destructive-foreground" : getDaysUntilDueColor() === "text-amber-600" ? "text-warning-foreground" : "text-foreground"}
+            valueClassName={getDaysUntilDueColor() === "text-red-600" ? "text-destructive dark:text-destructive" : getDaysUntilDueColor() === "text-amber-600" ? "text-warning dark:text-warning" : "text-success dark:text-success"}
             icon={<Clock className="h-4 w-4" />}
             className={
               getDaysUntilDueColor() === "text-red-600" 

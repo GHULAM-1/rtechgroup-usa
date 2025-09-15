@@ -203,7 +203,7 @@ export default function RemindersPageEnhanced() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-card hover:bg-accent/50 border transition-all duration-200 cursor-pointer hover:shadow-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Active</CardTitle>
           </CardHeader>
@@ -213,7 +213,7 @@ export default function RemindersPageEnhanced() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-200 cursor-pointer hover:shadow-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Due Today</CardTitle>
           </CardHeader>
@@ -223,7 +223,7 @@ export default function RemindersPageEnhanced() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/20 hover:border-destructive/40 transition-all duration-200 cursor-pointer hover:shadow-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Critical</CardTitle>
           </CardHeader>
@@ -233,7 +233,7 @@ export default function RemindersPageEnhanced() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="bg-card hover:bg-accent/50 border transition-all duration-200 cursor-pointer hover:shadow-md">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Snoozed</CardTitle>
           </CardHeader>

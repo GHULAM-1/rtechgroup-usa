@@ -64,11 +64,11 @@ function getTitleTemplate(ruleCode: string, context: ReminderContext): string {
     RENT_7D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (7 days)`,
     RENT_14D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (14 days)`,
     
-    // Immobilizer reminders
-    IMM_FIT_30D: (ctx) => `Fit immobilizer — ${ctx.reg} (30 days since acquisition)`,
-    IMM_FIT_14D: (ctx) => `Fit immobilizer — ${ctx.reg} (14 days since acquisition)`,
-    IMM_FIT_7D: (ctx) => `Fit immobilizer — ${ctx.reg} (7 days since acquisition)`,
-    IMM_FIT_0D: (ctx) => `Fit immobilizer — ${ctx.reg} (overdue)`,
+    // Immobiliser reminders
+    IMM_FIT_30D: (ctx) => `Fit immobiliser — ${ctx.reg} (30 days since acquisition)`,
+    IMM_FIT_14D: (ctx) => `Fit immobiliser — ${ctx.reg} (14 days since acquisition)`,
+    IMM_FIT_7D: (ctx) => `Fit immobiliser — ${ctx.reg} (7 days since acquisition)`,
+    IMM_FIT_0D: (ctx) => `Fit immobiliser — ${ctx.reg} (overdue)`,
     
     // Legacy codes for backward compatibility
     VEH_MOT_30D: (ctx) => `MOT due soon — ${ctx.reg} (30 days)`,
@@ -140,11 +140,11 @@ function getMessageTemplate(ruleCode: string, context: ReminderContext): string 
     RENT_7D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
     RENT_14D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
     
-    // Immobilizer reminders
-    IMM_FIT_30D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) acquired on ${ctx.due_date} needs an immobilizer fitted. Please schedule installation.`,
-    IMM_FIT_14D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) has been without an immobilizer for ${ctx.days_until || 0} days. Schedule fitting urgently.`,
-    IMM_FIT_7D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) urgently needs an immobilizer fitted - ${ctx.days_until || 0} days since acquisition.`,
-    IMM_FIT_0D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) is overdue for immobilizer fitting - acquired ${ctx.days_until || 0} days ago. Immediate action required!`,
+    // Immobiliser reminders
+    IMM_FIT_30D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) acquired on ${ctx.due_date} needs an immobiliser fitted. Please schedule installation.`,
+    IMM_FIT_14D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) has been without an immobiliser for ${ctx.days_until || 0} days. Schedule fitting urgently.`,
+    IMM_FIT_7D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) urgently needs an immobiliser fitted - ${ctx.days_until || 0} days since acquisition.`,
+    IMM_FIT_0D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) is overdue for immobiliser fitting - acquired ${ctx.days_until || 0} days ago. Immediate action required!`,
     
     // Legacy codes for backward compatibility
     VEH_MOT_30D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test soon.`,
@@ -270,7 +270,7 @@ serve(async (req) => {
       return acc;
     }, {} as Record<string, any[]>);
 
-    // 3. Generate Vehicle MOT/TAX/Immobilizer reminders
+    // 3. Generate Vehicle MOT/TAX/Immobiliser reminders
     const { data: vehicles } = await supabase
       .from('vehicles')
       .select('id, reg, make, model, mot_due_date, tax_due_date, has_remote_immobiliser, acquisition_date')
@@ -364,12 +364,12 @@ serve(async (req) => {
         }
       }
 
-      // Immobilizer reminders - for vehicles without immobilizers
-      if (!vehicle.has_remote_immobiliser && vehicle.acquisition_date && rulesByType['Immobilizer']) {
+      // Immobiliser reminders - for vehicles without immobilisers
+      if (!vehicle.has_remote_immobiliser && vehicle.acquisition_date && rulesByType['Immobiliser']) {
         const acquisitionDate = new Date(vehicle.acquisition_date);
         const daysSinceAcquisition = Math.ceil((new Date().getTime() - acquisitionDate.getTime()) / (1000 * 60 * 60 * 24));
         
-        for (const rule of rulesByType['Immobilizer']) {
+        for (const rule of rulesByType['Immobiliser']) {
           const remindDate = new Date(acquisitionDate);
           remindDate.setDate(acquisitionDate.getDate() + rule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];

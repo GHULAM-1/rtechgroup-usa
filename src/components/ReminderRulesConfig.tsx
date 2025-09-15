@@ -16,7 +16,7 @@ const categoryIcons = {
   'Insurance': Shield,
   'Financial': PoundSterling,
   'Document': FileText,
-  'Immobilizer': KeyRound
+  'Immobiliser': KeyRound
 };
 
 const severityColors = {
@@ -260,7 +260,7 @@ const ReminderRulesConfig: React.FC = () => {
                  <p className="text-xs text-muted-foreground">
                    {ruleType === 'Expiry' ? 'Reminders sent before insurance policies expire' :
                     ruleType === 'Verification' ? 'Recurring reminders to verify insurance is still active during rentals' :
-                    ruleType === 'Immobilizer' ? 'Reminders to fit immobilizers on vehicles that don\'t have them' :
+                    ruleType === 'Immobiliser' ? 'Reminders to fit immobilisers on vehicles that don\'t have them' :
                     `Configure ${ruleType.toLowerCase()} reminder settings`}
                  </p>
               </div>

@@ -79,9 +79,9 @@ function selectBestRule(daysUntilDue: number, rulePrefix: string): ReminderRule 
   // Sort rules by leadDays descending (30, 14, 7, 0)
   const sortedRules = rules.sort((a, b) => b.leadDays - a.leadDays);
   
-  // For immobilizer reminders, we check days since acquisition, not until due
+  // For immobiliser reminders, we check days since acquisition, not until due
   if (rulePrefix === 'IMM_FIT') {
-    // For immobilizers, find the right rule based on days since acquisition
+    // For immobilisers, find the right rule based on days since acquisition
     for (const rule of sortedRules) {
       if (daysUntilDue >= rule.leadDays) {
         return rule;
@@ -118,7 +118,7 @@ export async function generateVehicleReminders(): Promise<number> {
   let generated = 0;
   const today = getToday();
   
-  // Get vehicles with MOT or TAX dates, or without immobilizers
+  // Get vehicles with MOT or TAX dates, or without immobilisers
   const { data: vehicles, error } = await supabase
     .from('vehicles')
     .select('id, reg, make, model, mot_due_date, tax_due_date, has_remote_immobiliser, acquisition_date')
@@ -215,12 +215,12 @@ export async function generateVehicleReminders(): Promise<number> {
       }
     }
 
-    // Immobilizer reminders - for vehicles without immobilizers
+    // Immobiliser reminders - for vehicles without immobilisers
     if (!vehicle.has_remote_immobiliser && vehicle.acquisition_date) {
       const acquisitionDate = parseISO(vehicle.acquisition_date);
       const daysSinceAcquisition = Math.ceil((today.getTime() - acquisitionDate.getTime()) / (1000 * 60 * 60 * 24));
       
-      // Clean up existing immobilizer reminders first
+      // Clean up existing immobiliser reminders first
       await supabase
         .from('reminders')
         .delete()
@@ -230,10 +230,10 @@ export async function generateVehicleReminders(): Promise<number> {
         .in('status', ['pending', 'snoozed']);
       
       // Select the best rule based on days since acquisition
-      const immobilizerRule = selectBestRule(daysSinceAcquisition, 'IMM_FIT');
+      const immobiliserRule = selectBestRule(daysSinceAcquisition, 'IMM_FIT');
       
-      if (immobilizerRule) {
-        const remindDate = addDays(acquisitionDate, immobilizerRule.leadDays);
+      if (immobiliserRule) {
+        const remindDate = addDays(acquisitionDate, immobiliserRule.leadDays);
         
         // Only create if remind date has passed
         if (format(remindDate, 'yyyy-MM-dd') <= formatDate(today)) {
@@ -247,14 +247,14 @@ export async function generateVehicleReminders(): Promise<number> {
           };
           
           const created = await upsertReminder({
-            rule_code: immobilizerRule.code,
+            rule_code: immobiliserRule.code,
             object_type: 'Vehicle',
             object_id: vehicle.id,
-            title: getTitleTemplate(immobilizerRule.code, context),
-            message: getMessageTemplate(immobilizerRule.code, context),
+            title: getTitleTemplate(immobiliserRule.code, context),
+            message: getMessageTemplate(immobiliserRule.code, context),
             due_on: formatDate(today), // Due immediately since it's overdue
             remind_on: formatDate(remindDate),
-            severity: getSeverityForRule(immobilizerRule.code),
+            severity: getSeverityForRule(immobiliserRule.code),
             context
           });
           

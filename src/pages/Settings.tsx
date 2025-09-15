@@ -12,11 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database, AlertTriangle } from 'lucide-react';
+import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, Database, AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useOrgSettings } from '@/hooks/useOrgSettings';
 import { CompanyLogoUpload } from '@/components/CompanyLogoUpload';
 import { TestingCards } from '@/components/TestingCards';
+import { DataCleanupDialog } from '@/components/DataCleanupDialog';
 import UsersManagement from '@/pages/UsersManagement';
 
 const Settings = () => {
@@ -24,6 +25,7 @@ const Settings = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('company');
   const [isBackfilling, setIsBackfilling] = useState(false);
+  const [showDataCleanupDialog, setShowDataCleanupDialog] = useState(false);
   
   // Handle URL tab parameter
   useEffect(() => {
@@ -603,10 +605,16 @@ const Settings = () => {
       {/* Users Tab */}
       <TabsContent value="users">
         <UsersManagement />
-      </TabsContent>
-    </Tabs>
-  </div>
-);
+        </TabsContent>
+      </Tabs>
+
+      {/* Data Cleanup Dialog */}
+      <DataCleanupDialog 
+        open={showDataCleanupDialog} 
+        onOpenChange={setShowDataCleanupDialog} 
+      />
+    </div>
+  );
 };
 
 export { Settings };

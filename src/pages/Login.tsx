@@ -235,7 +235,7 @@ export default function Login() {
         <ThemeToggle />
       </div>
       
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md animate-glow-pulse hover:shadow-[var(--glow-pink-intense)] transition-shadow duration-300">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 

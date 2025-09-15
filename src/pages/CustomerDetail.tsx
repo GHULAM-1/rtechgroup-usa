@@ -182,11 +182,6 @@ const CustomerDetail = () => {
                   totalCharges={customerBalanceData.totalCharges}
                   totalPayments={customerBalanceData.totalPayments}
                 />
-                {customerBalanceData.balance > 0 && (
-                  <p className="text-xl font-bold text-foreground">
-                    £{customerBalanceData.balance.toLocaleString()}
-                  </p>
-                )}
               </div>
             ) : (
               <Badge variant="secondary">Loading...</Badge>

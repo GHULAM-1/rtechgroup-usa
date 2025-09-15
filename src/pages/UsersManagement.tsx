@@ -19,7 +19,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  UserPlus, 
   MoreHorizontal, 
   Key, 
   Shield, 
@@ -39,25 +38,12 @@ import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import type { AppUser } from '@/contexts/AuthContext';
 
-interface CreateUserForm {
-  name: string;
-  email: string;
-  role: 'head_admin' | 'admin' | 'ops' | 'viewer';
-  temporaryPassword: string;
-}
 
 export default function UsersManagement() {
   const { appUser } = useAuth();
   const queryClient = useQueryClient();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
-  const [createForm, setCreateForm] = useState<CreateUserForm>({
-    name: '',
-    email: '',
-    role: 'viewer',
-    temporaryPassword: ''
-  });
   const [resetPassword, setResetPassword] = useState('');
 
   // Fetch users
@@ -93,35 +79,6 @@ export default function UsersManagement() {
     return password.split('').sort(() => Math.random() - 0.5).join('');
   };
 
-  // Create user mutation
-  const createUserMutation = useMutation({
-    mutationFn: async (userData: CreateUserForm) => {
-      const { data, error } = await supabase.functions.invoke('admin-create-user', {
-        body: userData
-      });
-      
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to create user');
-      
-      return data.user;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      setShowCreateDialog(false);
-      setCreateForm({ name: '', email: '', role: 'viewer', temporaryPassword: '' });
-      toast({
-        title: "Success",
-        description: "User created successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create user",
-        variant: "destructive",
-      });
-    }
-  });
 
   // Reset password mutation
   const resetPasswordMutation = useMutation({
@@ -229,12 +186,6 @@ export default function UsersManagement() {
     }
   };
 
-  const handleCreateUser = () => {
-    if (!createForm.temporaryPassword) {
-      setCreateForm(prev => ({ ...prev, temporaryPassword: generatePassword() }));
-    }
-    createUserMutation.mutate(createForm);
-  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -260,15 +211,9 @@ export default function UsersManagement() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Users Management</h1>
-          <p className="text-muted-foreground">Manage user accounts and permissions</p>
-        </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Create User
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold">Users Management</h1>
+        <p className="text-muted-foreground">Manage user accounts and permissions</p>
       </div>
 
       <Card>
@@ -371,102 +316,6 @@ export default function UsersManagement() {
         </CardContent>
       </Card>
 
-      {/* Create User Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New User</DialogTitle>
-            <DialogDescription>
-              Create a new user account. They will need to change their password on first login.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={createForm.name}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter user's name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={createForm.email}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="Enter user's email"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select 
-                value={createForm.role} 
-                onValueChange={(value: any) => setCreateForm(prev => ({ ...prev, role: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                  <SelectItem value="ops">Operations</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="head_admin">Head Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Temporary Password</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="password"
-                  type="text"
-                  value={createForm.temporaryPassword}
-                  onChange={(e) => setCreateForm(prev => ({ ...prev, temporaryPassword: e.target.value }))}
-                  placeholder="Click generate or enter password"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setCreateForm(prev => ({ ...prev, temporaryPassword: generatePassword() }))}
-                >
-                  Generate
-                </Button>
-                {createForm.temporaryPassword && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon"
-                    onClick={() => copyToClipboard(createForm.temporaryPassword)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Password must be at least 12 characters with uppercase, lowercase, and numbers.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowCreateDialog(false)}
-              disabled={createUserMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleCreateUser}
-              disabled={!createForm.name || !createForm.email || !createForm.temporaryPassword || createUserMutation.isPending}
-            >
-              {createUserMutation.isPending ? 'Creating...' : 'Create User'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Reset Password Dialog */}
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>

@@ -409,7 +409,7 @@ serve(async (req) => {
       }
     }
 
-    // 3. Generate insurance verification reminders for active rentals
+    // 3. Generate insurance verification reminders for active rentals (simplified)
     if (rulesByType['Verification']) {
       const { data: activeRentals } = await supabase
         .from('rentals')
@@ -421,7 +421,10 @@ serve(async (req) => {
         .eq('status', 'Active');
 
       for (const rental of activeRentals || []) {
-        for (const rule of rulesByType['Verification']) {
+        // Only create verification reminders for the 7D rule to avoid excessive generation
+        const verificationRule = rulesByType['Verification'].find(r => r.rule_code === 'INSURANCE_VERIFICATION_7D');
+        
+        if (verificationRule) {
           const context: ReminderContext = {
             customer_id: rental.customer_id,
             customer_name: rental.customers.name,
@@ -430,31 +433,38 @@ serve(async (req) => {
             rental_id: rental.id
           };
 
-          // Calculate verification dates based on rental start date and rule interval
-          let currentVerificationDate = new Date(rental.start_date);
-          const rentalEndDate = rental.end_date ? new Date(rental.end_date) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          // Calculate next verification date (30 days from rental start, then monthly intervals)
+          const rentalStart = new Date(rental.start_date);
+          const daysSinceStart = Math.floor((new Date().getTime() - rentalStart.getTime()) / (1000 * 60 * 60 * 24));
+          
+          // Find next verification milestone (30, 60, 90, 120 days, etc.)
+          const nextMilestone = Math.ceil((daysSinceStart + 1) / 30) * 30;
+          const nextVerificationDate = new Date(rentalStart);
+          nextVerificationDate.setDate(nextVerificationDate.getDate() + nextMilestone);
 
-          while (currentVerificationDate <= rentalEndDate && currentVerificationDate <= new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)) {
-            // Add the lead days to get reminder date
-            const reminderDate = new Date(currentVerificationDate);
-            reminderDate.setDate(reminderDate.getDate() + rule.lead_days);
+          // Only create if the next verification is within the next 14 days
+          const daysUntilVerification = Math.floor((nextVerificationDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          
+          if (daysUntilVerification >= 0 && daysUntilVerification <= 14) {
+            const reminderDate = new Date(nextVerificationDate);
+            reminderDate.setDate(reminderDate.getDate() - Math.abs(verificationRule.lead_days));
 
-            // Only create reminder if it's within the next 30 days and hasn't passed
-            if (reminderDate >= new Date() && reminderDate <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) {
+            // Only create if reminder date is today or in the future
+            if (reminderDate >= new Date()) {
               const reminderDateStr = reminderDate.toISOString().split('T')[0];
-              const verificationDateStr = currentVerificationDate.toISOString().split('T')[0];
+              const verificationDateStr = nextVerificationDate.toISOString().split('T')[0];
 
               const { error: reminderError } = await supabase
                 .from('reminders')
                 .upsert({
-                  rule_code: rule.rule_code,
+                  rule_code: verificationRule.rule_code,
                   object_type: 'Rental',
                   object_id: rental.id,
-                  title: getTitleTemplate(rule.rule_code, context),
-                  message: getMessageTemplate(rule.rule_code, context),
+                  title: getTitleTemplate(verificationRule.rule_code, context),
+                  message: getMessageTemplate(verificationRule.rule_code, context),
                   due_on: verificationDateStr,
                   remind_on: reminderDateStr,
-                  severity: rule.severity,
+                  severity: verificationRule.severity,
                   context: context,
                   status: 'pending'
                 }, {
@@ -464,17 +474,6 @@ serve(async (req) => {
               if (!reminderError) {
                 totalGenerated++;
               }
-            }
-
-            // Move to next verification interval
-            if (rule.interval_type === 'weekly') {
-              currentVerificationDate.setDate(currentVerificationDate.getDate() + 7);
-            } else if (rule.interval_type === 'bi-weekly') {
-              currentVerificationDate.setDate(currentVerificationDate.getDate() + 14);
-            } else if (rule.interval_type === 'monthly') {
-              currentVerificationDate.setMonth(currentVerificationDate.getMonth() + 1);
-            } else {
-              currentVerificationDate.setDate(currentVerificationDate.getDate() + rule.lead_days);
             }
           }
         }

@@ -32,7 +32,7 @@ export const CustomerBalanceChip = ({
   };
 
   const getBadgeClasses = () => {
-    const sizeClasses = size === 'small' ? 'text-sm px-3 py-1' : 'text-base px-4 py-2';
+    const sizeClasses = size === 'small' ? 'text-xs px-2 py-1' : 'text-base px-4 py-2';
     
     switch (status) {
       case 'In Credit':

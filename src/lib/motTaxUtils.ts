@@ -1,4 +1,4 @@
-import { differenceInDays } from "date-fns";
+import { differenceInDays, startOfDay } from "date-fns";
 
 export interface DueStatus {
   state: 'ok' | 'due_soon' | 'overdue' | 'missing';
@@ -10,9 +10,11 @@ export function getDueStatus(dueDate: Date | string | null): DueStatus {
     return { state: 'missing' };
   }
   
+  // Normalize both dates to start of day to avoid time-of-day issues
   const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-  const today = new Date();
-  const diffDays = differenceInDays(dueDateObj, today);
+  const normalizedDueDate = startOfDay(dueDateObj);
+  const normalizedToday = startOfDay(new Date());
+  const diffDays = differenceInDays(normalizedDueDate, normalizedToday);
   
   if (diffDays < 0) {
     return { state: 'overdue', days: Math.abs(diffDays) };

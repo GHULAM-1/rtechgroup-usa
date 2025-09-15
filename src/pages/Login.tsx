@@ -94,7 +94,7 @@ export default function Login() {
             <img 
               src="/rtechgroup-logo.png" 
               alt="RTECHGROUP UK Logo" 
-              className="h-16 w-auto object-contain"
+              className="h-24 w-auto object-contain"
             />
           </div>
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>

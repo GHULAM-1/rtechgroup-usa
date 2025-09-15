@@ -43,17 +43,14 @@ const vehicleSchema = z.object({
   security_notes: z.string().optional(),
 }).refine(
   (data) => {
-    if (data.acquisition_type === 'Finance' && !data.monthly_payment) {
-      return false;
-    }
     if (data.acquisition_type === 'Purchase' && !data.purchase_price) {
       return false;
     }
     return true;
   },
   {
-    message: "Monthly payment is required for financed vehicles",
-    path: ["monthly_payment"],
+    message: "Purchase price is required for purchased vehicles",
+    path: ["purchase_price"],
   }
 ).refine(
   (data) => {

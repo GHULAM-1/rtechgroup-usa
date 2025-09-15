@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Key, Minus, Info } from "lucide-react";
+import { KeyRound, Minus, Info } from "lucide-react";
 
 interface SpareKeyChipProps {
   hasSpareKey: boolean;
@@ -46,7 +46,7 @@ export function SpareKeyChip({ hasSpareKey, spareKeyHolder, spareKeyNotes, compa
 
   const badge = (
     <Badge variant="default" className={`flex items-center gap-1 ${config.className} ${compact ? 'text-xs px-2 py-0.5' : ''}`}>
-      <Key className="h-3 w-3" />
+      <KeyRound className="h-3 w-3" />
       <span>{config.text}</span>
       {spareKeyNotes && <Info className="h-3 w-3" />}
     </Badge>

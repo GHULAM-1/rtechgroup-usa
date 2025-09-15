@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle, Minus } from "lucide-react";
+import { CheckCircle, Minus, Wrench } from "lucide-react";
 
 interface ServicePlanChipProps {
   hasServicePlan: boolean;
@@ -10,7 +10,7 @@ interface ServicePlanChipProps {
 export function ServicePlanChip({ hasServicePlan, compact = false }: ServicePlanChipProps) {
   const config = hasServicePlan
     ? {
-        icon: CheckCircle,
+        icon: Wrench,
         variant: 'default' as const,
         className: 'bg-green-100 text-green-700 hover:bg-green-200',
         text: compact ? 'Plan: Yes' : 'Service Plan: Active',

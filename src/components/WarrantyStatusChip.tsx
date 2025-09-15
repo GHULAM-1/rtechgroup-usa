@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { getDueStatus, formatDueStatusText, type DueStatus } from "@/lib/motTaxUtils";
-import { AlertCircle, CheckCircle, Clock, Minus } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, Minus, Shield } from "lucide-react";
 
 interface WarrantyStatusChipProps {
   dueDate: Date | string | null;
@@ -29,7 +29,7 @@ const getStatusIcon = (state: DueStatus['state']) => {
     case 'due_soon':
       return <Clock className="h-3 w-3" />;
     case 'ok':
-      return <CheckCircle className="h-3 w-3" />;
+      return <Shield className="h-3 w-3" />;
     case 'missing':
       return <Minus className="h-3 w-3" />;
     default:

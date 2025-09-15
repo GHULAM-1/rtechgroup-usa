@@ -75,6 +75,7 @@ export function getContractTotal(vehicle: {
   const monthly = (vehicle.monthly_payment || 0) * (vehicle.term_months || 0);
   const balloon = vehicle.balloon || 0;
   
+  // Return total even if only initial payment exists
   return initial + monthly + balloon;
 }
 

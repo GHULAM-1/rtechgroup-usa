@@ -28,7 +28,6 @@ interface VehiclePL {
   revenue_rental: number;
   revenue_fees: number;
   cost_acquisition: number;
-  cost_finance: number;
   cost_service: number;
   cost_fines: number;
   cost_other: number;
@@ -136,7 +135,6 @@ const PLDashboard: React.FC = () => {
           revenue_rental,
           revenue_fees,
           cost_acquisition,
-          cost_finance,
           cost_service,
           cost_fines,
           cost_other,
@@ -261,7 +259,6 @@ const PLDashboard: React.FC = () => {
       revenue_rental: acc.revenue_rental + (vehicle.revenue_rental || 0),
       revenue_fees: acc.revenue_fees + (vehicle.revenue_fees || 0),
       cost_acquisition: acc.cost_acquisition + (vehicle.cost_acquisition || 0),
-      cost_finance: acc.cost_finance + (vehicle.cost_finance || 0),
       cost_service: acc.cost_service + (vehicle.cost_service || 0),
       cost_fines: acc.cost_fines + (vehicle.cost_fines || 0),
       cost_other: acc.cost_other + (vehicle.cost_other || 0),
@@ -272,7 +269,6 @@ const PLDashboard: React.FC = () => {
       revenue_rental: 0,
       revenue_fees: 0,
       cost_acquisition: 0,
-      cost_finance: 0,
       cost_service: 0,
       cost_fines: 0,
       cost_other: 0,
@@ -296,7 +292,7 @@ const PLDashboard: React.FC = () => {
 
       const headers = groupByMonth 
         ? ['Month', 'Revenue', 'Costs', 'Net Profit', 'Vehicles']
-        : ['Vehicle', 'Make/Model', 'Revenue', 'Initial Fees', 'Finance', 'Services', 'Fines', 'Other', 'Total Costs', 'Net Profit'];
+        : ['Vehicle', 'Make/Model', 'Revenue', 'Initial Fees', 'Services', 'Fines', 'Other', 'Total Costs', 'Net Profit'];
       
       const csvContent = [
         headers.join(','),
@@ -317,7 +313,6 @@ const PLDashboard: React.FC = () => {
               `"${vehicleRow.make_model}"`,
               vehicleRow.revenue_rental || 0,
               vehicleRow.revenue_fees || 0,
-              vehicleRow.cost_finance || 0,
               vehicleRow.cost_service || 0,
               vehicleRow.cost_fines || 0,
               vehicleRow.cost_other || 0,
@@ -698,9 +693,6 @@ const PLDashboard: React.FC = () => {
                         <SortButton field="revenue_fees">Initial Fees</SortButton>
                       </TableHead>
                       <TableHead className="text-right">
-                        <SortButton field="cost_finance">Finance</SortButton>
-                      </TableHead>
-                      <TableHead className="text-right">
                         <SortButton field="cost_service">Services</SortButton>
                       </TableHead>
                       <TableHead className="text-right">
@@ -736,7 +728,6 @@ const PLDashboard: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(vehicle.revenue_rental || 0)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(vehicle.revenue_fees || 0)}</TableCell>
-                        <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_finance || 0)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_service || 0)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_fines || 0)}</TableCell>
                         <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_other || 0)}</TableCell>
@@ -767,7 +758,6 @@ const PLDashboard: React.FC = () => {
                           <TableCell className="font-medium">Totals</TableCell>
                           <TableCell className="text-right font-mono font-medium">{formatCurrency(categoryTotals.revenue_rental)}</TableCell>
                           <TableCell className="text-right font-mono font-medium">{formatCurrency(categoryTotals.revenue_fees)}</TableCell>
-                          <TableCell className="text-right font-mono font-medium">{formatCurrency(categoryTotals.cost_finance)}</TableCell>
                           <TableCell className="text-right font-mono font-medium">{formatCurrency(categoryTotals.cost_service)}</TableCell>
                           <TableCell className="text-right font-mono font-medium">{formatCurrency(categoryTotals.cost_fines)}</TableCell>
                           <TableCell className="text-right font-mono font-medium">{formatCurrency(categoryTotals.cost_other)}</TableCell>

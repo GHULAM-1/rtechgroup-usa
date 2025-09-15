@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowLeft, CreditCard, FileText, Plus, Upload, Car, AlertTriangle, Eye, Download, Edit, Trash2, User, Mail, Phone, CalendarPlus, PoundSterling, FolderOpen, Receipt, CreditCard as PaymentIcon } from "lucide-react";
 import { TruncatedCell } from "@/components/TruncatedCell";
 import { EmptyState } from "@/components/EmptyState";
+import { CustomerBalanceChip } from "@/components/CustomerBalanceChip";
 import { useNavigate } from "react-router-dom";
 import { useCustomerDocuments, useDeleteCustomerDocument, useDownloadDocument } from "@/hooks/useCustomerDocuments";
 import { useCustomerBalanceWithStatus } from "@/hooks/useCustomerBalance";
@@ -175,15 +176,12 @@ const CustomerDetail = () => {
           <CardContent className="flex-1">
             {customerBalanceData ? (
               <div className="space-y-3">
-                <Badge 
-                  variant={
-                    customerBalanceData.status === 'In Credit' ? 'default' : 
-                    customerBalanceData.status === 'Settled' ? 'secondary' : 
-                    'destructive'
-                  }
-                >
-                  {customerBalanceData.status}
-                </Badge>
+                <CustomerBalanceChip 
+                  balance={customerBalanceData.balance} 
+                  status={customerBalanceData.status} 
+                  totalCharges={customerBalanceData.totalCharges}
+                  totalPayments={customerBalanceData.totalPayments}
+                />
                 {customerBalanceData.balance > 0 && (
                   <p className="text-xl font-bold text-foreground">
                     £{customerBalanceData.balance.toLocaleString()}

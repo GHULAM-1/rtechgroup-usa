@@ -94,9 +94,9 @@ const CustomerDetail = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto p-6 pt-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate("/customers")}>
             <ArrowLeft className="h-4 w-4 mr-2" />

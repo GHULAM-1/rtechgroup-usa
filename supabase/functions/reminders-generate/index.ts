@@ -351,7 +351,79 @@ serve(async (req) => {
       }
     }
 
-    // 3. Generate rental overdue reminders
+    // 3. Generate insurance verification reminders for active rentals
+    if (rulesByType['Verification']) {
+      const { data: activeRentals } = await supabase
+        .from('rentals')
+        .select(`
+          id, customer_id, vehicle_id, start_date, end_date,
+          customers!inner(name),
+          vehicles!inner(reg)
+        `)
+        .eq('status', 'Active');
+
+      for (const rental of activeRentals || []) {
+        for (const rule of rulesByType['Verification']) {
+          const context: ReminderContext = {
+            customer_id: rental.customer_id,
+            customer_name: rental.customers.name,
+            vehicle_id: rental.vehicle_id,
+            reg: rental.vehicles.reg,
+            rental_id: rental.id
+          };
+
+          // Calculate verification dates based on rental start date and rule interval
+          let currentVerificationDate = new Date(rental.start_date);
+          const rentalEndDate = rental.end_date ? new Date(rental.end_date) : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+
+          while (currentVerificationDate <= rentalEndDate && currentVerificationDate <= new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)) {
+            // Add the lead days to get reminder date
+            const reminderDate = new Date(currentVerificationDate);
+            reminderDate.setDate(reminderDate.getDate() + rule.lead_days);
+
+            // Only create reminder if it's within the next 30 days and hasn't passed
+            if (reminderDate >= new Date() && reminderDate <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) {
+              const reminderDateStr = reminderDate.toISOString().split('T')[0];
+              const verificationDateStr = currentVerificationDate.toISOString().split('T')[0];
+
+              const { error: reminderError } = await supabase
+                .from('reminders')
+                .upsert({
+                  rule_code: rule.rule_code,
+                  object_type: 'Rental',
+                  object_id: rental.id,
+                  title: getTitleTemplate(rule.rule_code, context),
+                  message: getMessageTemplate(rule.rule_code, context),
+                  due_on: verificationDateStr,
+                  remind_on: reminderDateStr,
+                  severity: rule.severity,
+                  context: context,
+                  status: 'pending'
+                }, {
+                  onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
+                });
+
+              if (!reminderError) {
+                totalGenerated++;
+              }
+            }
+
+            // Move to next verification interval
+            if (rule.interval_type === 'weekly') {
+              currentVerificationDate.setDate(currentVerificationDate.getDate() + 7);
+            } else if (rule.interval_type === 'bi-weekly') {
+              currentVerificationDate.setDate(currentVerificationDate.getDate() + 14);
+            } else if (rule.interval_type === 'monthly') {
+              currentVerificationDate.setMonth(currentVerificationDate.getMonth() + 1);
+            } else {
+              currentVerificationDate.setDate(currentVerificationDate.getDate() + rule.lead_days);
+            }
+          }
+        }
+      }
+    }
+
+    // 4. Generate rental overdue reminders
     // Generate rental overdue reminders - these use a different logic
     if (rulesByType['Rental']) {
       const { data: overdueCharges } = await supabase

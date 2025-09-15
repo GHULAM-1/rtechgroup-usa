@@ -55,6 +55,11 @@ export function getTitleTemplate(ruleCode: string, context: ReminderContext): st
     INS_EXP_7D: (ctx) => `Insurance expiring — ${ctx.customer_name} (${ctx.reg}) (7 days)`,
     INS_EXP_0D: (ctx) => `Insurance expires today — ${ctx.customer_name} (${ctx.reg})`,
     
+    // Insurance verification reminders
+    INS_VERIFY_7D: (ctx) => `Verify insurance for ${ctx.reg}`,
+    INS_VERIFY_14D: (ctx) => `Verify insurance for ${ctx.reg}`,
+    INS_VERIFY_30D: (ctx) => `Verify insurance for ${ctx.reg}`,
+    
     // Document expiry reminders
     DOC_EXP_30D: (ctx) => `Document expiring — ${ctx.customer_name} (30 days)`,
     DOC_EXP_14D: (ctx) => `Document expiring — ${ctx.customer_name} (14 days)`,
@@ -93,6 +98,11 @@ export function getMessageTemplate(ruleCode: string, context: ReminderContext): 
     INS_EXP_14D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires on ${ctx.due_date}. Renew immediately with ${ctx.provider}.`,
     INS_EXP_7D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires on ${ctx.due_date}. Urgent renewal required!`,
     INS_EXP_0D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires today (${ctx.due_date}). Immediate action required!`,
+    
+    // Insurance verification reminders
+    INS_VERIFY_7D: (ctx) => `Please verify that insurance is still active for vehicle ${ctx.reg} rented by ${ctx.customer_name}.`,
+    INS_VERIFY_14D: (ctx) => `Please verify that insurance is still active for vehicle ${ctx.reg} rented by ${ctx.customer_name}.`,
+    INS_VERIFY_30D: (ctx) => `Please verify that insurance is still active for vehicle ${ctx.reg} rented by ${ctx.customer_name}.`,
     
     // Document expiry reminders
     DOC_EXP_30D: (ctx) => `Document for ${ctx.customer_name} expires on ${ctx.due_date}. Please request renewal.`,

@@ -73,7 +73,7 @@ const ReminderRuleCard: React.FC<{
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Label htmlFor={`days-${rule.id}`} className="text-xs">
-              Days before due:
+              {rule.is_recurring ? 'Days interval:' : 'Days before due:'}
             </Label>
             <Input
               id={`days-${rule.id}`}
@@ -85,6 +85,14 @@ const ReminderRuleCard: React.FC<{
               className="w-20 h-8 text-xs"
               disabled={isLoading}
             />
+            <span className="text-xs text-muted-foreground">
+              {rule.is_recurring ? 
+                (rule.interval_type === 'weekly' ? '(weekly)' :
+                 rule.interval_type === 'bi-weekly' ? '(bi-weekly)' :
+                 rule.interval_type === 'monthly' ? '(monthly)' :
+                 '(recurring)') : 
+                'days'}
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -237,26 +245,35 @@ const ReminderRulesConfig: React.FC = () => {
 
           {Object.entries(groupedRules).map(([category, ruleTypes]) => (
             <TabsContent key={category} value={category} className="space-y-4">
-              {Object.entries(ruleTypes).map(([ruleType, rules]) => (
-                <div key={ruleType} className="space-y-3">
-                  <h3 className="font-medium text-sm flex items-center gap-2">
-                    {ruleType} Reminders
-                    <Badge variant="secondary" className="text-xs">
-                      {rules.filter(r => r.is_enabled).length} active
-                    </Badge>
-                  </h3>
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {rules.map((rule) => (
-                      <ReminderRuleCard
-                        key={rule.id}
-                        rule={rule}
-                        onUpdate={handleRuleUpdate}
-                        isLoading={isUpdating}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+          {Object.entries(ruleTypes).map(([ruleType, rules]) => (
+            <div key={ruleType} className="space-y-3">
+              <div className="space-y-1">
+                <h3 className="font-medium text-sm flex items-center gap-2">
+                  {ruleType === 'Expiry' ? 'Policy Expiry Reminders' : 
+                   ruleType === 'Verification' ? 'Insurance Verification Reminders' : 
+                   `${ruleType} Reminders`}
+                  <Badge variant="secondary" className="text-xs">
+                    {rules.filter(r => r.is_enabled).length} active
+                  </Badge>
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {ruleType === 'Expiry' ? 'Reminders sent before insurance policies expire' :
+                   ruleType === 'Verification' ? 'Recurring reminders to verify insurance is still active during rentals' :
+                   `Configure ${ruleType.toLowerCase()} reminder settings`}
+                </p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {rules.map((rule) => (
+                  <ReminderRuleCard
+                    key={rule.id}
+                    rule={rule}
+                    onUpdate={handleRuleUpdate}
+                    isLoading={isUpdating}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
             </TabsContent>
           ))}
         </Tabs>

@@ -1426,7 +1426,9 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          interval_type: string | null
           is_enabled: boolean
+          is_recurring: boolean | null
           lead_days: number
           rule_code: string
           rule_type: string
@@ -1438,7 +1440,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          interval_type?: string | null
           is_enabled?: boolean
+          is_recurring?: boolean | null
           lead_days: number
           rule_code: string
           rule_type: string
@@ -1450,7 +1454,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          interval_type?: string | null
           is_enabled?: boolean
+          is_recurring?: boolean | null
           lead_days?: number
           rule_code?: string
           rule_type?: string

@@ -11,6 +11,8 @@ export interface ReminderRule {
   is_enabled: boolean;
   rule_code: string;
   description?: string;
+  is_recurring: boolean;
+  interval_type: string;
   created_at: string;
   updated_at: string;
 }

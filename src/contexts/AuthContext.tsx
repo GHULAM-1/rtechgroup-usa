@@ -188,13 +188,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setAppUser(userData);
             } catch (error) {
               console.error('Error fetching app user in auth state change:', error);
+            } finally {
+              setLoading(false);
             }
           }, 0);
         } else {
           setAppUser(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -204,10 +205,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchAppUser(session.user).then(userData => {
-          setAppUser(userData);
-          setLoading(false);
-        });
+        // Use consistent deferred approach for initial session
+        setTimeout(async () => {
+          try {
+            const userData = await fetchAppUser(session.user);
+            setAppUser(userData);
+          } catch (error) {
+            console.error('Error fetching app user in initial session:', error);
+          } finally {
+            setLoading(false);
+          }
+        }, 0);
       } else {
         setLoading(false);
       }

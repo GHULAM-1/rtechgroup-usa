@@ -84,7 +84,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Main Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
+          {!collapsed && <SidebarGroupLabel>Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNavigation.map((item) => (
@@ -96,7 +96,7 @@ export function AppSidebar() {
                   >
                     <NavLink to={item.href}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.name}</span>
+                      {!collapsed && <span>{item.name}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -107,7 +107,7 @@ export function AppSidebar() {
 
         {/* Operations Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>Operations</SidebarGroupLabel>
+          {!collapsed && <SidebarGroupLabel>Operations</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {operationsNavigation.map((item) => (
@@ -120,11 +120,16 @@ export function AppSidebar() {
                     <NavLink to={item.href} className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
-                        <span>{item.name}</span>
+                        {!collapsed && <span>{item.name}</span>}
                       </div>
-                      {item.badge !== undefined && item.badge > 0 && (
+                      {!collapsed && item.badge !== undefined && item.badge > 0 && (
                         <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-destructive rounded-full">
                           {item.badge}
+                        </span>
+                      )}
+                      {collapsed && item.badge !== undefined && item.badge > 0 && (
+                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold leading-none text-white bg-destructive rounded-full">
+                          {item.badge > 9 ? '9+' : item.badge}
                         </span>
                       )}
                     </NavLink>
@@ -137,7 +142,7 @@ export function AppSidebar() {
 
         {/* Settings Navigation */}
         <SidebarGroup>
-          <SidebarGroupLabel>System</SidebarGroupLabel>
+          {!collapsed && <SidebarGroupLabel>System</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {settingsNavigation.map((item) => (
@@ -149,7 +154,7 @@ export function AppSidebar() {
                   >
                     <NavLink to={item.href}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.name}</span>
+                      {!collapsed && <span>{item.name}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

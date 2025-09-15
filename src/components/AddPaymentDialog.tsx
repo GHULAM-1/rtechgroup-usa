@@ -14,6 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
+import { useCustomerVehicleRental } from "@/hooks/useCustomerVehicleRental";
 import { cn } from "@/lib/utils";
 
 
@@ -62,6 +63,9 @@ export const AddPaymentDialog = ({
   const selectedCustomerId = form.watch("customer_id") || customer_id;
   const selectedVehicleId = form.watch("vehicle_id") || vehicle_id;
 
+  // Auto-infer rental ID for the selected customer+vehicle combination
+  const { data: rentalId } = useCustomerVehicleRental(selectedCustomerId, selectedVehicleId);
+
   // Simplified vehicle lookup for the selected customer
   const { data: activeRentals } = useQuery({
     queryKey: ["active-rentals", selectedCustomerId],
@@ -104,6 +108,7 @@ export const AddPaymentDialog = ({
         .insert({
           customer_id: finalCustomerId,
           vehicle_id: finalVehicleId,
+          rental_id: rentalId, // Auto-inferred rental ID
           amount: data.amount,
           payment_date: formatInTimeZone(data.payment_date, 'Europe/London', 'yyyy-MM-dd'),
           method: data.method,

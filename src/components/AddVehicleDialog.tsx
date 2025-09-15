@@ -13,6 +13,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Car, PoundSterling, CalendarIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
+import { FormDescription } from "@/components/ui/form";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,6 +40,11 @@ const vehicleSchema = z.object({
   warranty_end_date: z.date().optional(),
   // Logbook field
   has_logbook: z.boolean().default(false),
+  // Service plan and spare key fields
+  has_service_plan: z.boolean().default(false),
+  has_spare_key: z.boolean().default(false),
+  spare_key_holder: z.enum(["Company", "Customer"]).optional(),
+  spare_key_notes: z.string().optional(),
 }).refine(
   (data) => {
     if (data.acquisition_type === 'Finance' && !data.contract_total) {
@@ -51,7 +59,15 @@ const vehicleSchema = z.object({
     message: "Contract total is required for financed vehicles",
     path: ["contract_total"],
   }
-)
+).refine((data) => {
+  if (data.has_spare_key) {
+    return data.spare_key_holder !== undefined;
+  }
+  return true;
+}, {
+  message: "Spare key holder is required when spare key exists",
+  path: ["spare_key_holder"],
+})
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
 
@@ -77,6 +93,10 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       acquisition_date: new Date(),
       acquisition_type: "Purchase",
       has_logbook: false,
+      has_service_plan: false,
+      has_spare_key: false,
+      spare_key_holder: undefined,
+      spare_key_notes: "",
     },
   });
 
@@ -110,6 +130,10 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
         warranty_start_date: data.warranty_start_date?.toISOString().split('T')[0],
         warranty_end_date: data.warranty_end_date?.toISOString().split('T')[0],
         has_logbook: data.has_logbook,
+        has_service_plan: data.has_service_plan,
+        has_spare_key: data.has_spare_key,
+        spare_key_holder: data.has_spare_key ? data.spare_key_holder : null,
+        spare_key_notes: data.has_spare_key ? data.spare_key_notes : null,
       };
 
       // Add type-specific fields
@@ -529,26 +553,137 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
             )}
 
             {/* Logbook Section */}
-            <FormField
-              control={form.control}
-              name="has_logbook"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>Has Logbook</FormLabel>
-                    <div className="text-sm text-muted-foreground">
-                      Vehicle has a physical logbook
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Compliance</h3>
+              <FormField
+                control={form.control}
+                name="has_logbook"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Has Logbook</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Vehicle has a physical logbook
+                      </div>
                     </div>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Ownership & Security Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Ownership & Security</h3>
+              
+              <FormField
+                control={form.control}
+                name="has_service_plan"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Service Plan</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Vehicle has an active service plan (for admin visibility only)
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="has_spare_key"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Spare Key</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Spare key exists for this vehicle
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked) {
+                            form.setValue("spare_key_holder", undefined);
+                            form.setValue("spare_key_notes", "");
+                          } else {
+                            form.setValue("spare_key_holder", "Company");
+                          }
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("has_spare_key") && (
+                <div className="space-y-4 ml-4 border-l-2 border-muted pl-4">
+                  <FormField
+                    control={form.control}
+                    name="spare_key_holder"
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <FormLabel>Spare Key Holder</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            className="flex flex-col space-y-2"
+                          >
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="Company" id="company" />
+                              <label htmlFor="company" className="text-sm">Company</label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <RadioGroupItem value="Customer" id="customer" />
+                              <label htmlFor="customer" className="text-sm">Customer</label>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="spare_key_notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Notes (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="e.g., with John - locker A3"
+                            {...field}
+                            rows={2}
+                            className="input-focus"
+                          />
+                        </FormControl>
+                        <div className="text-sm text-muted-foreground">
+                          Additional context about the spare key location or holder
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
-            />
+            </div>
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>

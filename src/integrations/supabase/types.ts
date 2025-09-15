@@ -1936,6 +1936,8 @@ export type Database = {
           has_ghost: boolean | null
           has_logbook: boolean
           has_remote_immobiliser: boolean | null
+          has_service_plan: boolean | null
+          has_spare_key: boolean | null
           has_tracker: boolean | null
           id: string
           initial_payment: number | null
@@ -1951,6 +1953,8 @@ export type Database = {
           reg: string
           sale_proceeds: number | null
           security_notes: string | null
+          spare_key_holder: string | null
+          spare_key_notes: string | null
           status: string | null
           tax_due_date: string | null
           term_months: number | null
@@ -1974,6 +1978,8 @@ export type Database = {
           has_ghost?: boolean | null
           has_logbook?: boolean
           has_remote_immobiliser?: boolean | null
+          has_service_plan?: boolean | null
+          has_spare_key?: boolean | null
           has_tracker?: boolean | null
           id?: string
           initial_payment?: number | null
@@ -1989,6 +1995,8 @@ export type Database = {
           reg: string
           sale_proceeds?: number | null
           security_notes?: string | null
+          spare_key_holder?: string | null
+          spare_key_notes?: string | null
           status?: string | null
           tax_due_date?: string | null
           term_months?: number | null
@@ -2012,6 +2020,8 @@ export type Database = {
           has_ghost?: boolean | null
           has_logbook?: boolean
           has_remote_immobiliser?: boolean | null
+          has_service_plan?: boolean | null
+          has_spare_key?: boolean | null
           has_tracker?: boolean | null
           id?: string
           initial_payment?: number | null
@@ -2027,6 +2037,8 @@ export type Database = {
           reg?: string
           sale_proceeds?: number | null
           security_notes?: string | null
+          spare_key_holder?: string | null
+          spare_key_notes?: string | null
           status?: string | null
           tax_due_date?: string | null
           term_months?: number | null

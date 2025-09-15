@@ -16,6 +16,8 @@ import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 import { WarrantyStatusChip } from "@/components/WarrantyStatusChip";
+import { ServicePlanChip } from "@/components/ServicePlanChip";
+import { SpareKeyChip } from "@/components/SpareKeyChip";
 import { NetPLChip } from "@/components/NetPLChip";
 import { VehiclePhotoThumbnail } from "@/components/VehiclePhotoThumbnail";
 import { computeVehicleStatus, VehicleStatus, VehiclePLData, formatCurrency } from "@/lib/vehicleUtils";
@@ -37,6 +39,11 @@ interface Vehicle {
   disposal_date?: string;
   status: string;
   photo_url?: string;
+  has_logbook?: boolean;
+  has_service_plan?: boolean;
+  has_spare_key?: boolean;
+  spare_key_holder?: string | null;
+  spare_key_notes?: string | null;
 }
 
 type SortField = 'reg' | 'make_model' | 'acquisition_type' | 'status' | 'mot_due_date' | 'tax_due_date' | 'warranty_end_date' | 'net_profit';
@@ -48,6 +55,8 @@ interface FiltersState {
   status: string;
   make: string;
   performance: PerformanceFilter;
+  servicePlan: string;
+  spareKey: string;
 }
 
 export default function VehiclesListEnhanced() {
@@ -61,6 +70,8 @@ export default function VehiclesListEnhanced() {
     status: searchParams.get('status') || 'all',
     make: searchParams.get('make') || 'all',
     performance: (searchParams.get('performance') as PerformanceFilter) || 'all',
+    servicePlan: searchParams.get('servicePlan') || 'all',
+    spareKey: searchParams.get('spareKey') || 'all',
   });
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -183,6 +194,25 @@ export default function VehiclesListEnhanced() {
       });
     }
 
+    // Service Plan filter
+    if (filters.servicePlan !== 'all') {
+      filtered = filtered.filter(vehicle => {
+        const hasServicePlan = vehicle.has_service_plan || false;
+        return filters.servicePlan === 'yes' ? hasServicePlan : !hasServicePlan;
+      });
+    }
+
+    // Spare Key filter
+    if (filters.spareKey !== 'all') {
+      filtered = filtered.filter(vehicle => {
+        const hasSpareKey = vehicle.has_spare_key || false;
+        if (filters.spareKey === 'none') return !hasSpareKey;
+        if (filters.spareKey === 'company') return hasSpareKey && vehicle.spare_key_holder === 'Company';
+        if (filters.spareKey === 'customer') return hasSpareKey && vehicle.spare_key_holder === 'Customer';
+        return true;
+      });
+    }
+
     // Sort
     filtered.sort((a, b) => {
       let aVal: any = '';
@@ -277,6 +307,8 @@ export default function VehiclesListEnhanced() {
       status: 'all',
       make: 'all',
       performance: 'all',
+      servicePlan: 'all',
+      spareKey: 'all',
     });
     setCurrentPage(1);
     setSearchParams(new URLSearchParams());
@@ -376,6 +408,29 @@ export default function VehiclesListEnhanced() {
             <SelectItem value="all">All Performance</SelectItem>
             <SelectItem value="profitable">Profitable</SelectItem>
             <SelectItem value="loss">Loss Making</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.servicePlan} onValueChange={(value) => updateFilters({ servicePlan: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Service Plan" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Plans</SelectItem>
+            <SelectItem value="yes">Has Plan</SelectItem>
+            <SelectItem value="no">No Plan</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filters.spareKey} onValueChange={(value) => updateFilters({ spareKey: value })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Spare Key" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Keys</SelectItem>
+            <SelectItem value="none">No Key</SelectItem>
+            <SelectItem value="company">Company</SelectItem>
+            <SelectItem value="customer">Customer</SelectItem>
           </SelectContent>
         </Select>
 
@@ -552,7 +607,14 @@ export default function VehiclesListEnhanced() {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                    </TableCell>
+                <ServicePlanChip hasServicePlan={vehicle.has_service_plan || false} compact />
+                <SpareKeyChip 
+                  hasSpareKey={vehicle.has_spare_key || false}
+                  spareKeyHolder={vehicle.spare_key_holder}
+                  spareKeyNotes={vehicle.spare_key_notes}
+                  compact
+                />
+              </TableCell>
                    </TableRow>
                    );
                  })}

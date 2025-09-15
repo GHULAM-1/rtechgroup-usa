@@ -14,6 +14,8 @@ import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
 import { MOTTaxStatusChip } from "@/components/MOTTaxStatusChip";
 import { WarrantyStatusChip } from "@/components/WarrantyStatusChip";
+import { ServicePlanChip } from "@/components/ServicePlanChip";
+import { SpareKeyChip } from "@/components/SpareKeyChip";
 import { MetricCard, MetricItem, MetricDivider } from "@/components/MetricCard";
 import { VehicleStatusBadge } from "@/components/VehicleStatusBadge";
 import { EmptyState } from "@/components/EmptyState";
@@ -75,6 +77,11 @@ interface Vehicle {
   security_notes?: string;
   // Logbook field
   has_logbook?: boolean;
+  // Service plan and spare key fields
+  has_service_plan?: boolean;
+  has_spare_key?: boolean;
+  spare_key_holder?: string | null;
+  spare_key_notes?: string | null;
   // Disposal fields
   is_disposed?: boolean;
   disposal_date?: string;
@@ -469,6 +476,14 @@ export default function VehicleDetail() {
                      />
                     <WarrantyStatusChip 
                       dueDate={vehicle.warranty_end_date}
+                    />
+                    <ServicePlanChip
+                      hasServicePlan={vehicle.has_service_plan || false}
+                    />
+                    <SpareKeyChip
+                      hasSpareKey={vehicle.has_spare_key || false}
+                      spareKeyHolder={vehicle.spare_key_holder}
+                      spareKeyNotes={vehicle.spare_key_notes}
                     />
                     {vehicle.has_logbook && (
                        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">

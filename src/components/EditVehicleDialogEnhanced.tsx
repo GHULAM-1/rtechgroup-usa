@@ -10,6 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Edit, Car, PoundSterling, CalendarIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +32,16 @@ const vehicleSchema = z.object({
   // MOT & TAX fields
   mot_due_date: z.date().optional(),
   tax_due_date: z.date().optional(),
+  // Warranty fields  
+  warranty_start_date: z.date().optional(),
+  warranty_end_date: z.date().optional(),
+  // Logbook field
+  has_logbook: z.boolean().default(false),
+  // Service plan and spare key fields
+  has_service_plan: z.boolean().default(false),
+  has_spare_key: z.boolean().default(false),
+  spare_key_holder: z.enum(["Company", "Customer"]).optional(),
+  spare_key_notes: z.string().optional(),
 }).refine(
   (data) => {
     if (data.acquisition_type === 'Finance' && !data.contract_total) {
@@ -43,7 +56,15 @@ const vehicleSchema = z.object({
     message: "Contract total is required for financed vehicles",
     path: ["contract_total"],
   }
-);
+).refine((data) => {
+  if (data.has_spare_key) {
+    return data.spare_key_holder !== undefined;
+  }
+  return true;
+}, {
+  message: "Spare key holder is required when spare key exists",
+  path: ["spare_key_holder"],
+});
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
 
@@ -63,6 +84,13 @@ interface Vehicle {
   balloon?: number;
   mot_due_date?: string;
   tax_due_date?: string;
+  warranty_start_date?: string;
+  warranty_end_date?: string;
+  has_logbook?: boolean;
+  has_service_plan?: boolean;
+  has_spare_key?: boolean;
+  spare_key_holder?: string | null;
+  spare_key_notes?: string | null;
 }
 
 interface EditVehicleDialogProps {
@@ -95,6 +123,13 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
       acquisition_type: vehicle.acquisition_type as 'Purchase' | 'Finance',
       mot_due_date: vehicle.mot_due_date ? new Date(vehicle.mot_due_date) : undefined,
       tax_due_date: vehicle.tax_due_date ? new Date(vehicle.tax_due_date) : undefined,
+      warranty_start_date: vehicle.warranty_start_date ? new Date(vehicle.warranty_start_date) : undefined,
+      warranty_end_date: vehicle.warranty_end_date ? new Date(vehicle.warranty_end_date) : undefined,
+      has_logbook: vehicle.has_logbook || false,
+      has_service_plan: vehicle.has_service_plan || false,
+      has_spare_key: vehicle.has_spare_key || false,
+      spare_key_holder: vehicle.spare_key_holder as 'Company' | 'Customer' | undefined,
+      spare_key_notes: vehicle.spare_key_notes || "",
     },
   });
 
@@ -124,6 +159,13 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
         acquisition_date: data.acquisition_date.toISOString().split('T')[0],
         mot_due_date: data.mot_due_date?.toISOString().split('T')[0],
         tax_due_date: data.tax_due_date?.toISOString().split('T')[0],
+        warranty_start_date: data.warranty_start_date?.toISOString().split('T')[0],
+        warranty_end_date: data.warranty_end_date?.toISOString().split('T')[0],
+        has_logbook: data.has_logbook,
+        has_service_plan: data.has_service_plan,
+        has_spare_key: data.has_spare_key,
+        spare_key_holder: data.has_spare_key ? data.spare_key_holder : null,
+        spare_key_notes: data.has_spare_key ? data.spare_key_notes : null,
       };
 
       // Add type-specific fields
@@ -447,6 +489,97 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
               <Button type="submit" disabled={loading}>
                 {loading ? "Updating..." : "Save Changes"}
               </Button>
+            </div>
+
+            {/* Compliance Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Compliance</h3>
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Has Logbook</label>
+                  <div className="text-sm text-muted-foreground">
+                    Vehicle has a physical logbook
+                  </div>
+                </div>
+                <Switch
+                  checked={form.watch("has_logbook")}
+                  onCheckedChange={(checked) => form.setValue("has_logbook", checked)}
+                />
+              </div>
+            </div>
+
+            {/* Ownership & Security Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Ownership & Security</h3>
+              
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Service Plan</label>
+                  <div className="text-sm text-muted-foreground">
+                    Vehicle has an active service plan (for admin visibility only)
+                  </div>
+                </div>
+                <Switch
+                  checked={form.watch("has_service_plan")}
+                  onCheckedChange={(checked) => form.setValue("has_service_plan", checked)}
+                />
+              </div>
+
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Spare Key</label>
+                  <div className="text-sm text-muted-foreground">
+                    Spare key exists for this vehicle
+                  </div>
+                </div>
+                <Switch
+                  checked={form.watch("has_spare_key")}
+                  onCheckedChange={(checked) => {
+                    form.setValue("has_spare_key", checked);
+                    if (!checked) {
+                      form.setValue("spare_key_holder", undefined);
+                      form.setValue("spare_key_notes", "");
+                    } else {
+                      form.setValue("spare_key_holder", "Company");
+                    }
+                  }}
+                />
+              </div>
+
+              {form.watch("has_spare_key") && (
+                <div className="space-y-4 ml-4 border-l-2 border-muted pl-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Spare Key Holder</label>
+                    <RadioGroup
+                      value={form.watch("spare_key_holder")}
+                      onValueChange={(value) => form.setValue("spare_key_holder", value as "Company" | "Customer")}
+                      className="flex flex-col space-y-2"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Company" id="edit-company" />
+                        <label htmlFor="edit-company" className="text-sm">Company</label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="Customer" id="edit-customer" />
+                        <label htmlFor="edit-customer" className="text-sm">Customer</label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Notes (Optional)</label>
+                    <Textarea
+                      placeholder="e.g., with John - locker A3"
+                      value={form.watch("spare_key_notes") || ""}
+                      onChange={(e) => form.setValue("spare_key_notes", e.target.value)}
+                      rows={2}
+                    />
+                    <div className="text-sm text-muted-foreground">
+                      Additional context about the spare key location or holder
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </form>
         </Form>

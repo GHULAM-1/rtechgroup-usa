@@ -266,71 +266,77 @@ const FineDetail = () => {
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-2">
-            {canCharge && (
+          <div className="flex flex-col gap-3">
+            {/* Row 1: Primary Financial Actions */}
+            <div className="flex flex-wrap gap-2">
+              {canCharge && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      onClick={() => chargeFineAction.mutate()}
+                      disabled={chargeFineAction.isPending || isCharged}
+                    >
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      {isCharged ? "Already Charged" : "Charge to Account"}
+                    </Button>
+                  </TooltipTrigger>
+                  {isCharged && (
+                    <TooltipContent>
+                      <p>Fine has already been charged to customer account</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              )}
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={() => chargeFineAction.mutate()}
-                    disabled={chargeFineAction.isPending || isCharged}
+                    onClick={() => setShowAuthorityPaymentDialog(true)}
+                    className={hasAuthorityPayments ? "border-green-200 bg-green-50" : ""}
                   >
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    {isCharged ? "Already Charged" : "Charge to Account"}
+                    <Receipt className="h-4 w-4 mr-2" />
+                    Record Authority Payment
+                    {hasAuthorityPayments && (
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        £{totalAuthorityPayments.toLocaleString()}
+                      </Badge>
+                    )}
                   </Button>
                 </TooltipTrigger>
-                {isCharged && (
+                {hasAuthorityPayments && (
                   <TooltipContent>
-                    <p>Fine has already been charged to customer account</p>
+                    <p>Payments already recorded: £{totalAuthorityPayments.toLocaleString()}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
-            )}
+            </div>
 
-            {canAppeal && (
-              <Button
-                variant="outline"
-                onClick={() => setShowAppealDialog(true)}
-                disabled={appealFineAction.isPending || isAppealed}
-              >
-                <Scale className="h-4 w-4 mr-2" />
-                {isAppealed ? "Appealed" : "Mark as Appealed"}
-              </Button>
-            )}
-
-            {canWaive && (
-              <Button
-                variant="outline"
-                onClick={() => waiveFineAction.mutate()}
-                disabled={waiveFineAction.isPending}
-              >
-                <Ban className="h-4 w-4 mr-2" />
-                Waive Fine
-              </Button>
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
+            {/* Row 2: Secondary Status Actions */}
+            <div className="flex flex-wrap gap-2">
+              {canAppeal && (
                 <Button
                   variant="outline"
-                  onClick={() => setShowAuthorityPaymentDialog(true)}
-                  className={hasAuthorityPayments ? "border-green-200 bg-green-50" : ""}
+                  onClick={() => setShowAppealDialog(true)}
+                  disabled={appealFineAction.isPending || isAppealed}
                 >
-                  <Receipt className="h-4 w-4 mr-2" />
-                  Record Authority Payment
-                  {hasAuthorityPayments && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      £{totalAuthorityPayments.toLocaleString()}
-                    </Badge>
-                  )}
+                  <Scale className="h-4 w-4 mr-2" />
+                  {isAppealed ? "Appealed" : "Mark as Appealed"}
                 </Button>
-              </TooltipTrigger>
-              {hasAuthorityPayments && (
-                <TooltipContent>
-                  <p>Payments already recorded: £{totalAuthorityPayments.toLocaleString()}</p>
-                </TooltipContent>
               )}
-            </Tooltip>
+
+              {canWaive && (
+                <Button
+                  variant="outline"
+                  onClick={() => waiveFineAction.mutate()}
+                  disabled={waiveFineAction.isPending}
+                >
+                  <Ban className="h-4 w-4 mr-2" />
+                  Waive Fine
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

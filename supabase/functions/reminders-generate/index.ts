@@ -28,6 +28,41 @@ interface ReminderContext {
 
 function getTitleTemplate(ruleCode: string, context: ReminderContext): string {
   const templates: Record<string, (ctx: ReminderContext) => string> = {
+    // MOT reminders
+    MOT_30D: (ctx) => `MOT due soon — ${ctx.reg} (30 days)`,
+    MOT_14D: (ctx) => `MOT due soon — ${ctx.reg} (14 days)`,
+    MOT_7D: (ctx) => `MOT due soon — ${ctx.reg} (7 days)`,
+    MOT_0D: (ctx) => `MOT due today — ${ctx.reg}`,
+    
+    // TAX reminders
+    TAX_30D: (ctx) => `TAX due soon — ${ctx.reg} (30 days)`,
+    TAX_14D: (ctx) => `TAX due soon — ${ctx.reg} (14 days)`,
+    TAX_7D: (ctx) => `TAX due soon — ${ctx.reg} (7 days)`,
+    TAX_0D: (ctx) => `TAX due today — ${ctx.reg}`,
+    
+    // Insurance reminders
+    INS_30D: (ctx) => `Insurance expiring — ${ctx.customer_name} (${ctx.reg}) (30 days)`,
+    INS_14D: (ctx) => `Insurance expiring — ${ctx.customer_name} (${ctx.reg}) (14 days)`,
+    INS_7D: (ctx) => `Insurance expiring — ${ctx.customer_name} (${ctx.reg}) (7 days)`,
+    INS_0D: (ctx) => `Insurance expires today — ${ctx.customer_name} (${ctx.reg})`,
+    
+    // Document reminders
+    DOC_30D: (ctx) => `Document expiring — ${ctx.customer_name} (30 days)`,
+    DOC_14D: (ctx) => `Document expiring — ${ctx.customer_name} (14 days)`,
+    DOC_7D: (ctx) => `Document expiring — ${ctx.customer_name} (7 days)`,
+    DOC_0D: (ctx) => `Document expires today — ${ctx.customer_name}`,
+    
+    // Fine reminders
+    FINE_14D: (ctx) => `Fine due soon — ${ctx.reg} (${ctx.reference}) (14 days)`,
+    FINE_7D: (ctx) => `Fine due soon — ${ctx.reg} (${ctx.reference}) (7 days)`,
+    FINE_0D: (ctx) => `Fine due today — ${ctx.reg} (${ctx.reference})`,
+    
+    // Rental reminders
+    RENT_1D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (1 day)`,
+    RENT_7D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (7 days)`,
+    RENT_14D: (ctx) => `Overdue rental balance — ${ctx.customer_name} (${ctx.reg}) (14 days)`,
+    
+    // Legacy codes for backward compatibility
     VEH_MOT_30D: (ctx) => `MOT due soon — ${ctx.reg} (30 days)`,
     VEH_MOT_14D: (ctx) => `MOT due soon — ${ctx.reg} (14 days)`,
     VEH_MOT_7D: (ctx) => `MOT due soon — ${ctx.reg} (7 days)`,
@@ -63,6 +98,41 @@ function getMessageTemplate(ruleCode: string, context: ReminderContext): string 
   }).format(amount);
 
   const templates: Record<string, (ctx: ReminderContext) => string> = {
+    // MOT reminders
+    MOT_30D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test soon.`,
+    MOT_14D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test immediately.`,
+    MOT_7D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Book test urgently!`,
+    MOT_0D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
+    
+    // TAX reminders
+    TAX_30D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew soon.`,
+    TAX_14D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew immediately.`,
+    TAX_7D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew urgently!`,
+    TAX_0D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
+    
+    // Insurance reminders
+    INS_30D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires on ${ctx.due_date}. Contact ${ctx.provider} to renew.`,
+    INS_14D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires on ${ctx.due_date}. Renew immediately with ${ctx.provider}.`,
+    INS_7D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires on ${ctx.due_date}. Urgent renewal required!`,
+    INS_0D: (ctx) => `Insurance policy ${ctx.policy_no} for ${ctx.customer_name} expires today (${ctx.due_date}). Immediate action required!`,
+    
+    // Document reminders
+    DOC_30D: (ctx) => `Document for ${ctx.customer_name} expires on ${ctx.due_date}. Please request renewal.`,
+    DOC_14D: (ctx) => `Document for ${ctx.customer_name} expires on ${ctx.due_date}. Request renewal immediately.`,
+    DOC_7D: (ctx) => `Document for ${ctx.customer_name} expires on ${ctx.due_date}. Urgent renewal required!`,
+    DOC_0D: (ctx) => `Document for ${ctx.customer_name} expires today (${ctx.due_date}). Immediate action required!`,
+    
+    // Fine reminders
+    FINE_14D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due on ${ctx.due_date}. Prepare payment or appeal.`,
+    FINE_7D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due on ${ctx.due_date}. Urgent action required!`,
+    FINE_0D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due today (${ctx.due_date}). Immediate payment required!`,
+    
+    // Rental reminders
+    RENT_1D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
+    RENT_7D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
+    RENT_14D: (ctx) => `${formatCurrency(ctx.overdue_total || 0)} overdue since ${ctx.oldest_due_date}. Review ledger & contact customer.`,
+    
+    // Legacy codes for backward compatibility
     VEH_MOT_30D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test soon.`,
     VEH_MOT_14D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test immediately.`,
     VEH_MOT_7D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Book test urgently!`,
@@ -158,7 +228,35 @@ serve(async (req) => {
       }
     }
 
-    // 2. Generate Vehicle MOT/TAX reminders
+    // 2. Generate reminders based on configurable rules
+    const { data: reminderRules } = await supabase
+      .from('reminder_rules')
+      .select('*')
+      .eq('is_enabled', true)
+      .order('lead_days', { ascending: false });
+
+    if (!reminderRules || reminderRules.length === 0) {
+      console.log('No enabled reminder rules found');
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'No enabled rules',
+        generated: 0,
+        expired: expiredReminders?.length || 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Group rules by type for efficient lookup
+    const rulesByType = reminderRules.reduce((acc, rule) => {
+      if (!acc[rule.rule_type]) {
+        acc[rule.rule_type] = [];
+      }
+      acc[rule.rule_type].push(rule);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // 3. Generate Vehicle MOT/TAX reminders
     const { data: vehicles } = await supabase
       .from('vehicles')
       .select('id, reg, make, model, mot_due_date, tax_due_date')
@@ -166,19 +264,13 @@ serve(async (req) => {
       .eq('is_disposed', false);
 
     for (const vehicle of vehicles || []) {
-      // MOT reminders
-      if (vehicle.mot_due_date) {
+      // MOT reminders - use configurable rules
+      if (vehicle.mot_due_date && rulesByType['MOT']) {
         const motDate = new Date(vehicle.mot_due_date);
-        const rules = [
-          { code: 'VEH_MOT_30D', leadDays: 30 },
-          { code: 'VEH_MOT_14D', leadDays: 14 },
-          { code: 'VEH_MOT_7D', leadDays: 7 },
-          { code: 'VEH_MOT_0D', leadDays: 0 }
-        ];
-
-        for (const rule of rules) {
+        
+        for (const rule of rulesByType['MOT']) {
           const remindDate = new Date(motDate);
-          remindDate.setDate(motDate.getDate() - rule.leadDays);
+          remindDate.setDate(motDate.getDate() - rule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];
 
           if (remindDateStr <= today) {
@@ -188,20 +280,20 @@ serve(async (req) => {
               make: vehicle.make,
               model: vehicle.model,
               due_date: vehicle.mot_due_date,
-              days_until: rule.leadDays
+              days_until: rule.lead_days
             };
 
             const { error: reminderError } = await supabase
               .from('reminders')
               .upsert({
-                rule_code: rule.code,
+                rule_code: rule.rule_code,
                 object_type: 'Vehicle',
                 object_id: vehicle.id,
-                title: getTitleTemplate(rule.code, context),
-                message: getMessageTemplate(rule.code, context),
+                title: getTitleTemplate(rule.rule_code, context),
+                message: getMessageTemplate(rule.rule_code, context),
                 due_on: vehicle.mot_due_date,
                 remind_on: remindDateStr,
-                severity: getSeverityForRule(rule.code),
+                severity: rule.severity,
                 context: context,
                 status: 'pending'
               }, {
@@ -215,19 +307,13 @@ serve(async (req) => {
         }
       }
 
-      // TAX reminders (similar logic)
-      if (vehicle.tax_due_date) {
+      // TAX reminders - use configurable rules
+      if (vehicle.tax_due_date && rulesByType['TAX']) {
         const taxDate = new Date(vehicle.tax_due_date);
-        const rules = [
-          { code: 'VEH_TAX_30D', leadDays: 30 },
-          { code: 'VEH_TAX_14D', leadDays: 14 },
-          { code: 'VEH_TAX_7D', leadDays: 7 },
-          { code: 'VEH_TAX_0D', leadDays: 0 }
-        ];
-
-        for (const rule of rules) {
+        
+        for (const rule of rulesByType['TAX']) {
           const remindDate = new Date(taxDate);
-          remindDate.setDate(taxDate.getDate() - rule.leadDays);
+          remindDate.setDate(taxDate.getDate() - rule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];
 
           if (remindDateStr <= today) {
@@ -237,20 +323,20 @@ serve(async (req) => {
               make: vehicle.make,
               model: vehicle.model,
               due_date: vehicle.tax_due_date,
-              days_until: rule.leadDays
+              days_until: rule.lead_days
             };
 
             const { error: reminderError } = await supabase
               .from('reminders')
               .upsert({
-                rule_code: rule.code,
+                rule_code: rule.rule_code,
                 object_type: 'Vehicle',
                 object_id: vehicle.id,
-                title: getTitleTemplate(rule.code, context),
-                message: getMessageTemplate(rule.code, context),
+                title: getTitleTemplate(rule.rule_code, context),
+                message: getMessageTemplate(rule.rule_code, context),
                 due_on: vehicle.tax_due_date,
                 remind_on: remindDateStr,
-                severity: getSeverityForRule(rule.code),
+                severity: rule.severity,
                 context: context,
                 status: 'pending'
               }, {
@@ -266,62 +352,74 @@ serve(async (req) => {
     }
 
     // 3. Generate rental overdue reminders
-    const { data: overdueCharges } = await supabase
-      .from('ledger_entries')
-      .select(`
-        rental_id, customer_id, vehicle_id, due_date, remaining_amount,
-        rentals!inner(status),
-        customers!inner(name),
-        vehicles!inner(reg, make, model)
-      `)
-      .eq('type', 'Charge')
-      .eq('category', 'Rental')
-      .gt('remaining_amount', 0)
-      .lt('due_date', today)
-      .eq('rentals.status', 'Active');
+    // Generate rental overdue reminders - these use a different logic
+    if (rulesByType['Rental']) {
+      const { data: overdueCharges } = await supabase
+        .from('ledger_entries')
+        .select(`
+          rental_id, customer_id, vehicle_id, due_date, remaining_amount,
+          rentals!inner(status),
+          customers!inner(name),
+          vehicles!inner(reg, make, model)
+        `)
+        .eq('type', 'Charge')
+        .eq('category', 'Rental')
+        .gt('remaining_amount', 0)
+        .lt('due_date', today)
+        .eq('rentals.status', 'Active');
 
-    // Group by rental
-    const rentalGroups = new Map<string, any[]>();
-    for (const charge of overdueCharges || []) {
-      if (!rentalGroups.has(charge.rental_id)) {
-        rentalGroups.set(charge.rental_id, []);
+      // Group by rental
+      const rentalGroups = new Map<string, any[]>();
+      for (const charge of overdueCharges || []) {
+        if (!rentalGroups.has(charge.rental_id)) {
+          rentalGroups.set(charge.rental_id, []);
+        }
+        rentalGroups.get(charge.rental_id)!.push(charge);
       }
-      rentalGroups.get(charge.rental_id)!.push(charge);
-    }
 
-    for (const [rentalId, charges] of rentalGroups) {
-      const totalOverdue = charges.reduce((sum, c) => sum + parseFloat(c.remaining_amount), 0);
-      const oldestCharge = charges.sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+      for (const [rentalId, charges] of rentalGroups) {
+        const totalOverdue = charges.reduce((sum, c) => sum + parseFloat(c.remaining_amount), 0);
+        const oldestCharge = charges.sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+        const daysSinceOldest = Math.floor((new Date(today).getTime() - new Date(oldestCharge.due_date).getTime()) / (1000 * 60 * 60 * 24));
 
-      const context: ReminderContext = {
-        rental_id: rentalId,
-        customer_id: oldestCharge.customer_id,
-        customer_name: oldestCharge.customers?.name,
-        vehicle_id: oldestCharge.vehicle_id,
-        reg: oldestCharge.vehicles?.reg,
-        overdue_total: totalOverdue,
-        oldest_due_date: oldestCharge.due_date
-      };
+        // Find the appropriate reminder rule based on days overdue
+        const appropriateRule = rulesByType['Rental']
+          .filter(rule => daysSinceOldest >= rule.lead_days)
+          .sort((a, b) => b.lead_days - a.lead_days)[0]; // Get the rule with highest lead_days that applies
 
-      const { error: reminderError } = await supabase
-        .from('reminders')
-        .upsert({
-          rule_code: 'RENT_OVERDUE',
-          object_type: 'Rental',
-          object_id: rentalId,
-          title: getTitleTemplate('RENT_OVERDUE', context),
-          message: getMessageTemplate('RENT_OVERDUE', context),
-          due_on: oldestCharge.due_date,
-          remind_on: today,
-          severity: getSeverityForRule('RENT_OVERDUE'),
-          context: context,
-          status: 'pending'
-        }, {
-          onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
-        });
+        if (appropriateRule) {
+          const context: ReminderContext = {
+            rental_id: rentalId,
+            customer_id: oldestCharge.customer_id,
+            customer_name: oldestCharge.customers?.name,
+            vehicle_id: oldestCharge.vehicle_id,
+            reg: oldestCharge.vehicles?.reg,
+            overdue_total: totalOverdue,
+            oldest_due_date: oldestCharge.due_date,
+            days_overdue: daysSinceOldest
+          };
 
-      if (!reminderError) {
-        totalGenerated++;
+          const { error: reminderError } = await supabase
+            .from('reminders')
+            .upsert({
+              rule_code: appropriateRule.rule_code,
+              object_type: 'Rental',
+              object_id: rentalId,
+              title: getTitleTemplate(appropriateRule.rule_code, context),
+              message: getMessageTemplate(appropriateRule.rule_code, context),
+              due_on: oldestCharge.due_date,
+              remind_on: today,
+              severity: appropriateRule.severity,
+              context: context,
+              status: 'pending'
+            }, {
+              onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
+            });
+
+          if (!reminderError) {
+            totalGenerated++;
+          }
+        }
       }
     }
 

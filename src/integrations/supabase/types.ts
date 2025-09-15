@@ -1420,6 +1420,45 @@ export type Database = {
         }
         Relationships: []
       }
+      reminder_rules: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_enabled: boolean
+          lead_days: number
+          rule_code: string
+          rule_type: string
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          lead_days: number
+          rule_code: string
+          rule_type: string
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_enabled?: boolean
+          lead_days?: number
+          rule_code?: string
+          rule_type?: string
+          severity?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reminder_settings: {
         Row: {
           id: string

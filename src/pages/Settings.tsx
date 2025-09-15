@@ -18,6 +18,7 @@ import { useOrgSettings } from '@/hooks/useOrgSettings';
 import { CompanyLogoUpload } from '@/components/CompanyLogoUpload';
 import { TestingCards } from '@/components/TestingCards';
 import { DataCleanupDialog } from '@/components/DataCleanupDialog';
+import ReminderRulesConfig from '@/components/ReminderRulesConfig';
 import UsersManagement from '@/pages/UsersManagement';
 
 const Settings = () => {
@@ -240,15 +241,16 @@ const Settings = () => {
         </TabsList>
 
         {/* Reminders Tab */}
-        <TabsContent value="reminders">
+        <TabsContent value="reminders" className="space-y-6">
+          {/* Legacy Reminder Settings */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                Reminder Settings
+                Basic Reminder Settings
               </CardTitle>
               <CardDescription>
-                Configure when and how payment reminders are sent
+                Simple on/off toggles for payment reminder types
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -330,6 +332,9 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Advanced Reminder Rules Configuration */}
+          <ReminderRulesConfig />
         </TabsContent>
 
         {/* Maintenance Tab */}

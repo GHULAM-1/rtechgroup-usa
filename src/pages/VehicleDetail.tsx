@@ -177,6 +177,17 @@ export default function VehicleDetail() {
         .single();
       
       if (error) throw error;
+      
+      // Debug logging
+      console.log('Vehicle data from database:', data);
+      console.log('Finance fields:', {
+        acquisition_type: data?.acquisition_type,
+        initial_payment: data?.initial_payment,
+        monthly_payment: data?.monthly_payment,
+        term_months: data?.term_months,
+        balloon: data?.balloon
+      });
+      
       return data as Vehicle;
     },
     enabled: !!id,

@@ -71,11 +71,24 @@ export function getContractTotal(vehicle: {
     return 0;
   }
   
-  const initial = vehicle.initial_payment || 0;
-  const monthly = (vehicle.monthly_payment || 0) * (vehicle.term_months || 0);
-  const balloon = vehicle.balloon || 0;
+  // Convert to numbers explicitly in case they come as strings
+  const initial = Number(vehicle.initial_payment) || 0;
+  const monthly = (Number(vehicle.monthly_payment) || 0) * (Number(vehicle.term_months) || 0);
+  const balloon = Number(vehicle.balloon) || 0;
   
-  // Return total even if only initial payment exists
+  // Debug logging
+  console.log('getContractTotal debug:', {
+    acquisition_type: vehicle.acquisition_type,
+    initial_payment: vehicle.initial_payment,
+    monthly_payment: vehicle.monthly_payment,
+    term_months: vehicle.term_months,
+    balloon: vehicle.balloon,
+    calculated_initial: initial,
+    calculated_monthly: monthly,
+    calculated_balloon: balloon,
+    calculated_total: initial + monthly + balloon
+  });
+  
   return initial + monthly + balloon;
 }
 

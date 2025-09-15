@@ -181,8 +181,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          const userData = await fetchAppUser(session.user);
-          setAppUser(userData);
+          // Defer fetchAppUser to prevent deadlock during password updates
+          setTimeout(async () => {
+            try {
+              const userData = await fetchAppUser(session.user);
+              setAppUser(userData);
+            } catch (error) {
+              console.error('Error fetching app user in auth state change:', error);
+            }
+          }, 0);
         } else {
           setAppUser(null);
         }

@@ -278,88 +278,114 @@ serve(async (req) => {
       .eq('is_disposed', false);
 
     for (const vehicle of vehicles || []) {
-      // MOT reminders - use configurable rules
+      // MOT reminders - select most appropriate rule
       if (vehicle.mot_due_date && rulesByType['MOT']) {
         const motDate = new Date(vehicle.mot_due_date);
         
+        // Find the most appropriate rule (smallest lead_days that meets criteria)
+        let bestRule = null;
         for (const rule of rulesByType['MOT']) {
           const remindDate = new Date(motDate);
           remindDate.setDate(motDate.getDate() - rule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];
 
           if (remindDateStr <= today) {
-            const context: ReminderContext = {
-              vehicle_id: vehicle.id,
-              reg: vehicle.reg,
-              make: vehicle.make,
-              model: vehicle.model,
-              due_date: vehicle.mot_due_date,
-              days_until: rule.lead_days
-            };
-
-            const { error: reminderError } = await supabase
-              .from('reminders')
-              .upsert({
-                rule_code: rule.rule_code,
-                object_type: 'Vehicle',
-                object_id: vehicle.id,
-                title: getTitleTemplate(rule.rule_code, context),
-                message: getMessageTemplate(rule.rule_code, context),
-                due_on: vehicle.mot_due_date,
-                remind_on: remindDateStr,
-                severity: rule.severity,
-                context: context,
-                status: 'pending'
-              }, {
-                onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
-              });
-
-            if (!reminderError) {
-              totalGenerated++;
+            if (!bestRule || rule.lead_days < bestRule.lead_days) {
+              bestRule = rule;
             }
+          }
+        }
+
+        // Create reminder only for the best rule
+        if (bestRule) {
+          const context: ReminderContext = {
+            vehicle_id: vehicle.id,
+            reg: vehicle.reg,
+            make: vehicle.make,
+            model: vehicle.model,
+            due_date: vehicle.mot_due_date,
+            days_until: bestRule.lead_days
+          };
+
+          const remindDate = new Date(motDate);
+          remindDate.setDate(motDate.getDate() - bestRule.lead_days);
+          const remindDateStr = remindDate.toISOString().split('T')[0];
+
+          const { error: reminderError } = await supabase
+            .from('reminders')
+            .upsert({
+              rule_code: bestRule.rule_code,
+              object_type: 'Vehicle',
+              object_id: vehicle.id,
+              title: getTitleTemplate(bestRule.rule_code, context),
+              message: getMessageTemplate(bestRule.rule_code, context),
+              due_on: vehicle.mot_due_date,
+              remind_on: remindDateStr,
+              severity: bestRule.severity,
+              context: context,
+              status: 'pending'
+            }, {
+              onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
+            });
+
+          if (!reminderError) {
+            totalGenerated++;
           }
         }
       }
 
-      // TAX reminders - use configurable rules
+      // TAX reminders - select most appropriate rule
       if (vehicle.tax_due_date && rulesByType['TAX']) {
         const taxDate = new Date(vehicle.tax_due_date);
         
+        // Find the most appropriate rule (smallest lead_days that meets criteria)
+        let bestRule = null;
         for (const rule of rulesByType['TAX']) {
           const remindDate = new Date(taxDate);
           remindDate.setDate(taxDate.getDate() - rule.lead_days);
           const remindDateStr = remindDate.toISOString().split('T')[0];
 
           if (remindDateStr <= today) {
-            const context: ReminderContext = {
-              vehicle_id: vehicle.id,
-              reg: vehicle.reg,
-              make: vehicle.make,
-              model: vehicle.model,
-              due_date: vehicle.tax_due_date,
-              days_until: rule.lead_days
-            };
-
-            const { error: reminderError } = await supabase
-              .from('reminders')
-              .upsert({
-                rule_code: rule.rule_code,
-                object_type: 'Vehicle',
-                object_id: vehicle.id,
-                title: getTitleTemplate(rule.rule_code, context),
-                message: getMessageTemplate(rule.rule_code, context),
-                due_on: vehicle.tax_due_date,
-                remind_on: remindDateStr,
-                severity: rule.severity,
-                context: context,
-                status: 'pending'
-              }, {
-                onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
-              });
-
-            if (!reminderError) {
-              totalGenerated++;
+            if (!bestRule || rule.lead_days < bestRule.lead_days) {
+              bestRule = rule;
             }
+          }
+        }
+
+        // Create reminder only for the best rule
+        if (bestRule) {
+          const context: ReminderContext = {
+            vehicle_id: vehicle.id,
+            reg: vehicle.reg,
+            make: vehicle.make,
+            model: vehicle.model,
+            due_date: vehicle.tax_due_date,
+            days_until: bestRule.lead_days
+          };
+
+          const remindDate = new Date(taxDate);
+          remindDate.setDate(taxDate.getDate() - bestRule.lead_days);
+          const remindDateStr = remindDate.toISOString().split('T')[0];
+
+          const { error: reminderError } = await supabase
+            .from('reminders')
+            .upsert({
+              rule_code: bestRule.rule_code,
+              object_type: 'Vehicle',
+              object_id: vehicle.id,
+              title: getTitleTemplate(bestRule.rule_code, context),
+              message: getMessageTemplate(bestRule.rule_code, context),
+              due_on: vehicle.tax_due_date,
+              remind_on: remindDateStr,
+              severity: bestRule.severity,
+              context: context,
+              status: 'pending'
+            }, {
+              onConflict: 'rule_code,object_type,object_id,due_on,remind_on'
+            });
+
+          if (!reminderError) {
+            totalGenerated++;
           }
         }
       }

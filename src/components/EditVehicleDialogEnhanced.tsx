@@ -42,6 +42,12 @@ const vehicleSchema = z.object({
   has_spare_key: z.boolean().default(false),
   spare_key_holder: z.enum(["Company", "Customer"]).optional(),
   spare_key_notes: z.string().optional(),
+  // Security fields
+  has_ghost: z.boolean().default(false),
+  has_tracker: z.boolean().default(false),
+  has_remote_immobiliser: z.boolean().default(false),
+  ghost_code: z.string().optional(),
+  security_notes: z.string().optional(),
 }).refine(
   (data) => {
     if (data.acquisition_type === 'Finance' && !data.contract_total) {
@@ -91,6 +97,11 @@ interface Vehicle {
   has_spare_key?: boolean;
   spare_key_holder?: string | null;
   spare_key_notes?: string | null;
+  has_ghost?: boolean;
+  has_tracker?: boolean;
+  has_remote_immobiliser?: boolean;
+  ghost_code?: string | null;
+  security_notes?: string | null;
 }
 
 interface EditVehicleDialogProps {
@@ -130,6 +141,11 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
       has_spare_key: vehicle.has_spare_key || false,
       spare_key_holder: vehicle.spare_key_holder as 'Company' | 'Customer' | undefined,
       spare_key_notes: vehicle.spare_key_notes || "",
+      has_ghost: vehicle.has_ghost || false,
+      has_tracker: vehicle.has_tracker || false,
+      has_remote_immobiliser: vehicle.has_remote_immobiliser || false,
+      ghost_code: vehicle.ghost_code || "",
+      security_notes: vehicle.security_notes || "",
     },
   });
 
@@ -166,6 +182,11 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
         has_spare_key: data.has_spare_key,
         spare_key_holder: data.has_spare_key ? data.spare_key_holder : null,
         spare_key_notes: data.has_spare_key ? data.spare_key_notes : null,
+        has_ghost: data.has_ghost,
+        has_tracker: data.has_tracker,
+        has_remote_immobiliser: data.has_remote_immobiliser,
+        ghost_code: data.has_ghost ? data.ghost_code : null,
+        security_notes: data.security_notes || null,
       };
 
       // Add type-specific fields
@@ -571,6 +592,81 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Security Features Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Security Features</h3>
+              
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Ghost Immobiliser</label>
+                  <div className="text-sm text-muted-foreground">
+                    Vehicle has a Ghost immobiliser installed
+                  </div>
+                </div>
+                <Switch
+                  checked={form.watch("has_ghost")}
+                  onCheckedChange={(checked) => {
+                    form.setValue("has_ghost", checked);
+                    if (!checked) {
+                      form.setValue("ghost_code", "");
+                    }
+                  }}
+                />
+              </div>
+
+              {form.watch("has_ghost") && (
+                <div className="ml-4 border-l-2 border-muted pl-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Ghost Code</label>
+                    <Input
+                      placeholder="Enter Ghost immobiliser code"
+                      value={form.watch("ghost_code") || ""}
+                      onChange={(e) => form.setValue("ghost_code", e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">GPS Tracker</label>
+                  <div className="text-sm text-muted-foreground">
+                    Vehicle has a GPS tracker installed
+                  </div>
+                </div>
+                <Switch
+                  checked={form.watch("has_tracker")}
+                  onCheckedChange={(checked) => form.setValue("has_tracker", checked)}
+                />
+              </div>
+
+              <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Remote Immobiliser</label>
+                  <div className="text-sm text-muted-foreground">
+                    Vehicle has a remote immobiliser system
+                  </div>
+                </div>
+                <Switch
+                  checked={form.watch("has_remote_immobiliser")}
+                  onCheckedChange={(checked) => form.setValue("has_remote_immobiliser", checked)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Security Notes (Optional)</label>
+                <Textarea
+                  placeholder="Additional security information..."
+                  value={form.watch("security_notes") || ""}
+                  onChange={(e) => form.setValue("security_notes", e.target.value)}
+                  rows={2}
+                />
+                <div className="text-sm text-muted-foreground">
+                  Any additional security-related information or notes
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

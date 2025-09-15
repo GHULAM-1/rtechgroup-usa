@@ -45,6 +45,12 @@ const vehicleSchema = z.object({
   has_spare_key: z.boolean().default(false),
   spare_key_holder: z.enum(["Company", "Customer"]).optional(),
   spare_key_notes: z.string().optional(),
+  // Security fields
+  has_ghost: z.boolean().default(false),
+  has_tracker: z.boolean().default(false),
+  has_remote_immobiliser: z.boolean().default(false),
+  ghost_code: z.string().optional(),
+  security_notes: z.string().optional(),
 }).refine(
   (data) => {
     if (data.acquisition_type === 'Finance' && !data.contract_total) {
@@ -97,6 +103,11 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
       has_spare_key: false,
       spare_key_holder: undefined,
       spare_key_notes: "",
+      has_ghost: false,
+      has_tracker: false,
+      has_remote_immobiliser: false,
+      ghost_code: "",
+      security_notes: "",
     },
   });
 
@@ -134,6 +145,11 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
         has_spare_key: data.has_spare_key,
         spare_key_holder: data.has_spare_key ? data.spare_key_holder : null,
         spare_key_notes: data.has_spare_key ? data.spare_key_notes : null,
+        has_ghost: data.has_ghost,
+        has_tracker: data.has_tracker,
+        has_remote_immobiliser: data.has_remote_immobiliser,
+        ghost_code: data.has_ghost ? data.ghost_code : null,
+        security_notes: data.security_notes || null,
       };
 
       // Add type-specific fields
@@ -683,6 +699,123 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   />
                 </div>
               )}
+            </div>
+
+            {/* Security Features Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Security Features</h3>
+              
+              <FormField
+                control={form.control}
+                name="has_ghost"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Ghost Immobiliser</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Vehicle has a Ghost immobiliser installed
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (!checked) {
+                            form.setValue("ghost_code", "");
+                          }
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("has_ghost") && (
+                <div className="ml-4 border-l-2 border-muted pl-4">
+                  <FormField
+                    control={form.control}
+                    name="ghost_code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ghost Code</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Enter Ghost immobiliser code"
+                            {...field}
+                            className="input-focus"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              <FormField
+                control={form.control}
+                name="has_tracker"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>GPS Tracker</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Vehicle has a GPS tracker installed
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="has_remote_immobiliser"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>Remote Immobiliser</FormLabel>
+                      <div className="text-sm text-muted-foreground">
+                        Vehicle has a remote immobiliser system
+                      </div>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="security_notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Security Notes (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Additional security information..."
+                        {...field}
+                        rows={2}
+                        className="input-focus"
+                      />
+                    </FormControl>
+                    <div className="text-sm text-muted-foreground">
+                      Any additional security-related information or notes
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <div className="flex justify-end gap-2 pt-4">

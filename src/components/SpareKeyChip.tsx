@@ -22,7 +22,9 @@ export function SpareKeyChip({ hasSpareKey, spareKeyHolder, spareKeyNotes, compa
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            {badge}
+            <div>
+              {badge}
+            </div>
           </TooltipTrigger>
           <TooltipContent>
             <p>No spare key for this vehicle</p>
@@ -68,7 +70,9 @@ export function SpareKeyChip({ hasSpareKey, spareKeyHolder, spareKeyNotes, compa
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          {badge}
+          <div>
+            {badge}
+          </div>
         </TooltipTrigger>
         <TooltipContent>
           {tooltipContent}

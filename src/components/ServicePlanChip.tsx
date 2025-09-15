@@ -37,7 +37,9 @@ export function ServicePlanChip({ hasServicePlan, compact = false }: ServicePlan
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          {badge}
+          <div>
+            {badge}
+          </div>
         </TooltipTrigger>
         <TooltipContent>
           <p>{config.tooltip}</p>

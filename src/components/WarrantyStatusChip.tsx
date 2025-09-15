@@ -59,9 +59,11 @@ export function WarrantyStatusChip({ dueDate, compact = false }: WarrantyStatusC
   }
 
   return (
-    <Badge variant={variant} className="flex items-center gap-2">
-      {icon}
-      <span className="font-medium">Warranty: {statusText}</span>
-    </Badge>
+    <div>
+      <Badge variant={variant} className="flex items-center gap-2">
+        {icon}
+        <span className="font-medium">Warranty: {statusText}</span>
+      </Badge>
+    </div>
   );
 }

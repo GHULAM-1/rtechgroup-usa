@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle, Minus, Wrench } from "lucide-react";
+import { Wrench, Minus } from "lucide-react";
 
 interface ServicePlanChipProps {
   hasServicePlan: boolean;

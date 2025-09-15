@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { getDueStatus, formatDueStatusText, type DueStatus } from "@/lib/motTaxUtils";
-import { AlertCircle, CheckCircle, Clock, Minus, Shield } from "lucide-react";
+import { AlertCircle, Clock, Minus, Shield } from "lucide-react";
 
 interface WarrantyStatusChipProps {
   dueDate: Date | string | null;

@@ -409,7 +409,7 @@ serve(async (req) => {
       }
     }
 
-    // 3. Generate insurance verification reminders for active rentals (simplified)
+    // 3. Generate insurance verification reminders for active rentals (fixed)
     if (rulesByType['Verification']) {
       const { data: activeRentals } = await supabase
         .from('rentals')
@@ -420,11 +420,11 @@ serve(async (req) => {
         `)
         .eq('status', 'Active');
 
-      for (const rental of activeRentals || []) {
-        // Only create verification reminders for the 7D rule to avoid excessive generation
-        const verificationRule = rulesByType['Verification'].find(r => r.rule_code === 'INSURANCE_VERIFICATION_7D');
-        
-        if (verificationRule) {
+      // Only use the 7D verification rule to avoid duplication
+      const verificationRule = rulesByType['Verification'].find(r => r.rule_code === 'INS_VERIFY_7D');
+      
+      if (verificationRule) {
+        for (const rental of activeRentals || []) {
           const context: ReminderContext = {
             customer_id: rental.customer_id,
             customer_name: rental.customers.name,
@@ -435,22 +435,23 @@ serve(async (req) => {
 
           // Calculate next verification date (30 days from rental start, then monthly intervals)
           const rentalStart = new Date(rental.start_date);
-          const daysSinceStart = Math.floor((new Date().getTime() - rentalStart.getTime()) / (1000 * 60 * 60 * 24));
+          const today = new Date();
+          const daysSinceStart = Math.floor((today.getTime() - rentalStart.getTime()) / (1000 * 60 * 60 * 24));
           
           // Find next verification milestone (30, 60, 90, 120 days, etc.)
-          const nextMilestone = Math.ceil((daysSinceStart + 1) / 30) * 30;
+          const nextMilestone = Math.max(30, Math.ceil((daysSinceStart + 1) / 30) * 30);
           const nextVerificationDate = new Date(rentalStart);
           nextVerificationDate.setDate(nextVerificationDate.getDate() + nextMilestone);
 
-          // Only create if the next verification is within the next 14 days
-          const daysUntilVerification = Math.floor((nextVerificationDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+          // Only create if the verification is within the next 14 days
+          const daysUntilVerification = Math.floor((nextVerificationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
           
           if (daysUntilVerification >= 0 && daysUntilVerification <= 14) {
             const reminderDate = new Date(nextVerificationDate);
             reminderDate.setDate(reminderDate.getDate() - Math.abs(verificationRule.lead_days));
 
-            // Only create if reminder date is today or in the future
-            if (reminderDate >= new Date()) {
+            // Only create if reminder date is today or in the future  
+            if (reminderDate >= today) {
               const reminderDateStr = reminderDate.toISOString().split('T')[0];
               const verificationDateStr = nextVerificationDate.toISOString().split('T')[0];
 

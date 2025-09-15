@@ -32,11 +32,11 @@ export const CustomerBalanceChip = ({
   const getBadgeClasses = () => {
     switch (status) {
       case 'In Credit':
-        return 'bg-green-500 text-white hover:bg-green-600 font-semibold text-lg px-6 py-3 rounded-full';
+        return 'bg-green-500 text-white hover:bg-green-600 font-semibold text-base px-4 py-2 rounded-full';
       case 'Settled':
-        return 'bg-muted text-muted-foreground hover:bg-muted/80 font-semibold text-lg px-6 py-3 rounded-full';
+        return 'bg-muted text-muted-foreground hover:bg-muted/80 font-semibold text-base px-4 py-2 rounded-full';
       case 'In Debt':
-        return 'bg-destructive text-destructive-foreground hover:bg-destructive/80 font-semibold text-lg px-6 py-3 rounded-full';
+        return 'bg-destructive text-destructive-foreground hover:bg-destructive/80 font-semibold text-base px-4 py-2 rounded-full';
       default:
         return '';
     }

@@ -22,6 +22,7 @@ const vehicleSchema = z.object({
   reg: z.string().min(1, "Registration number is required"),
   make: z.string().min(1, "Make is required"),
   model: z.string().min(1, "Model is required"),
+  year: z.number().min(1900, "Year must be after 1900").max(new Date().getFullYear() + 1, "Year cannot be in the future").optional(),
   colour: z.string().min(1, "Colour is required"),
   purchase_price: z.preprocess((val) => val === null ? undefined : val, z.number().min(0, "Price must be positive").optional()),
   acquisition_date: z.date(),
@@ -72,6 +73,7 @@ interface Vehicle {
   reg: string;
   make: string;
   model: string;
+  year?: number;
   colour: string;
   purchase_price?: number;
   acquisition_date: string;
@@ -117,6 +119,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
       reg: vehicle.reg,
       make: vehicle.make,
       model: vehicle.model,
+      year: vehicle.year ?? undefined,
       colour: vehicle.colour,
       purchase_price: vehicle.purchase_price ?? undefined,
       acquisition_date: new Date(vehicle.acquisition_date),
@@ -167,6 +170,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
         reg: data.reg,
         make: data.make,
         model: data.model,
+        year: data.year,
         colour: data.colour,
         acquisition_type: data.acquisition_type,
         acquisition_date: data.acquisition_date.toISOString().split('T')[0],
@@ -287,7 +291,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
                 name="make"
@@ -309,6 +313,24 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                     <FormLabel>Model</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Transit" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="e.g. 2020" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

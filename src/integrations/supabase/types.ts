@@ -1909,6 +1909,7 @@ export type Database = {
           tax_due_date: string | null
           term_months: number | null
           updated_at: string
+          year: number | null
         }
         Insert: {
           acquisition_date?: string | null
@@ -1943,6 +1944,7 @@ export type Database = {
           tax_due_date?: string | null
           term_months?: number | null
           updated_at?: string
+          year?: number | null
         }
         Update: {
           acquisition_date?: string | null
@@ -1977,6 +1979,7 @@ export type Database = {
           tax_due_date?: string | null
           term_months?: number | null
           updated_at?: string
+          year?: number | null
         }
         Relationships: []
       }

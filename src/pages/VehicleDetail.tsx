@@ -44,6 +44,7 @@ interface Vehicle {
   reg: string;
   make: string;
   model: string;
+  year?: number;
   colour: string;
   status: string;
   purchase_price: number;
@@ -426,6 +427,7 @@ export default function VehicleDetail() {
                 <MetricItem label="Registration" value={vehicle.reg} />
                 <MetricItem label="Make" value={vehicle.make} />
                 <MetricItem label="Model" value={vehicle.model} />
+                {vehicle.year && <MetricItem label="Year" value={vehicle.year} />}
                 <MetricItem label="Colour" value={vehicle.colour} />
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Status:</span>

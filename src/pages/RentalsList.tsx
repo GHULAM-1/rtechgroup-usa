@@ -140,31 +140,31 @@ const RentalsList = () => {
       {/* Quick Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <Card>
+          <Card className="bg-card hover:bg-accent/50 border transition-all duration-200 cursor-pointer hover:shadow-md">
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-sm text-muted-foreground">Total Rentals</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40 transition-all duration-200 cursor-pointer hover:shadow-md">
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+              <div className="text-2xl font-bold text-success">{stats.active}</div>
               <p className="text-sm text-muted-foreground">Active</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-card hover:bg-accent/50 border transition-all duration-200 cursor-pointer hover:shadow-md">
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-gray-600">{stats.closed}</div>
+              <div className="text-2xl font-bold text-muted-foreground">{stats.closed}</div>
               <p className="text-sm text-muted-foreground">Closed</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:border-primary/40 transition-all duration-200 cursor-pointer hover:shadow-md">
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{stats.upcoming}</div>
+              <div className="text-2xl font-bold text-primary">{stats.upcoming}</div>
               <p className="text-sm text-muted-foreground">Upcoming</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-card hover:bg-accent/50 border transition-all duration-200 cursor-pointer hover:shadow-md">
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.avgDuration}</div>
               <p className="text-sm text-muted-foreground">Avg Duration (mo)</p>

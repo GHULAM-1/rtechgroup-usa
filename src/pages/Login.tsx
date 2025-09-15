@@ -235,7 +235,7 @@ export default function Login() {
         <ThemeToggle />
       </div>
       
-      <Card className="w-full max-w-md rotating-border transition-shadow duration-300">
+      <Card className="w-full max-w-md border-primary">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 

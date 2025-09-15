@@ -25,9 +25,14 @@ export interface EnhancedFine {
     make: string; 
     model: string; 
   };
+  authority_payments: {
+    total_amount: number;
+  }[];
   // Computed fields
   isOverdue: boolean;
   daysUntilDue: number;
+  hasAuthorityPayments: boolean;
+  isAuthoritySettled: boolean;
 }
 
 interface UseFinesDataParams {
@@ -58,7 +63,8 @@ export const useFinesData = ({
         .select(`
           *,
           customers(name, email, phone),
-          vehicles(reg, make, model)
+          vehicles(reg, make, model),
+          authority_payments(amount)
         `, { count: 'exact' });
 
       // Apply filters
@@ -132,13 +138,21 @@ export const useFinesData = ({
         const dueDate = new Date(fine.due_date);
         const isOverdue = dueDate < today && (fine.status === 'Open' || fine.status === 'Charged');
         const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Calculate authority payments
+        const totalAuthorityPayments = (fine.authority_payments || []).reduce((sum: number, payment: any) => sum + Number(payment.amount), 0);
+        const hasAuthorityPayments = totalAuthorityPayments > 0;
+        const isAuthoritySettled = totalAuthorityPayments >= fine.amount;
 
         return {
           ...fine,
           customers: fine.customers as any,
           vehicles: fine.vehicles as any,
+          authority_payments: fine.authority_payments as any,
           isOverdue,
           daysUntilDue,
+          hasAuthorityPayments,
+          isAuthoritySettled,
         };
       });
 

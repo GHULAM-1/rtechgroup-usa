@@ -218,11 +218,18 @@ const FinesList = () => {
         </TableCell>
         
         <TableCell>
-          <FineStatusBadge 
-            status={fine.status}
-            dueDate={fine.due_date}
-            remainingAmount={fine.amount}
-          />
+          <div className="flex items-center gap-2">
+            <FineStatusBadge 
+              status={fine.status}
+              dueDate={fine.due_date}
+              remainingAmount={fine.amount}
+            />
+            {fine.isAuthoritySettled && (
+              <Badge variant="secondary" className="text-green-700 bg-green-100 text-xs">
+                Authority Settled
+              </Badge>
+            )}
+          </div>
         </TableCell>
         
         <TableCell className="text-right font-medium">

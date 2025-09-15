@@ -67,6 +67,73 @@ const FineDetail = () => {
   const [showAppealDialog, setShowAppealDialog] = useState(false);
   const [showAuthorityPaymentDialog, setShowAuthorityPaymentDialog] = useState(false);
 
+  // Action mutations
+  const chargeFineAction = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('apply-fine', {
+        body: { fineId: id, action: 'charge' }
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to charge fine');
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Fine charged to customer account successfully" });
+      queryClient.invalidateQueries({ queryKey: ["fine", id] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to charge fine",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const waiveFineAction = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('apply-fine', {
+        body: { fineId: id, action: 'waive' }
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to waive fine');
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Fine waived successfully" });
+      queryClient.invalidateQueries({ queryKey: ["fine", id] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to waive fine",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const appealFineAction = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('apply-fine', {
+        body: { fineId: id, action: 'appeal' }
+      });
+      if (error) throw error;
+      if (!data.success) throw new Error(data.error || 'Failed to mark as appealed');
+      return data;
+    },
+    onSuccess: () => {
+      toast({ title: "Fine marked as appealed" });
+      queryClient.invalidateQueries({ queryKey: ["fine", id] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to mark fine as appealed",
+        variant: "destructive",
+      });
+    },
+  });
+
   const { data: fine, isLoading } = useQuery({
     queryKey: ["fine", id],
     queryFn: async () => {
@@ -154,6 +221,13 @@ const FineDetail = () => {
   const totalAuthorityPayments = authorityPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
   const hasAuthorityPayments = authorityPayments && authorityPayments.length > 0;
 
+  // Action button states
+  const canCharge = fine.liability === 'Customer' && (fine.status === 'Open' || fine.status === 'Appealed');
+  const canWaive = fine.status === 'Open' || fine.status === 'Appealed';
+  const canAppeal = fine.status === 'Open';
+  const isCharged = fine.status === 'Charged';
+  const isAppealed = fine.status === 'Appealed' || fine.status === 'Appeal Submitted';
+
   const getDaysUntilDueDisplay = () => {
     const dueDate = new Date(fine.due_date);
     const today = new Date();
@@ -176,7 +250,7 @@ const FineDetail = () => {
 
   return (
     <TooltipProvider>
-      <div className="space-y-6 max-w-7xl mx-auto">
+      <div className="space-y-6 max-w-7xl mx-auto p-6 pt-8">
         {/* Enhanced Header */}
         <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
           <div className="flex items-center gap-4">
@@ -193,13 +267,70 @@ const FineDetail = () => {
           </div>
           
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowAuthorityPaymentDialog(true)}
-            >
-              <Receipt className="h-4 w-4 mr-2" />
-              Record Authority Payment
-            </Button>
+            {canCharge && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => chargeFineAction.mutate()}
+                    disabled={chargeFineAction.isPending || isCharged}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    {isCharged ? "Already Charged" : "Charge to Account"}
+                  </Button>
+                </TooltipTrigger>
+                {isCharged && (
+                  <TooltipContent>
+                    <p>Fine has already been charged to customer account</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            )}
+
+            {canAppeal && (
+              <Button
+                variant="outline"
+                onClick={() => setShowAppealDialog(true)}
+                disabled={appealFineAction.isPending || isAppealed}
+              >
+                <Scale className="h-4 w-4 mr-2" />
+                {isAppealed ? "Appealed" : "Mark as Appealed"}
+              </Button>
+            )}
+
+            {canWaive && (
+              <Button
+                variant="outline"
+                onClick={() => waiveFineAction.mutate()}
+                disabled={waiveFineAction.isPending}
+              >
+                <Ban className="h-4 w-4 mr-2" />
+                Waive Fine
+              </Button>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAuthorityPaymentDialog(true)}
+                  className={hasAuthorityPayments ? "border-green-200 bg-green-50" : ""}
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Record Authority Payment
+                  {hasAuthorityPayments && (
+                    <Badge variant="secondary" className="ml-2 text-xs">
+                      £{totalAuthorityPayments.toLocaleString()}
+                    </Badge>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              {hasAuthorityPayments && (
+                <TooltipContent>
+                  <p>Payments already recorded: £{totalAuthorityPayments.toLocaleString()}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
           </div>
         </div>
 

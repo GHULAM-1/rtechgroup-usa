@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Building, UserCheck, TrendingUp } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Customer {
   id: string;
@@ -56,23 +55,35 @@ export const CustomerSummaryCards = ({ customers }: CustomerSummaryCardsProps) =
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
+        const getCardClassName = () => {
+          let baseClasses = "transition-all duration-200 cursor-pointer hover:shadow-md ";
+          if (card.title === "Active") {
+            return baseClasses + "bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40";
+          } else if (card.title === "High Switchers") {
+            return baseClasses + "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:border-warning/40";
+          } else {
+            return baseClasses + "bg-card hover:bg-accent/50 border";
+          }
+        };
+        
+        const getIconClassName = () => {
+          let baseClasses = "h-4 w-4 ";
+          if (card.title === "Active") {
+            return baseClasses + "text-success";
+          } else if (card.title === "High Switchers") {
+            return baseClasses + "text-warning";
+          } else {
+            return baseClasses + "text-primary";
+          }
+        };
+        
         return (
-          <Card key={card.title} className={cn(
-            "transition-all duration-200 cursor-pointer hover:shadow-md",
-            card.title === "Active" ? "bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:border-success/40" :
-            card.title === "High Switchers" ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:border-warning/40" :
-            "bg-card hover:bg-accent/50 border"
-          )}>
+          <Card key={card.title} className={getCardClassName()}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {card.title}
               </CardTitle>
-              <Icon className={cn(
-                "h-4 w-4",
-                card.title === "Active" ? "text-success" :
-                card.title === "High Switchers" ? "text-warning" :
-                "text-primary"
-              )} />
+              <Icon className={getIconClassName()} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{card.value}</div>

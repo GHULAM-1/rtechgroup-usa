@@ -18,7 +18,6 @@ interface VehicleMonthlyPL {
   make_model: string;
   revenue_rental: number;
   revenue_fees: number;
-  cost_finance: number;
   cost_service: number;
   cost_fines: number;
   cost_other: number;
@@ -84,7 +83,6 @@ const MonthlyPLDrilldown = () => {
             make_model: `${vehicle.make} ${vehicle.model}`.trim(),
             revenue_rental: 0,
             revenue_fees: 0,
-            cost_finance: 0,
             cost_service: 0,
             cost_fines: 0,
             cost_other: 0,
@@ -104,9 +102,7 @@ const MonthlyPLDrilldown = () => {
           }
           groupedData[vehicleId].total_revenue += amount;
         } else if (entry.side === 'Cost') {
-          if (entry.category === 'Finance') {
-            groupedData[vehicleId].cost_finance += amount;
-          } else if (entry.category === 'Service') {
+          if (entry.category === 'Service') {
             groupedData[vehicleId].cost_service += amount;
           } else if (entry.category === 'Fine') {
             groupedData[vehicleId].cost_fines += amount;
@@ -185,7 +181,6 @@ const MonthlyPLDrilldown = () => {
       'Make/Model',
       'Rental Revenue',
       'Initial Fees',
-      'Finance Cost',
       'Service Cost',
       'Fines Cost',
       'Other Cost',
@@ -201,7 +196,6 @@ const MonthlyPLDrilldown = () => {
         `"${vehicle.make_model}"`,
         vehicle.revenue_rental,
         vehicle.revenue_fees,
-        vehicle.cost_finance,
         vehicle.cost_service,
         vehicle.cost_fines,
         vehicle.cost_other,
@@ -430,7 +424,6 @@ const MonthlyPLDrilldown = () => {
                     </TableHead>
                     <TableHead className="text-right">Rental Revenue</TableHead>
                     <TableHead className="text-right">Initial Fees</TableHead>
-                    <TableHead className="text-right">Finance</TableHead>
                     <TableHead className="text-right">Services</TableHead>
                     <TableHead className="text-right">Fines</TableHead>
                     <TableHead className="text-right">Other</TableHead>
@@ -461,7 +454,6 @@ const MonthlyPLDrilldown = () => {
                       </TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(vehicle.revenue_rental)}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(vehicle.revenue_fees)}</TableCell>
-                      <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_finance)}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_service)}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_fines)}</TableCell>
                       <TableCell className="text-right font-mono">{formatCurrency(vehicle.cost_other)}</TableCell>

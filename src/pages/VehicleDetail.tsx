@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Car, FileText, PoundSterling, Wrench, Calendar, TrendingUp, TrendingDown, Plus, Shield, Clock, Trash2, History, Receipt, Users, Eye, EyeOff } from "lucide-react";
+import { getContractTotal } from "@/lib/vehicleUtils";
 import { format } from "date-fns";
 import { startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { AcquisitionBadge } from "@/components/AcquisitionBadge";
@@ -261,7 +262,6 @@ export default function VehicleDetail() {
       } else if (entry.side === 'Cost') {
         acc.totalCosts += amount;
         if (entry.category === 'Acquisition') acc.cost_acquisition += amount;
-        if (entry.category === 'Finance') acc.cost_finance += amount;
         if (entry.category === 'Service') acc.cost_service += amount;
         if (entry.category === 'Fines') acc.cost_fines += amount;
         if (entry.category === 'Plates') acc.cost_plates += amount;
@@ -278,7 +278,6 @@ export default function VehicleDetail() {
       revenue_other: 0,
       totalCosts: 0,
       cost_acquisition: 0,
-      cost_finance: 0,
       cost_service: 0,
       cost_plates: 0,
       cost_fines: 0,
@@ -293,7 +292,6 @@ export default function VehicleDetail() {
     revenue_other: 0,
     totalCosts: 0,
     cost_acquisition: 0,
-    cost_finance: 0,
     cost_service: 0,
     cost_plates: 0,
     cost_fines: 0,
@@ -429,8 +427,8 @@ export default function VehicleDetail() {
                 <MetricDivider />
                 <MetricItem 
                   label={vehicle.acquisition_type === 'Finance' ? 'Contract Total' : 'Purchase Price'}
-                  value={vehicle.acquisition_type === 'Finance' && vehicle.monthly_payment && vehicle.term_months
-                    ? (vehicle.initial_payment || 0) + (vehicle.monthly_payment * vehicle.term_months) + (vehicle.balloon || 0)
+                  value={vehicle.acquisition_type === 'Finance'
+                    ? getContractTotal(vehicle)
                     : Number(vehicle.purchase_price)
                   }
                   isAmount
@@ -480,19 +478,15 @@ export default function VehicleDetail() {
                   )}
                   
                   {/* Contract Total */}
-                  {vehicle.monthly_payment && vehicle.term_months && (
-                    <>
-                      <MetricDivider />
-                      <MetricItem 
-                        label="Contract Total" 
-                        value={(vehicle.initial_payment || 0) + (vehicle.monthly_payment * vehicle.term_months) + (vehicle.balloon || 0)}
-                        isAmount
-                      />
-                      <div className="text-xs text-muted-foreground mt-2">
-                        Finance costs are recorded upfront in P&L when vehicle is added
-                      </div>
-                    </>
-                  )}
+                  <MetricDivider />
+                  <MetricItem 
+                    label="Contract Total" 
+                    value={getContractTotal(vehicle)}
+                    isAmount
+                  />
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Finance costs are recorded upfront in P&L when vehicle is added
+                  </div>
                 </div>
               </MetricCard>
             )}
@@ -738,12 +732,6 @@ export default function VehicleDetail() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Cost (Finance)</span>
-                      <span className="text-sm font-medium text-red-600">
-                        -£{(plSummary.cost_finance || 0).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-sm">Cost (Service)</span>
                       <span className="text-sm font-medium text-red-600">
                         -£{(plSummary.cost_service || 0).toFixed(2)}
@@ -796,10 +784,6 @@ export default function VehicleDetail() {
                   <div className="flex justify-between">
                     <span>Acquisition:</span>
                     <span>£{(plSummary.cost_acquisition || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Finance:</span>
-                    <span>£{(plSummary.cost_finance || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Service:</span>

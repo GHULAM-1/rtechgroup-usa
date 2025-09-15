@@ -365,7 +365,7 @@ export default function VehiclesListEnhanced() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -408,29 +408,6 @@ export default function VehiclesListEnhanced() {
             <SelectItem value="all">All Performance</SelectItem>
             <SelectItem value="profitable">Profitable</SelectItem>
             <SelectItem value="loss">Loss Making</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={filters.servicePlan} onValueChange={(value) => updateFilters({ servicePlan: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Service Plan" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Plans</SelectItem>
-            <SelectItem value="yes">Has Plan</SelectItem>
-            <SelectItem value="no">No Plan</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={filters.spareKey} onValueChange={(value) => updateFilters({ spareKey: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Spare Key" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Keys</SelectItem>
-            <SelectItem value="none">No Key</SelectItem>
-            <SelectItem value="company">Company</SelectItem>
-            <SelectItem value="customer">Customer</SelectItem>
           </SelectContent>
         </Select>
 
@@ -500,20 +477,12 @@ export default function VehiclesListEnhanced() {
                       {getSortIcon('mot_due_date')}
                     </div>
                   </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('tax_due_date')}>
-                    <div className="flex items-center gap-2">
-                      TAX Due
-                      {getSortIcon('tax_due_date')}
-                     </div>
-                   </TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('warranty_end_date')}>
+                    <TableHead className="cursor-pointer" onClick={() => handleSort('tax_due_date')}>
                       <div className="flex items-center gap-2">
-                        Warranty
-                        {getSortIcon('warranty_end_date')}
-                      </div>
-                    </TableHead>
-                    <TableHead>Service Plan</TableHead>
-                    <TableHead>Spare Key</TableHead>
+                        TAX Due
+                        {getSortIcon('tax_due_date')}
+                       </div>
+                     </TableHead>
                     <TableHead className="cursor-pointer text-right" onClick={() => handleSort('net_profit')}>
                      <div className="flex items-center justify-end gap-2">
                        Net P&L
@@ -577,24 +546,7 @@ export default function VehiclesListEnhanced() {
                         type="TAX" 
                         compact 
                       />
-                      </TableCell>
-                      <TableCell>
-                        <WarrantyStatusChip 
-                          dueDate={vehicle.warranty_end_date} 
-                          compact 
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <ServicePlanChip hasServicePlan={vehicle.has_service_plan || false} compact />
-                      </TableCell>
-                      <TableCell>
-                        <SpareKeyChip 
-                          hasSpareKey={vehicle.has_spare_key || false}
-                          spareKeyHolder={vehicle.spare_key_holder}
-                          spareKeyNotes={vehicle.spare_key_notes}
-                          compact
-                        />
-                      </TableCell>
+                     </TableCell>
                      <TableCell className="text-right">
                        <NetPLChip
                          revenue={vehicle.pl_data.total_revenue}

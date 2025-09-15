@@ -13,6 +13,7 @@ import { toast } from '@/hooks/use-toast';
 import { useAuthValidation } from '@/hooks/useAuthValidation';
 import { useRateLimiting } from '@/hooks/useRateLimiting';
 import { supabase } from '@/integrations/supabase/client';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Login() {
   const { user, signIn, loading, appUser } = useAuth();
@@ -229,13 +230,18 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      {/* Theme Toggle - positioned in top right */}
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 
               src="/rtechgroup-logo.png" 
               alt="RTECHGROUP UK Logo" 
-              className="h-24 w-auto object-contain"
+              className="h-32 w-auto object-contain"
             />
           </div>
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>

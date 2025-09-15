@@ -7,11 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ArrowLeft, FileText, PoundSterling, CheckCircle, XCircle, Scale, CreditCard, Clock, Ban, Receipt, AlertCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AlertTriangle, ArrowLeft, FileText, PoundSterling, CheckCircle, Scale, CreditCard, Clock, Ban, Receipt, AlertCircle, Upload, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FineAppealDialog } from "@/components/FineAppealDialog";
 import { FineStatusBadge } from "@/components/FineStatusBadge";
 import { AuthorityPaymentDialog } from "@/components/AuthorityPaymentDialog";
+import { KPICard } from "@/components/ui/kpi-card";
+import { InfoGrid } from "@/components/ui/info-grid";
+import { Timeline, TimelineItem } from "@/components/ui/timeline";
 
 interface Fine {
   id: string;
@@ -97,40 +101,6 @@ const FineDetail = () => {
     enabled: !!id,
   });
 
-  const { data: ledgerEntries } = useQuery({
-    queryKey: ["fine-ledger", id],
-    queryFn: async () => {
-      if (!fine?.customer_id) return [];
-      
-      const { data, error } = await supabase
-        .from("ledger_entries")
-        .select("*")
-        .eq("customer_id", fine.customer_id)
-        .eq("category", "Fine")
-        .order("entry_date", { ascending: true });
-      
-      if (error) throw error;
-      return data as LedgerEntry[];
-    },
-    enabled: !!fine?.customer_id,
-  });
-
-  const { data: pnlEntries } = useQuery({
-    queryKey: ["fine-pnl", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pnl_entries")
-        .select("*")
-        .eq("vehicle_id", fine?.vehicle_id)
-        .eq("category", "Fines")
-        .eq("source_ref", id);
-      
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!fine?.vehicle_id && fine?.liability === "Business",
-  });
-
   const { data: authorityPayments } = useQuery({
     queryKey: ["authority-payments", id],
     queryFn: async () => {
@@ -146,733 +116,261 @@ const FineDetail = () => {
     enabled: !!id,
   });
 
-  const appealSuccessfulMutation = useMutation({
-    mutationFn: async () => {
-      if (!fine) throw new Error("Fine not found");
-
-      // Call the void charge function
-      const { error: voidError } = await supabase.rpc('fine_void_charge', {
-        f_id: fine.id
-      });
-      if (voidError) throw voidError;
-
-      // Update fine status
-      const { error: updateError } = await supabase
-        .from("fines")
-        .update({ status: "Appeal Successful" })
-        .eq("id", fine.id);
-      if (updateError) throw updateError;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Appeal Successful",
-        description: "Fine has been successfully appealed and charges voided.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["fine", id] });
-      queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
-    },
-    onError: (error) => {
-      console.error("Error processing appeal:", error);
-      toast({
-        title: "Error",
-        description: "Failed to process appeal. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // New admin-controlled fine actions using the apply-fine edge function
-  const chargeFineToAccount = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('apply-fine', {
-        body: { fineId: id, action: 'charge' }
-      });
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to charge fine');
-      return data;
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Fine Charged",
-        description: `Fine has been charged to customer account. Status: ${data.status}`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["fine", id] });
-      queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
-      queryClient.invalidateQueries({ queryKey: ["customers"] });
-      queryClient.invalidateQueries({ queryKey: ["authority-payments", id] });
-    },
-    onError: (error: any) => {
-      console.error("Error charging fine:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to charge fine to account. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const waiveFine = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('apply-fine', {
-        body: { fineId: id, action: 'waive' }
-      });
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to waive fine');
-      return data;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Fine Waived",
-        description: "Fine has been waived and will not be charged.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["fine", id] });
-      queryClient.invalidateQueries({ queryKey: ["fine-ledger", id] });
-      queryClient.invalidateQueries({ queryKey: ["authority-payments", id] });
-    },
-    onError: (error: any) => {
-      console.error("Error waiving fine:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to waive fine. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const markAsAppealed = useMutation({
-    mutationFn: async () => {
-      const { data, error } = await supabase.functions.invoke('apply-fine', {
-        body: { fineId: id, action: 'appeal' }
-      });
-      if (error) throw error;
-      if (!data.success) throw new Error(data.error || 'Failed to mark as appealed');
-      return data;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Fine Appealed",
-        description: "Fine has been marked as appealed.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["fine", id] });
-    },
-    onError: (error: any) => {
-      console.error("Error marking fine as appealed:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to mark fine as appealed. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   if (isLoading) {
-    return <div>Loading fine details...</div>;
-  }
-
-  if (!fine) {
-    return <div>Fine not found</div>;
-  }
-
-  const totalCharges = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  const totalPayments = ledgerEntries?.filter(e => e.type === 'Payment').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-  const outstandingAmount = ledgerEntries?.filter(e => e.type === 'Charge').reduce((sum, e) => sum + Number(e.remaining_amount), 0) || 0;
-  
-  const totalAuthorityPayments = authorityPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
-  const hasAuthorityPayments = authorityPayments && authorityPayments.length > 0;
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    return (
+      <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate("/fines")}>
+          <Button variant="outline" disabled>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Fines
           </Button>
           <div>
             <h1 className="text-3xl font-bold">Fine Details</h1>
-            <p className="text-muted-foreground">
-              {fine.reference_no || fine.id.slice(0, 8)} • {fine.vehicles.reg}
-            </p>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          {/* Authority Payment Button - Available for all fines */}
-          <Button
-            variant={hasAuthorityPayments ? "secondary" : "outline"}
-            onClick={() => setShowAuthorityPaymentDialog(true)}
-          >
-            <Receipt className="h-4 w-4 mr-2" />
-            {hasAuthorityPayments ? "Add Authority Payment" : "Record Authority Payment"}
-          </Button>
-
-          {/* Admin Actions for Customer Liability Fines */}
-          {fine.liability === 'Customer' && (
-            <>
-              {(fine.status === 'Open' || fine.status === 'Appealed') && (
-                <Button
-                  onClick={() => chargeFineToAccount.mutate()}
-                  disabled={chargeFineToAccount.isPending}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  {chargeFineToAccount.isPending ? 'Charging...' : 'Charge to Account'}
-                </Button>
-              )}
-              
-              {fine.status === 'Open' && !hasAuthorityPayments && (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() => markAsAppealed.mutate()}
-                    disabled={markAsAppealed.isPending}
-                  >
-                    <Scale className="h-4 w-4 mr-2" />
-                    {markAsAppealed.isPending ? 'Processing...' : 'Mark as Appealed'}
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => waiveFine.mutate()}
-                    disabled={waiveFine.isPending}
-                  >
-                    <Ban className="h-4 w-4 mr-2" />
-                    {waiveFine.isPending ? 'Waiving...' : 'Waive Fine'}
-                  </Button>
-                </>
-              )}
-              
-              {fine.status === 'Appealed' && !hasAuthorityPayments && (
-                <Button
-                  variant="outline"
-                  onClick={() => waiveFine.mutate()}
-                  disabled={waiveFine.isPending}
-                >
-                  <Ban className="h-4 w-4 mr-2" />
-                  {waiveFine.isPending ? 'Waiving...' : 'Resolve Appeal - Waive'}
-                </Button>
-              )}
-
-              {hasAuthorityPayments && (
-                <div className="mt-2 p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    Authority payment recorded. Waive and Appeal options are no longer available.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
+        <div className="grid gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <KPICard key={i} title="" value="" isLoading />
+          ))}
         </div>
       </div>
+    );
+  }
 
-      {/* Fine Summary */}
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Fine Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              £{Number(fine.amount).toLocaleString()}
+  if (!fine) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <AlertTriangle className="h-12 w-12 text-destructive" />
+        <h2 className="text-2xl font-bold">Fine not found</h2>
+        <Button onClick={() => navigate("/fines")}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Fines
+        </Button>
+      </div>
+    );
+  }
+
+  const totalAuthorityPayments = authorityPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0;
+  const hasAuthorityPayments = authorityPayments && authorityPayments.length > 0;
+
+  const getDaysUntilDueDisplay = () => {
+    const dueDate = new Date(fine.due_date);
+    const today = new Date();
+    const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff > 0) return `${daysDiff} days`;
+    if (daysDiff === 0) return "Due Today";
+    return `Overdue ${Math.abs(daysDiff)}`;
+  };
+
+  const getDaysUntilDueColor = () => {
+    const dueDate = new Date(fine.due_date);
+    const today = new Date();
+    const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff > 7) return "text-foreground";
+    if (daysDiff > 0) return "text-amber-600";
+    return "text-red-600";
+  };
+
+  return (
+    <TooltipProvider>
+      <div className="space-y-6 max-w-7xl mx-auto">
+        {/* Enhanced Header */}
+        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => navigate("/fines")}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Fines
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Fine Details</h1>
+              <p className="text-muted-foreground">
+                {fine.reference_no || fine.id.slice(0, 8)} • {fine.vehicles.reg}
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowAuthorityPaymentDialog(true)}
+            >
+              <Receipt className="h-4 w-4 mr-2" />
+              Record Authority Payment
+            </Button>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FineStatusBadge 
+        {/* KPI Card Row */}
+        <div className="grid gap-4 md:grid-cols-4">
+          <KPICard
+            title="Fine Amount"
+            value={`£${Number(fine.amount).toLocaleString()}`}
+            valueClassName="text-red-600"
+            icon={<PoundSterling className="h-4 w-4" />}
+          />
+
+          <KPICard
+            title="Status"
+            value={<FineStatusBadge 
               status={fine.status}
               dueDate={fine.due_date}
-              remainingAmount={outstandingAmount}
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Authority Payments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {hasAuthorityPayments ? (
-              <div className="space-y-1">
-                <div className="text-2xl font-bold text-green-600">
-                  £{totalAuthorityPayments.toLocaleString()}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {totalAuthorityPayments >= fine.amount ? (
-                    <Badge variant="secondary" className="text-green-700 bg-green-100">
-                      Fully Paid
-                    </Badge>
-                  ) : (
-                    <span>of £{fine.amount.toLocaleString()} paid</span>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-2xl font-bold text-gray-400">
-                £0
-              </div>
+              remainingAmount={0}
+            />}
+            badge={totalAuthorityPayments >= fine.amount && (
+              <Badge variant="secondary" className="text-green-700 bg-green-100">
+                Authority Settled
+              </Badge>
             )}
-          </CardContent>
-        </Card>
+          />
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Days Until Due</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${new Date(fine.due_date) < new Date() ? 'text-red-600' : 'text-gray-600'}`}>
-              {Math.ceil((new Date(fine.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
-            </div>
-          </CardContent>
-        </Card>
+          <KPICard
+            title="Authority Payments"
+            value={hasAuthorityPayments ? `£${totalAuthorityPayments.toLocaleString()}` : "£0"}
+            valueClassName={hasAuthorityPayments ? "text-green-600" : "text-muted-foreground"}
+            subtitle={hasAuthorityPayments ? `of £${fine.amount.toLocaleString()}` : undefined}
+            icon={<Receipt className="h-4 w-4" />}
+          />
+
+          <KPICard
+            title="Days Until Due"
+            value={getDaysUntilDueDisplay()}
+            valueClassName={getDaysUntilDueColor()}
+            icon={<Clock className="h-4 w-4" />}
+          />
+        </div>
+
+        {/* Enhanced Tabbed Layout */}
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="evidence">Evidence</TabsTrigger>
+            <TabsTrigger value="accounting">Accounting</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-primary" />
+                  Fine Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <InfoGrid items={[
+                  { label: "Type", value: fine.type },
+                  { label: "Reference", value: fine.reference_no || '-' },
+                  { label: "Vehicle", value: `${fine.vehicles.reg} (${fine.vehicles.make} ${fine.vehicles.model})` },
+                  { label: "Customer", value: fine.customers?.name || 'No customer assigned' },
+                  { label: "Issue Date", value: new Date(fine.issue_date).toLocaleDateString() },
+                  { label: "Due Date", value: new Date(fine.due_date).toLocaleDateString() }
+                ]} />
+                {fine.notes && (
+                  <div className="mt-6 pt-4 border-t">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Notes</p>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm">{fine.notes}</p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="evidence" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Evidence Files
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {fineFiles && fineFiles.length > 0 ? (
+                  <div className="grid gap-4">
+                    {fineFiles.map((file) => (
+                      <div key={file.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{file.file_name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Uploaded {new Date(file.uploaded_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => window.open(file.file_url, '_blank')}
+                        >
+                          View File
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No evidence files</h3>
+                    <Button variant="outline" disabled>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Evidence (Coming Soon)
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="accounting" className="space-y-6 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PoundSterling className="h-5 w-5 text-primary" />
+                  Authority Payments
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {hasAuthorityPayments ? (
+                  <div className="space-y-4">
+                    {authorityPayments.map((payment) => (
+                      <div key={payment.id} className="flex justify-between p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium text-green-600">£{Number(payment.amount).toLocaleString()}</p>
+                          <p className="text-sm text-muted-foreground">{new Date(payment.payment_date).toLocaleDateString()}</p>
+                        </div>
+                        <Badge variant="outline">{payment.payment_method || 'Unknown'}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Receipt className="mx-auto h-8 w-8 mb-2" />
+                    <p>No payments recorded</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Dialogs */}
+        <FineAppealDialog
+          open={showAppealDialog}
+          onOpenChange={setShowAppealDialog}
+          fineId={fine.id}
+          fineAmount={fine.amount}
+          customerId={fine.customer_id || undefined}
+        />
+
+        <AuthorityPaymentDialog
+          open={showAuthorityPaymentDialog}
+          onOpenChange={setShowAuthorityPaymentDialog}
+          fineId={fine.id}
+          fineAmount={fine.amount}
+          fineReference={fine.reference_no}
+        />
       </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="evidence">Evidence</TabsTrigger>
-          <TabsTrigger value="accounting">Accounting</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-primary" />
-                Fine Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Type</p>
-                  <p className="font-medium">{fine.type}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Reference</p>
-                  <p className="font-medium">{fine.reference_no || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Vehicle</p>
-                  <p className="font-medium">
-                    {fine.vehicles.reg} ({fine.vehicles.make} {fine.vehicles.model})
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Customer</p>
-                  <p className="font-medium">{fine.customers?.name || 'No customer assigned'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Issue Date</p>
-                  <p className="font-medium">{new Date(fine.issue_date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Due Date</p>
-                  <p className="font-medium">{new Date(fine.due_date).toLocaleDateString()}</p>
-                </div>
-              </div>
-              {fine.notes && (
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground">Notes</p>
-                  <p className="font-medium">{fine.notes}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="evidence" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-primary" />
-                Evidence Files
-              </CardTitle>
-              <CardDescription>
-                Supporting documents and evidence for this fine
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {fineFiles && fineFiles.length > 0 ? (
-                <div className="grid gap-4">
-                  {fineFiles.map((file) => (
-                    <div key={file.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{file.file_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Uploaded {new Date(file.uploaded_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        onClick={() => window.open(file.file_url, '_blank')}
-                      >
-                        View File
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No evidence files</h3>
-                  <p className="text-muted-foreground">No evidence has been uploaded for this fine</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="accounting" className="space-y-6">
-          {fine.liability === "Customer" && fine.customers ? (
-            <>
-              {/* Customer Accounting Summary */}
-              <div className="grid gap-6 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Total Charges</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-red-600">
-                      £{totalCharges.toLocaleString()}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Total Payments</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-green-600">
-                      £{totalPayments.toLocaleString()}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Outstanding</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className={`text-2xl font-bold ${outstandingAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                      £{outstandingAmount.toLocaleString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Ledger Entries */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PoundSterling className="h-5 w-5 text-primary" />
-                    Customer Ledger (Fine Charges & Payments)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {ledgerEntries && ledgerEntries.length > 0 ? (
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            <TableHead className="text-right">Remaining</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {ledgerEntries.map((entry) => (
-                            <TableRow key={entry.id}>
-                              <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
-                              <TableCell>
-                                <Badge variant={entry.type === 'Charge' ? 'destructive' : 'default'}>
-                                  {entry.type}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {entry.due_date ? new Date(entry.due_date).toLocaleDateString() : '-'}
-                              </TableCell>
-                              <TableCell className={`text-right ${entry.type === 'Charge' ? 'text-red-600' : 'text-green-600'}`}>
-                                {entry.type === 'Charge' ? '+' : '-'}£{Number(entry.amount).toLocaleString()}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                £{Number(entry.remaining_amount).toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <p className="text-center py-8 text-muted-foreground">No ledger entries found</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Authority Payments Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Receipt className="h-5 w-5 text-primary" />
-                    Authority Payments
-                    {hasAuthorityPayments && (
-                      <Badge variant="secondary" className="ml-2">
-                        £{totalAuthorityPayments.toLocaleString()} paid
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Payments made directly to the issuing authority for this fine
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {hasAuthorityPayments ? (
-                    <div className="space-y-4">
-                      {/* Summary */}
-                      <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Total Paid to Authority</p>
-                          <p className="text-xl font-bold text-green-600">£{totalAuthorityPayments.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Remaining Fine Amount</p>
-                          <p className={`text-xl font-bold ${totalAuthorityPayments >= fine.amount ? 'text-green-600' : 'text-orange-600'}`}>
-                            £{Math.max(0, fine.amount - totalAuthorityPayments).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Payments Table */}
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Payment Date</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Method</TableHead>
-                              <TableHead>Notes</TableHead>
-                              <TableHead>Recorded</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {authorityPayments.map((payment) => (
-                              <TableRow key={payment.id}>
-                                <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                                <TableCell className="text-green-600 font-semibold">
-                                  £{Number(payment.amount).toLocaleString()}
-                                </TableCell>
-                                <TableCell>{payment.payment_method || '-'}</TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                  {payment.notes || '-'}
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">
-                                  {new Date(payment.created_at).toLocaleDateString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      
-                      {totalAuthorityPayments >= fine.amount && (
-                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                          <span className="text-green-800 font-medium">
-                            Fine fully paid to authority
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Receipt className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No authority payments recorded</h3>
-                      <p className="text-muted-foreground mb-4">
-                        No payments have been recorded as made directly to the issuing authority
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowAuthorityPaymentDialog(true)}
-                      >
-                        <Receipt className="h-4 w-4 mr-2" />
-                        Record First Payment
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <>
-              {/* Business Liability P&L */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <PoundSterling className="h-5 w-5 text-primary" />
-                    Business P&L Impact
-                  </CardTitle>
-                  <CardDescription>
-                    This fine is a business liability and recorded as a cost
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {pnlEntries && pnlEntries.length > 0 ? (
-                    <div className="rounded-md border">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Side</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {pnlEntries.map((entry) => (
-                            <TableRow key={entry.id}>
-                              <TableCell>{new Date(entry.entry_date).toLocaleDateString()}</TableCell>
-                              <TableCell>{entry.category}</TableCell>
-                              <TableCell>
-                                <Badge variant="destructive">{entry.side}</Badge>
-                              </TableCell>
-                              <TableCell className="text-right text-red-600">
-                                £{Number(entry.amount).toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <p className="text-center py-8 text-muted-foreground">No P&L entries found</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Authority Payments Section for Business Liability */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Receipt className="h-5 w-5 text-primary" />
-                    Authority Payments
-                    {hasAuthorityPayments && (
-                      <Badge variant="secondary" className="ml-2">
-                        £{totalAuthorityPayments.toLocaleString()} paid
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <CardDescription>
-                    Payments made directly to the issuing authority for this fine
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {hasAuthorityPayments ? (
-                    <div className="space-y-4">
-                      {/* Summary */}
-                      <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Total Paid to Authority</p>
-                          <p className="text-xl font-bold text-green-600">£{totalAuthorityPayments.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Remaining Fine Amount</p>
-                          <p className={`text-xl font-bold ${totalAuthorityPayments >= fine.amount ? 'text-green-600' : 'text-orange-600'}`}>
-                            £{Math.max(0, fine.amount - totalAuthorityPayments).toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Payments Table */}
-                      <div className="rounded-md border">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Payment Date</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Method</TableHead>
-                              <TableHead>Notes</TableHead>
-                              <TableHead>Recorded</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {authorityPayments.map((payment) => (
-                              <TableRow key={payment.id}>
-                                <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
-                                <TableCell className="text-green-600 font-semibold">
-                                  £{Number(payment.amount).toLocaleString()}
-                                </TableCell>
-                                <TableCell>{payment.payment_method || '-'}</TableCell>
-                                <TableCell className="max-w-xs truncate">
-                                  {payment.notes || '-'}
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">
-                                  {new Date(payment.created_at).toLocaleDateString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-                      
-                      {totalAuthorityPayments >= fine.amount && (
-                        <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <CheckCircle className="h-5 w-5 text-green-600" />
-                          <span className="text-green-800 font-medium">
-                            Fine fully paid to authority
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <Receipt className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No authority payments recorded</h3>
-                      <p className="text-muted-foreground mb-4">
-                        No payments have been recorded as made directly to the issuing authority
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowAuthorityPaymentDialog(true)}
-                      >
-                        <Receipt className="h-4 w-4 mr-2" />
-                        Record First Payment
-                      </Button>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Appeal Dialog */}
-      <FineAppealDialog
-        open={showAppealDialog}
-        onOpenChange={setShowAppealDialog}
-        fineId={fine.id}
-        fineAmount={fine.amount}
-        customerId={fine.customer_id || undefined}
-      />
-
-      {/* Authority Payment Dialog */}
-      <AuthorityPaymentDialog
-        open={showAuthorityPaymentDialog}
-        onOpenChange={setShowAuthorityPaymentDialog}
-        fineId={fine.id}
-        fineAmount={fine.amount}
-        fineReference={fine.reference_no}
-      />
-    </div>
+    </TooltipProvider>
   );
 };
 

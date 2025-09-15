@@ -482,15 +482,6 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? "Updating..." : "Save Changes"}
-              </Button>
-            </div>
-
             {/* Compliance Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Compliance</h3>
@@ -580,6 +571,15 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
                   </div>
                 </div>
               )}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Updating..." : "Save Changes"}
+              </Button>
             </div>
           </form>
         </Form>

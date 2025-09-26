@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -211,15 +212,16 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           Add Vehicle
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5 text-primary" />
             Add New Vehicle
           </DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <ScrollArea className="flex-1 -mr-4 pr-4">
+          <div className="space-y-4 pb-4">
+            <Form {...form}>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -818,16 +820,22 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading} className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary">
-                {loading ? "Adding..." : "Add Vehicle"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+            </Form>
+          </div>
+        </ScrollArea>
+        <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
+          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={loading} 
+            className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary"
+            onClick={form.handleSubmit(onSubmit)}
+          >
+            {loading ? "Adding..." : "Add Vehicle"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

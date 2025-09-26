@@ -6,6 +6,9 @@ verify_jwt = true
 [functions.admin-reset-password]
 verify_jwt = true
 
+[functions.emergency-password-reset]
+verify_jwt = false
+
 [functions.admin-update-role]
 verify_jwt = true
 

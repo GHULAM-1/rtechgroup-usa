@@ -36,6 +36,7 @@ import FineDetail from "@/pages/FineDetail";
 import RemindersPageNew from "@/pages/RemindersPageNew";
 import InsuranceListEnhanced from "@/pages/InsuranceListEnhanced";
 import Login from "@/pages/Login";
+import ResetPassword from "@/pages/ResetPassword";
 import UsersManagement from "@/pages/UsersManagement";
 import NotFound from "./pages/NotFound";
 
@@ -72,6 +73,7 @@ function App() {
               <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={<AuthGuard><Layout><Dashboard /></Layout></AuthGuard>} />
             <Route path="/vehicles" element={<AuthGuard><Layout><VehiclesList /></Layout></AuthGuard>} />
             <Route path="/vehicles/:id" element={<AuthGuard><Layout><VehicleDetail /></Layout></AuthGuard>} />

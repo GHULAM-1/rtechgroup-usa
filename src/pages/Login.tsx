@@ -359,7 +359,7 @@ export default function Login() {
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={isSubmitting || isLocked || !formData.email || !formData.password}
+                disabled={isSubmitting || !formData.email.trim() || !formData.password.trim()}
               >
                 {isSubmitting ? (
                   <>
@@ -370,6 +370,15 @@ export default function Login() {
                   'Sign In'
                 )}
               </Button>
+              
+              {/* Debug info - remove this after testing */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>Email: "{formData.email}" (length: {formData.email.length})</div>
+                  <div>Password: "{formData.password ? '***' : ''}" (length: {formData.password.length})</div>
+                  <div>Button disabled: {isSubmitting || !formData.email.trim() || !formData.password.trim() ? 'Yes' : 'No'}</div>
+                </div>
+              )}
               
               {rateLimitStatus.attemptsRemaining < 5 && rateLimitStatus.attemptsRemaining > 0 && (
                 <div className="text-center text-sm text-amber-600">

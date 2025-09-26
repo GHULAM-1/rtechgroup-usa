@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Car, PoundSterling, CalendarIcon } from "lucide-react";
+import { Plus, Car, PoundSterling, CalendarIcon, Shield, Key, Settings } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -219,623 +219,605 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
             Add New Vehicle
           </DialogTitle>
         </DialogHeader>
-        <ScrollArea className="flex-1 -mr-4 pr-4">
-          <div className="space-y-4 pb-4">
-            <Form {...form}>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="reg"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Registration Number</FormLabel>
-                    <FormControl>
-              <Input 
-                placeholder="e.g. AB12 CDE" 
-                {...field}
-                onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                className="input-focus" 
-              />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="acquisition_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Acquisition Date</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field}
-                        value={field.value ? field.value.toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(new Date(e.target.value))}
-                        className="input-focus"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="make"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Make</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Ford" {...field} className="input-focus" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="model"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Model</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Transit" {...field} className="input-focus" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Year</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="e.g. 2020" 
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value))}
-                        className="input-focus" 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className={`grid gap-4 ${form.watch("acquisition_type") === "Purchase" ? "grid-cols-2" : "grid-cols-1"}`}>
-              <FormField
-                control={form.control}
-                name="colour"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Colour</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. White" {...field} className="input-focus" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {form.watch("acquisition_type") === "Purchase" && (
-                <FormField
-                  control={form.control}
-                  name="purchase_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Purchase Price (£)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter amount" 
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                          className="input-focus"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
-
-            {/* MOT & TAX Due Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="mot_due_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>MOT Due Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
+            <ScrollArea className="flex-1 -mr-4 pr-4">
+              <div className="space-y-4 pb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="reg"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Registration Number *</FormLabel>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick MOT due date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                          <Input placeholder="e.g. AB12 CDE" {...field} />
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="tax_due_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>TAX Due Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick TAX due date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Warranty Due Dates */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="warranty_start_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Warranty Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick warranty start</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="warranty_end_date"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Warranty End Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick warranty end</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="acquisition_type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Acquisition Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="input-focus">
-                        <SelectValue placeholder="Select acquisition type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Purchase">Purchase</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Finance Section - Only show when acquisition type is Finance */}
-            {form.watch("acquisition_type") === "Finance" && (
-              <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <PoundSterling className="h-4 w-4 text-primary" />
-                  <h3 className="font-semibold text-sm">Finance Information</h3>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="acquisition_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Acquisition Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                
+
+                <div className="grid grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="make"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Make *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Ford" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Model *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Transit" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Year</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="e.g. 2020" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : "")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="colour"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Colour</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. White" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="purchase_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Price (£)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Enter amount" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : "")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mot_due_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>MOT Due Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick MOT due date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date("1900-01-01")}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="tax_due_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>TAX Due Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick TAX due date</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date("1900-01-01")}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="warranty_start_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Warranty Start Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick warranty start</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date("1900-01-01")}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="warranty_end_date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Warranty End Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={"outline"}
+                                className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick warranty end</span>
+                                )}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date("1900-01-01")}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="contract_total"
+                  name="acquisition_type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contract Total (£) *</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter total contract value" 
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
-                          className="input-focus"
-                        />
-                      </FormControl>
+                      <FormLabel>Acquisition Type</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select acquisition type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Purchase">Purchase</SelectItem>
+                          <SelectItem value="Finance">Finance</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="text-xs bg-blue-50 text-blue-800 p-3 rounded border border-blue-200">
-                  <strong>Finance P&L Approach:</strong> We track total finance cost only (no monthly breakdown). 
-                  The full contract value is posted upfront as an Acquisition cost for accurate P&L reporting.
+                {/* Contract Total field - only show for Finance */}
+                {form.watch("acquisition_type") === "Finance" && (
+                  <FormField
+                    control={form.control}
+                    name="contract_total"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contract Total (£)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01" 
+                            placeholder="Enter contract total" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : "")}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {/* Compliance Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Compliance
+                  </h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="has_logbook"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Has Logbook</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Vehicle has a physical logbook
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="has_service_plan"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Has Service Plan</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Vehicle has an active service plan
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="has_spare_key"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Has Spare Key</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Vehicle has a spare key available
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Spare Key Holder - only show if has_spare_key is true */}
+                  {form.watch("has_spare_key") && (
+                    <FormField
+                      control={form.control}
+                      name="spare_key_holder"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Spare Key Holder</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select who holds the spare key" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Company">Company</SelectItem>
+                              <SelectItem value="Customer">Customer</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  {/* Spare Key Notes - only show if has_spare_key is true */}
+                  {form.watch("has_spare_key") && (
+                    <FormField
+                      control={form.control}
+                      name="spare_key_notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Spare Key Notes</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Additional notes about spare key location or details..."
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+
+                {/* Security Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <Key className="h-5 w-5 text-primary" />
+                    Security Features
+                  </h3>
+                  
+                  <FormField
+                    control={form.control}
+                    name="has_ghost"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Has Ghost Immobiliser</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Vehicle has a Ghost immobiliser installed
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Ghost Code - only show if has_ghost is true */}
+                  {form.watch("has_ghost") && (
+                    <FormField
+                      control={form.control}
+                      name="ghost_code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ghost Immobiliser Code</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="password"
+                              placeholder="Enter Ghost code" 
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="has_tracker"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Has Tracker</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Vehicle has a GPS tracker installed
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="has_remote_immobiliser"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Has Remote Immobiliser</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Vehicle has a remote immobiliser system
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="security_notes"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Security Notes</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Additional security information..."
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
-            )}
-
-            {/* Logbook Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Compliance</h3>
-              <FormField
-                control={form.control}
-                name="has_logbook"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Has Logbook</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Vehicle has a physical logbook
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+            </ScrollArea>
+            
+            <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
+              <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={loading} 
+                className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary"
+              >
+                {loading ? "Adding..." : "Add Vehicle"}
+              </Button>
             </div>
-
-            {/* Ownership & Security Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Ownership & Security</h3>
-              
-              <FormField
-                control={form.control}
-                name="has_service_plan"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Service Plan</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Vehicle has an active service plan (for admin visibility only)
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="has_spare_key"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Spare Key</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Spare key exists for this vehicle
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          if (!checked) {
-                            form.setValue("spare_key_holder", undefined);
-                            form.setValue("spare_key_notes", "");
-                          } else {
-                            form.setValue("spare_key_holder", "Company");
-                          }
-                        }}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("has_spare_key") && (
-                <div className="space-y-4 ml-4 border-l-2 border-muted pl-4">
-                  <FormField
-                    control={form.control}
-                    name="spare_key_holder"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Spare Key Holder</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            className="flex flex-col space-y-2"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="Company" id="company" />
-                              <label htmlFor="company" className="text-sm">Company</label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="Customer" id="customer" />
-                              <label htmlFor="customer" className="text-sm">Customer</label>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="spare_key_notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Notes (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="e.g., with John - locker A3"
-                            {...field}
-                            rows={2}
-                            className="input-focus"
-                          />
-                        </FormControl>
-                        <div className="text-sm text-muted-foreground">
-                          Additional context about the spare key location or holder
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Security Features Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Security Features</h3>
-              
-              <FormField
-                control={form.control}
-                name="has_ghost"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Ghost Immobiliser</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Vehicle has a Ghost immobiliser installed
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          if (!checked) {
-                            form.setValue("ghost_code", "");
-                          }
-                        }}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {form.watch("has_ghost") && (
-                <div className="ml-4 border-l-2 border-muted pl-4">
-                  <FormField
-                    control={form.control}
-                    name="ghost_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ghost Code</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter Ghost immobiliser code"
-                            {...field}
-                            className="input-focus"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-
-              <FormField
-                control={form.control}
-                name="has_tracker"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>GPS Tracker</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Vehicle has a GPS tracker installed
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="has_remote_immobiliser"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="space-y-0.5">
-                      <FormLabel>Remote Immobiliser</FormLabel>
-                      <div className="text-sm text-muted-foreground">
-                        Vehicle has a remote immobiliser system
-                      </div>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="security_notes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Security Notes (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Additional security information..."
-                        {...field}
-                        rows={2}
-                        className="input-focus"
-                      />
-                    </FormControl>
-                    <div className="text-sm text-muted-foreground">
-                      Any additional security-related information or notes
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            </Form>
-          </div>
-        </ScrollArea>
-        <div className="flex justify-end gap-2 pt-4 border-t flex-shrink-0">
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            disabled={loading} 
-            className="bg-gradient-primary rounded-lg transition-all duration-200 focus:ring-2 focus:ring-primary"
-            onClick={form.handleSubmit(onSubmit)}
-          >
-            {loading ? "Adding..." : "Add Vehicle"}
-          </Button>
-        </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

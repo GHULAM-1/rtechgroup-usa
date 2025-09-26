@@ -434,8 +434,8 @@ export default function VehiclesListEnhanced() {
           description="No vehicles match your current filters. Try adjusting your search criteria."
           actionLabel="Add Vehicle"
           onAction={() => {
-            // Open add vehicle dialog programmatically
-            const addButton = document.querySelector('[data-add-vehicle-trigger]') as HTMLButtonElement;
+            // Open add vehicle dialog programmatically  
+            const addButton = document.querySelector('[data-add-vehicle-trigger] button') as HTMLButtonElement;
             addButton?.click();
           }}
         />

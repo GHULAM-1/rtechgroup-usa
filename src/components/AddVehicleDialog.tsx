@@ -12,7 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Car, PoundSterling, CalendarIcon, Shield, Key, Settings } from "lucide-react";
+import { Plus, Car, PoundSterling, CalendarIcon, ShieldCheck, KeyRound, Cog } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -578,7 +578,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 {/* Compliance Section */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
+                    <ShieldCheck className="h-5 w-5 text-primary" />
                     Compliance
                   </h3>
                   
@@ -695,7 +695,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 {/* Security Section */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <Key className="h-5 w-5 text-primary" />
+                    <KeyRound className="h-5 w-5 text-primary" />
                     Security Features
                   </h3>
                   

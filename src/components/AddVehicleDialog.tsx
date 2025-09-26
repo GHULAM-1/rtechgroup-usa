@@ -212,17 +212,17 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           Add Vehicle
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-0">
-        <DialogHeader className="flex-shrink-0 px-6 pt-6">
+      <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5 text-primary" />
             Add New Vehicle
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0">
-            <ScrollArea className="flex-1 px-6">
-              <div className="space-y-4 pb-4 pr-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+            <ScrollArea className="h-[60vh] px-6">
+              <div className="space-y-4 pr-4">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}

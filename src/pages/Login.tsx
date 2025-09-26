@@ -78,15 +78,21 @@ export default function Login() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🔥 SIGN IN BUTTON CLICKED!');
+    console.log('Form data:', formData);
     e.preventDefault();
     setError('');
     
-    // Validate form
-    const validationErrors = validateForm(formData);
-    if (validationErrors.length > 0) {
-      validationErrors.forEach(error => setFieldTouched(error.field));
-      return;
-    }
+    // Temporarily skip validation to test if that's the issue
+    console.log('Skipping validation for testing...');
+    
+    // // Validate form
+    // const validationErrors = validateForm(formData);
+    // console.log('Validation errors:', validationErrors);
+    // if (validationErrors.length > 0) {
+    //   validationErrors.forEach(error => setFieldTouched(error.field));
+    //   return;
+    // }
 
     // Check rate limiting
     const rateLimitCheck = await checkRateLimit(formData.email);
@@ -360,6 +366,13 @@ export default function Login() {
                 type="submit" 
                 className="w-full"
                 disabled={isSubmitting || !formData.email.trim() || !formData.password.trim()}
+                onClick={(e) => {
+                  console.log('🔥 BUTTON CLICKED DIRECTLY!');
+                  console.log('Button disabled?', isSubmitting || !formData.email.trim() || !formData.password.trim());
+                  console.log('isSubmitting:', isSubmitting);
+                  console.log('email.length:', formData.email.trim().length);
+                  console.log('password.length:', formData.password.trim().length);
+                }}
               >
                 {isSubmitting ? (
                   <>

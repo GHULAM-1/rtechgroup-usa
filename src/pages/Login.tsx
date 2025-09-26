@@ -14,6 +14,7 @@ import { useAuthValidation } from '@/hooks/useAuthValidation';
 import { useRateLimiting } from '@/hooks/useRateLimiting';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { EmergencyPasswordReset } from '@/components/EmergencyPasswordReset';
 
 export default function Login() {
   const { user, signIn, loading, appUser } = useAuth();
@@ -383,6 +384,10 @@ export default function Login() {
           </div>
         </CardContent>
       </Card>
+      
+      <div className="mt-6">
+        <EmergencyPasswordReset />
+      </div>
     </div>
   );
 }

@@ -468,7 +468,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                                 {field.value ? (
                                   format(field.value, "PPP")
                                 ) : (
-                                  <span>Pick warranty start</span>
+                                  <span>Pick warranty start date</span>
                                 )}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
@@ -508,7 +508,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                                 {field.value ? (
                                   format(field.value, "PPP")
                                 ) : (
-                                  <span>Pick warranty end</span>
+                                  <span>Pick warranty end date</span>
                                 )}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
@@ -534,46 +534,47 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   <FormField
                     control={form.control}
                     name="acquisition_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Acquisition Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select acquisition type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Purchase">Purchase</SelectItem>
-                          <SelectItem value="Finance">Finance</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Acquisition Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select acquisition type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="Purchase">Purchase</SelectItem>
+                            <SelectItem value="Finance">Finance</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {/* Contract Total field - only show for Finance */}
                 {form.watch("acquisition_type") === "Finance" && (
                   <div className="ml-3">
                     <FormField
-                    control={form.control}
-                    name="contract_total"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contract Total (£)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01" 
-                            placeholder="Enter contract total" 
-                            {...field} 
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : "")}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                      control={form.control}
+                      name="contract_total"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contract Total (£)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              step="0.01" 
+                              placeholder="Enter contract total" 
+                              {...field} 
+                              onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : "")}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
                 )}
@@ -652,25 +653,25 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   {form.watch("has_spare_key") && (
                     <div className="ml-3">
                       <FormField
-                      control={form.control}
-                      name="spare_key_holder"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spare Key Holder</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select who holds the spare key" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Company">Company</SelectItem>
-                              <SelectItem value="Customer">Customer</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                        control={form.control}
+                        name="spare_key_holder"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Spare Key Holder</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select who holds the spare key" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Company">Company</SelectItem>
+                                <SelectItem value="Customer">Customer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                   )}
@@ -679,22 +680,23 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   {form.watch("has_spare_key") && (
                     <div className="ml-3">
                       <FormField
-                      control={form.control}
-                      name="spare_key_notes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Spare Key Notes</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Additional notes about spare key location or details..."
-                              className="resize-none"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        control={form.control}
+                        name="spare_key_notes"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Spare Key Notes</FormLabel>
+                            <FormControl>
+                              <Textarea 
+                                placeholder="Additional notes about spare key location or details..."
+                                className="resize-none"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   )}
                 </div>
 
@@ -713,7 +715,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Has Ghost Immobiliser</FormLabel>
                           <div className="text-sm text-muted-foreground">
-                            Vehicle has a Ghost immobiliser installed
+                            Vehicle has a Ghost immobiliser system
                           </div>
                         </div>
                         <FormControl>
@@ -730,21 +732,21 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   {form.watch("has_ghost") && (
                     <div className="ml-3">
                       <FormField
-                      control={form.control}
-                      name="ghost_code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Ghost Immobiliser Code</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="password"
-                              placeholder="Enter Ghost code" 
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                        control={form.control}
+                        name="ghost_code"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Ghost Immobiliser Code</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="password"
+                                placeholder="Enter Ghost code" 
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                   )}
@@ -795,19 +797,19 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                     <FormField
                       control={form.control}
                       name="security_notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Security Notes</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Additional security information..."
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Security Notes</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Additional security information..."
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
                 </div>

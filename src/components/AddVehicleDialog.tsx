@@ -745,8 +745,8 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                               />
                             </FormControl>
                             <FormMessage />
-                          </FormItem>
-                        )}
+                           </FormItem>
+                         )}
                       />
                     </div>
                   )}
@@ -793,11 +793,10 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                     )}
                   />
 
-                  <div className="ml-3">
-                    <FormField
-                      control={form.control}
-                      name="security_notes"
-                      render={({ field }) => (
+                  <FormField
+                    control={form.control}
+                    name="security_notes"
+                    render={({ field }) => (
                         <FormItem>
                           <FormLabel>Security Notes</FormLabel>
                           <FormControl>
@@ -810,8 +809,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
-                  </div>
+                     />
                 </div>
               </div>
             </ScrollArea>

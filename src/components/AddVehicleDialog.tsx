@@ -281,7 +281,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-4 ml-3">
                   <FormField
                     control={form.control}
                     name="make"
@@ -330,7 +330,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 ml-3">
                   <FormField
                     control={form.control}
                     name="colour"
@@ -366,7 +366,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 ml-3">
                   <FormField
                     control={form.control}
                     name="mot_due_date"
@@ -448,7 +448,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 ml-3">
                   <FormField
                     control={form.control}
                     name="warranty_start_date"
@@ -530,9 +530,10 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="acquisition_type"
+                <div className="ml-3">
+                  <FormField
+                    control={form.control}
+                    name="acquisition_type"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Acquisition Type</FormLabel>
@@ -554,7 +555,8 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
 
                 {/* Contract Total field - only show for Finance */}
                 {form.watch("acquisition_type") === "Finance" && (
-                  <FormField
+                  <div className="ml-3">
+                    <FormField
                     control={form.control}
                     name="contract_total"
                     render={({ field }) => (
@@ -572,11 +574,12 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                    />
+                  </div>
                 )}
 
                 {/* Compliance Section */}
-                <div className="space-y-4">
+                <div className="space-y-4 ml-3">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
                     Compliance
@@ -647,7 +650,8 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
 
                   {/* Spare Key Holder - only show if has_spare_key is true */}
                   {form.watch("has_spare_key") && (
-                    <FormField
+                    <div className="ml-3">
+                      <FormField
                       control={form.control}
                       name="spare_key_holder"
                       render={({ field }) => (
@@ -667,12 +671,14 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
+                      />
+                    </div>
                   )}
 
                   {/* Spare Key Notes - only show if has_spare_key is true */}
                   {form.watch("has_spare_key") && (
-                    <FormField
+                    <div className="ml-3">
+                      <FormField
                       control={form.control}
                       name="spare_key_notes"
                       render={({ field }) => (
@@ -693,7 +699,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                 </div>
 
                 {/* Security Section */}
-                <div className="space-y-4">
+                <div className="space-y-4 ml-3">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <KeyRound className="h-5 w-5 text-primary" />
                     Security Features
@@ -722,7 +728,8 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
 
                   {/* Ghost Code - only show if has_ghost is true */}
                   {form.watch("has_ghost") && (
-                    <FormField
+                    <div className="ml-3">
+                      <FormField
                       control={form.control}
                       name="ghost_code"
                       render={({ field }) => (
@@ -738,7 +745,8 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
+                      />
+                    </div>
                   )}
 
                   <FormField
@@ -783,9 +791,10 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="security_notes"
+                  <div className="ml-3">
+                    <FormField
+                      control={form.control}
+                      name="security_notes"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Security Notes</FormLabel>
@@ -799,7 +808,8 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                    />
+                  </div>
                 </div>
               </div>
             </ScrollArea>

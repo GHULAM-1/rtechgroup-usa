@@ -20,6 +20,11 @@ interface VehiclePL {
   total_revenue: number;
   total_costs: number;
   net_profit: number;
+  cost_acquisition: number;
+  cost_service: number;
+  cost_fines: number;
+  cost_other: number;
+  cost_finance: number;
 }
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -41,11 +46,12 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
   const navigate = useNavigate();
   
   // Calculate operational profit (revenue minus operational costs, excluding acquisition)
-  const operationalProfit = pl ? Number(pl.total_revenue) - Number(pl.total_costs) : 0;
+  const operationalCosts = pl ? (Number(pl.cost_service) + Number(pl.cost_fines) + Number(pl.cost_other) + Number(pl.cost_finance)) : 0;
+  const operationalProfit = pl ? Number(pl.total_revenue) - operationalCosts : 0;
   const isOperationalProfit = operationalProfit > 0;
   
-  // Total P&L including acquisition cost
-  const totalPL = operationalProfit - (vehicle.purchase_price || 0);
+  // Total P&L is already calculated in the view as net_profit
+  const totalPL = pl ? Number(pl.net_profit) : -(vehicle.purchase_price || 0);
   const isTotalProfit = totalPL > 0;
 
   const handleClick = () => {
@@ -87,7 +93,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Op. Costs</span>
-              <span className="font-medium text-orange-600">£{Number(pl.total_costs).toLocaleString()}</span>
+              <span className="font-medium text-orange-600">£{operationalCosts.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Op. Profit</span>
@@ -145,36 +151,26 @@ export const FleetOverview = () => {
     queryKey: ["vehicle-pl"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("pnl_entries")
-        .select("vehicle_id, side, amount")
-        .order("entry_date", { ascending: false });
+        .from("view_pl_by_vehicle")
+        .select("*");
       
       if (error) throw error;
       
-      // Aggregate P&L by vehicle
+      // Convert to lookup by vehicle_id
       const plByVehicle: Record<string, VehiclePL> = {};
       
       data?.forEach((entry) => {
-        if (!plByVehicle[entry.vehicle_id]) {
-          plByVehicle[entry.vehicle_id] = {
-            vehicle_id: entry.vehicle_id,
-            total_revenue: 0,
-            total_costs: 0,
-            net_profit: 0,
-          };
-        }
-        
-        const amount = Number(entry.amount);
-        if (entry.side === 'Revenue') {
-          plByVehicle[entry.vehicle_id].total_revenue += amount;
-        } else if (entry.side === 'Cost') {
-          plByVehicle[entry.vehicle_id].total_costs += amount;
-        }
-      });
-      
-      // Calculate net profit
-      Object.values(plByVehicle).forEach((pl) => {
-        pl.net_profit = pl.total_revenue - pl.total_costs;
+        plByVehicle[entry.vehicle_id] = {
+          vehicle_id: entry.vehicle_id,
+          total_revenue: Number(entry.total_revenue || 0),
+          total_costs: Number(entry.total_costs || 0),
+          net_profit: Number(entry.net_profit || 0),
+          cost_acquisition: Number(entry.cost_acquisition || 0),
+          cost_service: Number(entry.cost_service || 0),
+          cost_fines: Number(entry.cost_fines || 0),
+          cost_other: Number(entry.cost_other || 0),
+          cost_finance: Number(entry.cost_finance || 0),
+        };
       });
       
       return plByVehicle;

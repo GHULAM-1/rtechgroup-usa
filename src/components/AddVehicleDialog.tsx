@@ -223,7 +223,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
             <ScrollArea className="h-[60vh] px-8">
               <div className="space-y-4 pr-6 py-2">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 ml-3">
                   <FormField
                     control={form.control}
                     name="reg"

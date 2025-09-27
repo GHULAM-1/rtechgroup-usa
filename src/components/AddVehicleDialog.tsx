@@ -212,7 +212,7 @@ export const AddVehicleDialog = ({ open, onOpenChange }: AddVehicleDialogProps) 
           Add Vehicle
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[800px] max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col">
         <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Car className="h-5 w-5 text-primary" />

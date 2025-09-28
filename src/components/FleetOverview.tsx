@@ -64,7 +64,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
     <Card className="card-hover shadow-card transition-all duration-300 hover:scale-102 cursor-pointer" onClick={handleClick}>
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0 flex-[2]">
             <VehiclePhotoThumbnail 
               photoUrl={vehicle.photo_url}
               vehicleReg={vehicle.reg}
@@ -72,7 +72,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
               className="shrink-0"
             />
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-base sm:text-lg font-semibold truncate sm:truncate-none" title={vehicle.reg}>
+              <CardTitle className="text-sm sm:text-base font-semibold truncate sm:truncate-none" title={vehicle.reg}>
                 {vehicle.reg || 'No Registration'}
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm truncate" title={`${vehicle.make} ${vehicle.model}`}>

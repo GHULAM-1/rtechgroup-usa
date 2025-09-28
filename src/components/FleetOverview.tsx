@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Car, TrendingUp, TrendingDown } from "lucide-react";
+import { VehiclePhotoThumbnail } from "@/components/VehiclePhotoThumbnail";
 
 interface Vehicle {
   id: string;
@@ -13,6 +14,7 @@ interface Vehicle {
   colour: string;
   status: string;
   purchase_price: number;
+  photo_url?: string;
 }
 
 interface VehiclePL {
@@ -63,9 +65,12 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-              <Car className="h-4 w-4 text-primary" />
-            </div>
+            <VehiclePhotoThumbnail 
+              photoUrl={vehicle.photo_url}
+              vehicleReg={vehicle.reg}
+              size="sm"
+              className="shrink-0"
+            />
             <div className="min-w-0 flex-1">
               <CardTitle className="text-base sm:text-lg font-semibold truncate" title={vehicle.reg}>
                 {vehicle.reg || 'No Registration'}

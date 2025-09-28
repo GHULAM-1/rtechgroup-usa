@@ -1,19 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Navigate, useLocation, Link } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { PasswordInput } from '@/components/ui/password-input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, AlertCircle, Shield } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAuthValidation } from '@/hooks/useAuthValidation';
 import { useRateLimiting } from '@/hooks/useRateLimiting';
 import { supabase } from '@/integrations/supabase/client';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { EnhancedSignInCard } from '@/components/ui/sign-in-card-enhanced';
 
 
 export default function Login() {
@@ -26,7 +20,7 @@ export default function Login() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   
   const { 
     validateField, 
@@ -77,25 +71,18 @@ export default function Login() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    console.log('🔥 SIGN IN BUTTON CLICKED!');
-    console.log('Form data:', formData);
-    e.preventDefault();
+  const handleSubmit = async (email: string, password: string, rememberMe: boolean) => {
     setError('');
     
-    // Temporarily skip validation to test if that's the issue
-    console.log('Skipping validation for testing...');
-    
-    // // Validate form
-    // const validationErrors = validateForm(formData);
-    // console.log('Validation errors:', validationErrors);
-    // if (validationErrors.length > 0) {
-    //   validationErrors.forEach(error => setFieldTouched(error.field));
-    //   return;
-    // }
+    // Validate form
+    const validationErrors = validateForm({ email, password });
+    if (validationErrors.length > 0) {
+      validationErrors.forEach(error => setFieldTouched(error.field));
+      return;
+    }
 
     // Check rate limiting
-    const rateLimitCheck = await checkRateLimit(formData.email);
+    const rateLimitCheck = await checkRateLimit(email);
     if (!rateLimitCheck.allowed) {
       setError(getRateLimitMessage() || 'Too many failed attempts. Please try again later.');
       return;
@@ -104,18 +91,18 @@ export default function Login() {
     setIsSubmitting(true);
 
     try {
-      const { error: signInError } = await signIn(formData.email, formData.password);
+      const { error: signInError } = await signIn(email, password);
       
       if (signInError) {
         // Record failed attempt
-        await recordLoginAttempt(formData.email, false);
+        await recordLoginAttempt(email, false);
         
         // Log audit event
         try {
           await supabase.from('audit_logs').insert({
             action: 'login_failed',
             details: { 
-              email: formData.email,
+              email: email,
               error_type: signInError.message.includes('Invalid login credentials') ? 'invalid_credentials' : 'other',
               user_agent: navigator.userAgent
             }
@@ -137,7 +124,7 @@ export default function Login() {
           setError('Unable to sign in. Please check your credentials and try again.');
         }
 
-        const updatedRateLimit = await recordLoginAttempt(formData.email, false);
+        const updatedRateLimit = await recordLoginAttempt(email, false);
         if (updatedRateLimit.attemptsRemaining <= 2 && updatedRateLimit.attemptsRemaining > 0) {
           toast({
             title: "Security Notice",
@@ -147,15 +134,15 @@ export default function Login() {
         }
       } else {
         // Record successful attempt
-        await recordLoginAttempt(formData.email, true);
+        await recordLoginAttempt(email, true);
         
         // Log successful login
         try {
           await supabase.from('audit_logs').insert({
             action: 'login_success',
             details: { 
-              email: formData.email,
-              remember_me: formData.rememberMe,
+              email: email,
+              remember_me: rememberMe,
               user_agent: navigator.userAgent
             }
           });
@@ -175,7 +162,7 @@ export default function Login() {
         await supabase.from('audit_logs').insert({
           action: 'login_error',
           details: { 
-            email: formData.email,
+            email: email,
             error: error instanceof Error ? error.message : 'Unknown error',
             user_agent: navigator.userAgent
           }
@@ -188,31 +175,31 @@ export default function Login() {
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!formData.email) {
+  const handleForgotPassword = async (email: string) => {
+    if (!email) {
       setError('Please enter your email address first.');
       return;
     }
 
-    if (validateField('email', formData.email)) {
+    if (validateField('email', email)) {
       setError('Please enter a valid email address.');
       return;
     }
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`
       });
 
       if (error) throw error;
 
-      setShowForgotPassword(true);
+      setShowPasswordReset(true);
       
       // Log password reset request
       try {
         await supabase.from('audit_logs').insert({
           action: 'password_reset_requested',
-          details: { email: formData.email }
+          details: { email: email }
         });
       } catch (auditError) {
         console.error('Failed to log audit event:', auditError);
@@ -220,177 +207,45 @@ export default function Login() {
     } catch (error) {
       console.error('Password reset error:', error);
       // Always show success message for security (don't reveal if email exists)
-      setShowForgotPassword(true);
-    }
-  };
-
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (error) setError('');
-    
-    // Clear field-specific validation error when user starts typing
-    if (typeof value === 'string' && value.length > 0) {
-      setFieldTouched(field);
+      setShowPasswordReset(true);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      {/* Theme Toggle - positioned in top right */}
-      <div className="absolute top-4 right-4">
+    <div className="relative">
+      <div className="absolute top-4 right-4 z-50">
         <ThemeToggle />
       </div>
       
-      <Card className="w-full max-w-md border-primary">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img 
-              src="/rtechgroup-logo.png" 
-              alt="RTECHGROUP UK Logo" 
-              className="h-32 w-auto object-contain"
-            />
-          </div>
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-          <CardDescription>
-            Enter your email and password to access the fleet management system
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {showForgotPassword ? (
-            <div className="text-center space-y-4">
-              <div className="flex justify-center">
-                <Shield className="h-12 w-12 text-green-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium">Password Reset Sent</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  If an account exists with that email address, you will receive password reset instructions.
-                </p>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowForgotPassword(false)}
-                className="w-full"
-              >
-                Back to Sign In
-              </Button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              
-              {getRateLimitMessage() && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{getRateLimitMessage()}</AlertDescription>
-                </Alert>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  onBlur={() => setFieldTouched('email')}
-                  required
-                  disabled={isSubmitting || isLocked}
-                  autoComplete="email"
-                  autoFocus
-                  aria-invalid={!!getFieldError('email')}
-                  aria-describedby={getFieldError('email') ? 'email-error' : undefined}
-                />
-                {getFieldError('email') && (
-                  <p id="email-error" className="text-sm text-destructive">
-                    {getFieldError('email')}
-                  </p>
-                )}
-              </div>
-              
-              <div className="space-y-2 relative">
-                <Label htmlFor="password">Password</Label>
-                <PasswordInput
-                  id="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  onBlur={() => setFieldTouched('password')}
-                  required
-                  disabled={isSubmitting || isLocked}
-                  autoComplete="current-password"
-                  aria-invalid={!!getFieldError('password')}
-                  aria-describedby={getFieldError('password') ? 'password-error' : undefined}
-                />
-                {getFieldError('password') && (
-                  <p id="password-error" className="text-sm text-destructive">
-                    {getFieldError('password')}
-                  </p>
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="rememberMe"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked) => handleInputChange('rememberMe', checked as boolean)}
-                    disabled={isSubmitting || isLocked}
-                  />
-                  <Label 
-                    htmlFor="rememberMe" 
-                    className="text-sm font-normal cursor-pointer"
-                  >
-                    Keep me signed in
-                  </Label>
-                </div>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="px-0 text-sm"
-                  onClick={handleForgotPassword}
-                  disabled={isSubmitting}
-                >
-                  Forgot password?
-                </Button>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full"
-                disabled={isSubmitting || !formData.email.trim() || !formData.password.trim()}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  'Sign In'
-                )}
-              </Button>
-              
-              
-              {rateLimitStatus.attemptsRemaining < 5 && rateLimitStatus.attemptsRemaining > 0 && (
-                <div className="text-center text-sm text-amber-600">
-                  {rateLimitStatus.attemptsRemaining} attempt{rateLimitStatus.attemptsRemaining > 1 ? 's' : ''} remaining
-                </div>
-              )}
-            </form>
-          )}
-          
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Need help? Contact your system administrator.</p>
-          </div>
-        </CardContent>
-      </Card>
+      <EnhancedSignInCard
+        onSubmit={handleSubmit}
+        onForgotPassword={handleForgotPassword}
+        isLoading={isSubmitting}
+        error={error}
+        rateLimitMessage={rateLimitStatus.attemptsRemaining < 5 && rateLimitStatus.attemptsRemaining > 0 ? 
+          `${rateLimitStatus.attemptsRemaining} attempt${rateLimitStatus.attemptsRemaining !== 1 ? 's' : ''} remaining` : 
+          undefined
+        }
+        showPasswordReset={showPasswordReset}
+        email={formData.email}
+        password={formData.password}
+        rememberMe={formData.rememberMe}
+        onEmailChange={(email) => {
+          setFormData(prev => ({ ...prev, email }));
+          setFieldTouched('email');
+          if (error) setError('');
+        }}
+        onPasswordChange={(password) => {
+          setFormData(prev => ({ ...prev, password }));
+          setFieldTouched('password');
+          if (error) setError('');
+        }}
+        onRememberMeChange={(rememberMe) => 
+          setFormData(prev => ({ ...prev, rememberMe }))
+        }
+        emailError={getFieldError('email')}
+        passwordError={getFieldError('password')}
+      />
     </div>
   );
 }

@@ -72,7 +72,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
               className="shrink-0"
             />
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-base sm:text-lg font-semibold truncate" title={vehicle.reg}>
+              <CardTitle className="text-base sm:text-lg font-semibold truncate sm:truncate-none" title={vehicle.reg}>
                 {vehicle.reg || 'No Registration'}
               </CardTitle>
               <CardDescription className="text-xs sm:text-sm truncate" title={`${vehicle.make} ${vehicle.model}`}>

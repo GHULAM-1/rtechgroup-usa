@@ -16,7 +16,7 @@ import { Settings as SettingsIcon, Building2, Bell, Zap, Upload, Save, Loader2, 
 import { toast } from '@/hooks/use-toast';
 import { useOrgSettings } from '@/hooks/useOrgSettings';
 import { CompanyLogoUpload } from '@/components/CompanyLogoUpload';
-import { TestingCards } from '@/components/TestingCards';
+import { ComprehensiveTestingSuite } from '@/components/ComprehensiveTestingSuite';
 import { DataCleanupDialog } from '@/components/DataCleanupDialog';
 import ReminderRulesConfig from '@/components/ReminderRulesConfig';
 import UsersManagement from '@/pages/UsersManagement';
@@ -452,7 +452,7 @@ const Settings = () => {
               </p>
             </div>
             
-            <TestingCards />
+            <ComprehensiveTestingSuite />
           </div>
         </TabsContent>
 

@@ -151,7 +151,7 @@ export const ReportPreviewModal: React.FC<ReportPreviewModalProps> = ({
     
     switch (type) {
       case 'currency':
-        return `£${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        return `$${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       case 'date':
         return format(new Date(value), 'dd/MM/yyyy');
       default:

@@ -2,14 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RTECHGROUP UK Design System
-All colors, gradients, fonts, etc should be defined here. 
+/* RTECHGROUP USA Design System
+All colors, gradients, fonts, etc should be defined here.
 All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* RTECHGROUP UK Color System */
+    /* RTECHGROUP USA Color System */
     --background: 0 0% 100%;
     --foreground: 210 52% 15%;
 

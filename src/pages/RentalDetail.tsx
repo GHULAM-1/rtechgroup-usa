@@ -134,7 +134,7 @@ const RentalDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">
-              £{totalCharges.toLocaleString()}
+              ${totalCharges.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -145,7 +145,7 @@ const RentalDetail = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              £{totalPayments.toLocaleString()}
+              ${totalPayments.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -156,7 +156,7 @@ const RentalDetail = () => {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${outstandingBalance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              £{outstandingBalance.toLocaleString()}
+              ${outstandingBalance.toLocaleString()}
             </div>
           </CardContent>
         </Card>
@@ -204,12 +204,12 @@ const RentalDetail = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Monthly Amount</p>
-              <p className="font-medium">£{Number(rental.monthly_amount).toLocaleString()}</p>
+              <p className="font-medium">${Number(rental.monthly_amount).toLocaleString()}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Initial Fee</p>
               <p className="font-medium">
-                {initialFee ? `£${Number(initialFee.amount).toLocaleString()}` : 'No Initial Fee'}
+                {initialFee ? `$${Number(initialFee.amount).toLocaleString()}` : 'No Initial Fee'}
               </p>
             </div>
           </div>

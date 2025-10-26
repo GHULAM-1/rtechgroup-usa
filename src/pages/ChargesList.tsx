@@ -131,7 +131,7 @@ const ChargesList = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                £{charges.reduce((sum, charge) => sum + Number(charge.remaining_amount), 0).toLocaleString()}
+                ${charges.reduce((sum, charge) => sum + Number(charge.remaining_amount), 0).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -141,7 +141,7 @@ const ChargesList = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                £{charges.length > 0 ? Math.round(charges.reduce((sum, charge) => sum + Number(charge.remaining_amount), 0) / charges.length) : 0}
+                ${charges.length > 0 ? Math.round(charges.reduce((sum, charge) => sum + Number(charge.remaining_amount), 0) / charges.length) : 0}
               </div>
             </CardContent>
           </Card>
@@ -231,10 +231,10 @@ const ChargesList = () => {
                         {getStatusBadge(charge)}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        £{Number(charge.amount).toLocaleString()}
+                        ${Number(charge.amount).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-right font-medium">
-                        £{Number(charge.remaining_amount).toLocaleString()}
+                        ${Number(charge.remaining_amount).toLocaleString()}
                       </TableCell>
                     </TableRow>
                   ))}

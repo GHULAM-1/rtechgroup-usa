@@ -23,7 +23,7 @@ const vehicleSchema = z.object({
   make: z.string().min(1, "Make is required"),
   model: z.string().min(1, "Model is required"),
   year: z.number().min(1900, "Year must be after 1900").max(new Date().getFullYear() + 1, "Year cannot be in the future").optional(),
-  colour: z.string().min(1, "Colour is required"),
+  colour: z.string().min(1, "Color is required"),
   purchase_price: z.preprocess((val) => val === null ? undefined : val, z.number().min(0, "Price must be positive").optional()),
   acquisition_date: z.date(),
   acquisition_type: z.enum(['Purchase', 'Finance']),
@@ -66,7 +66,7 @@ const vehicleSchema = z.object({
     return true;
   },
   {
-    message: "Ghost code is required when Ghost Immobiliser is enabled", 
+    message: "Ghost code is required when Ghost Immobilizer is enabled", 
     path: ["ghost_code"],
   }
 );
@@ -279,7 +279,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                 name="reg"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Registration Number</FormLabel>
+                    <FormLabel>License Plate Number</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. AB12 CDE" {...field} />
                     </FormControl>
@@ -360,7 +360,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                 name="colour"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Colour</FormLabel>
+                    <FormLabel>Color</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. White" {...field} />
                     </FormControl>
@@ -374,11 +374,11 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                   name="purchase_price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Purchase Price (£)</FormLabel>
+                      <FormLabel>Purchase Price ($)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter amount" 
+                        <Input
+                          type="number"
+                          placeholder="Enter amount"
                           {...field}
                           onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         />
@@ -390,14 +390,14 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
               )}
             </div>
 
-            {/* MOT & TAX Due Dates */}
+            {/* Inspection & Registration Due Dates */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="mot_due_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>MOT Due Date</FormLabel>
+                    <FormLabel>Inspection Due Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -437,7 +437,7 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                 name="tax_due_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>TAX Due Date</FormLabel>
+                    <FormLabel>Registration Due Date</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -592,11 +592,11 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                     name="monthly_payment"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Monthly Payment (£) *</FormLabel>
+                        <FormLabel>Monthly Payment ($) *</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Monthly payment" 
+                          <Input
+                            type="number"
+                            placeholder="Monthly payment"
                             {...field}
                             onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                           />
@@ -610,11 +610,11 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                     name="initial_payment"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Initial Payment (£)</FormLabel>
+                        <FormLabel>Initial Payment ($)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Initial payment" 
+                          <Input
+                            type="number"
+                            placeholder="Initial payment"
                             {...field}
                             onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                           />
@@ -649,11 +649,11 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                     name="balloon"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Balloon Payment (£)</FormLabel>
+                        <FormLabel>Balloon Payment ($)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Balloon payment" 
+                          <Input
+                            type="number"
+                            placeholder="Balloon payment"
                             {...field}
                             onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                           />
@@ -717,9 +717,9 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                       <div className="space-y-0.5">
-                        <FormLabel>Ghost Immobiliser</FormLabel>
+                        <FormLabel>Ghost Immobilizer</FormLabel>
                         <div className="text-sm text-muted-foreground">
-                          Vehicle has a ghost immobiliser fitted
+                          Vehicle has a ghost immobilizer fitted
                         </div>
                       </div>
                       <FormControl>
@@ -738,12 +738,12 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                     name="ghost_code"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Ghost Immobiliser Code *</FormLabel>
+                        <FormLabel>Ghost Immobilizer Code *</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input 
+                            <Input
                               type={showGhostCode ? "text" : "password"}
-                              placeholder="Enter ghost immobiliser code" 
+                              placeholder="Enter ghost immobilizer code" 
                               {...field} 
                             />
                             <Button
@@ -794,9 +794,9 @@ export const EditVehicleDialog = ({ vehicle, open, onOpenChange }: EditVehicleDi
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                       <div className="space-y-0.5">
-                        <FormLabel>Remote Immobiliser</FormLabel>
+                        <FormLabel>Remote Immobilizer</FormLabel>
                         <div className="text-sm text-muted-foreground">
-                          Vehicle has remote immobiliser capability
+                          Vehicle has remote immobilizer capability
                         </div>
                       </div>
                       <FormControl>

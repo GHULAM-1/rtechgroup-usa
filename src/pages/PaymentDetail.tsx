@@ -147,7 +147,7 @@ export default function PaymentDetail() {
             <div>
               <div className="text-sm text-muted-foreground">Amount</div>
               <div className="text-2xl font-bold">
-                £{payment.amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                ${payment.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
             </div>
             <div>
@@ -175,7 +175,7 @@ export default function PaymentDetail() {
                   <div className="text-xs text-blue-700">Available for future allocations</div>
                 </div>
                 <div className="text-lg font-bold text-blue-900">
-                  £{payment.remaining_amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                  ${payment.remaining_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
               </div>
             </div>

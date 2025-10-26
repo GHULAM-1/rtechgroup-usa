@@ -125,10 +125,10 @@ export const VehiclePlatesPanel = ({ vehicleId, vehicleReg }: VehiclePlatesPanel
                       <TableCell className="font-medium">{plate.plate_number}</TableCell>
                       <TableCell>{plate.supplier || "—"}</TableCell>
                       <TableCell>
-                        {plate.order_date ? format(new Date(plate.order_date), "dd/MM/yyyy") : "—"}
+                        {plate.order_date ? format(new Date(plate.order_date), "MM/dd/yyyy") : "—"}
                       </TableCell>
                       <TableCell>
-                        {plate.cost > 0 ? `£${Number(plate.cost).toLocaleString()}` : "—"}
+                        {plate.cost > 0 ? `$${Number(plate.cost).toLocaleString()}` : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge 

@@ -277,7 +277,7 @@ const PaymentsList = () => {
                            </TableCell>
                            <TableCell>{payment.method || '-'}</TableCell>
                           <TableCell className="text-right font-medium">
-                            £{payment.amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                            ${payment.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell>
                             {allocatedAmount === payment.amount ? (
@@ -289,13 +289,13 @@ const PaymentsList = () => {
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Badge variant="secondary" className="bg-blue-100 text-blue-800 cursor-help">
-                                      Credit £{payment.remaining_amount?.toFixed(2)}
+                                      Credit ${payment.remaining_amount?.toFixed(2)}
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <div>
-                                      <p>Applied £{allocatedAmount.toFixed(2)} to charges</p>
-                                      <p>Remaining £{payment.remaining_amount?.toFixed(2)} credit will auto-apply to next charge</p>
+                                      <p>Applied ${allocatedAmount.toFixed(2)} to charges</p>
+                                      <p>Remaining ${payment.remaining_amount?.toFixed(2)} credit will auto-apply to next charge</p>
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>

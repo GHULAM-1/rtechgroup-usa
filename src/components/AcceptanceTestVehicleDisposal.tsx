@@ -54,7 +54,7 @@ export function AcceptanceTestVehicleDisposal() {
           name: 'Expense → P&L Cost Entry',
           passed: expenseTestPassed,
           details: expenseTestPassed ? 
-            `✓ P&L cost entry created: £${pnlEntry.amount} in ${pnlEntry.category}` :
+            `✓ P&L cost entry created: $${pnlEntry.amount} in ${pnlEntry.category}` :
             `✗ P&L entry incorrect: ${JSON.stringify(pnlEntry)}`
         });
 
@@ -116,7 +116,7 @@ export function AcceptanceTestVehicleDisposal() {
           name: 'Disposal Gain → P&L Revenue',
           passed: gainTestPassed,
           details: gainTestPassed ? 
-            `✓ P&L revenue entry: £${gainPnl.amount} gain posted` :
+            `✓ P&L revenue entry: $${gainPnl.amount} gain posted` :
             `✗ P&L entry incorrect: ${JSON.stringify(gainPnl)}`
         });
 
@@ -178,7 +178,7 @@ export function AcceptanceTestVehicleDisposal() {
           name: 'Disposal Loss → P&L Cost',
           passed: lossTestPassed,
           details: lossTestPassed ? 
-            `✓ P&L cost entry: £${lossPnl.amount} loss posted` :
+            `✓ P&L cost entry: $${lossPnl.amount} loss posted` :
             `✗ P&L entry incorrect: ${JSON.stringify(lossPnl)}`
         });
 

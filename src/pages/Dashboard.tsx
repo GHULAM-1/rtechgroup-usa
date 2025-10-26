@@ -55,7 +55,7 @@ const Dashboard = () => {
   const { data: kpis, isLoading, error } = useDashboardKPIs({
     from,
     to,
-    timezone: 'Europe/London'
+    timezone: 'America/New_York'
   });
 
   const handleDateRangeChange = (value: string) => {

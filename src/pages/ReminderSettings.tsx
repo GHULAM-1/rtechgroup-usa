@@ -311,21 +311,21 @@ export default function ReminderSettings() {
             <div className="p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
               <Label className="text-sm font-medium text-blue-800">Upcoming</Label>
               <p className="text-sm text-blue-700 mt-1">
-                £250.00 due on 2024-01-15 for ABC123 – will notify customer on due date once channels are connected.
+                $250.00 due on 2024-01-15 for ABC123 – will notify customer on due date once channels are connected.
               </p>
             </div>
             
             <div className="p-3 bg-orange-50 rounded-lg border-l-4 border-orange-400">
               <Label className="text-sm font-medium text-orange-800">Due Today</Label>
               <p className="text-sm text-orange-700 mt-1">
-                £250.00 due today for ABC123.
+                $250.00 due today for ABC123.
               </p>
             </div>
             
             <div className="p-3 bg-red-50 rounded-lg border-l-4 border-red-400">
               <Label className="text-sm font-medium text-red-800">Overdue</Label>
               <p className="text-sm text-red-700 mt-1">
-                £250.00 overdue for ABC123 (since 2024-01-15).
+                $250.00 overdue for ABC123 (since 2024-01-15).
               </p>
             </div>
           </div>

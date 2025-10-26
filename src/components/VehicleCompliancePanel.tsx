@@ -52,7 +52,7 @@ export function VehicleCompliancePanel({ vehicle }: VehicleCompliancePanelProps)
     return (
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">MOT & TAX Status</CardTitle>
+          <CardTitle className="text-sm">Inspection & Registration Status</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-2">
@@ -68,7 +68,7 @@ export function VehicleCompliancePanel({ vehicle }: VehicleCompliancePanelProps)
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm">MOT & TAX Status</CardTitle>
+          <CardTitle className="text-sm">Inspection & Registration Status</CardTitle>
           {(criticalReminders > 0 || warningReminders > 0) && (
             <div className="flex gap-1">
               {criticalReminders > 0 && (
@@ -86,41 +86,41 @@ export function VehicleCompliancePanel({ vehicle }: VehicleCompliancePanelProps)
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* MOT Status */}
+        {/* Inspection Status */}
         <div className="flex items-center justify-between p-3 rounded-md border">
           <div className="flex items-center gap-2">
             <div className={motStatus.state === 'overdue' ? 'text-destructive' : motStatus.state === 'due_soon' ? 'text-secondary-foreground' : 'text-muted-foreground'}>
               {getStatusIcon(motStatus.state)}
             </div>
             <div>
-              <p className="text-sm font-medium">MOT</p>
+              <p className="text-sm font-medium">Inspection</p>
               <p className="text-xs text-muted-foreground">
                 {formatDueStatusText(motStatus, vehicle.mot_due_date)}
               </p>
             </div>
           </div>
           <Badge variant={getStatusColor(motStatus.state)} className="text-xs">
-            {motStatus.state === 'ok' ? 'Valid' : 
+            {motStatus.state === 'ok' ? 'Valid' :
              motStatus.state === 'due_soon' ? 'Due Soon' :
              motStatus.state === 'overdue' ? 'Overdue' : 'Missing'}
           </Badge>
         </div>
 
-        {/* TAX Status */}
+        {/* Registration Status */}
         <div className="flex items-center justify-between p-3 rounded-md border">
           <div className="flex items-center gap-2">
             <div className={taxStatus.state === 'overdue' ? 'text-destructive' : taxStatus.state === 'due_soon' ? 'text-secondary-foreground' : 'text-muted-foreground'}>
               {getStatusIcon(taxStatus.state)}
             </div>
             <div>
-              <p className="text-sm font-medium">TAX</p>
+              <p className="text-sm font-medium">Registration</p>
               <p className="text-xs text-muted-foreground">
                 {formatDueStatusText(taxStatus, vehicle.tax_due_date)}
               </p>
             </div>
           </div>
           <Badge variant={getStatusColor(taxStatus.state)} className="text-xs">
-            {taxStatus.state === 'ok' ? 'Valid' : 
+            {taxStatus.state === 'ok' ? 'Valid' :
              taxStatus.state === 'due_soon' ? 'Due Soon' :
              taxStatus.state === 'overdue' ? 'Overdue' : 'Missing'}
           </Badge>

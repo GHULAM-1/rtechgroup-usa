@@ -458,7 +458,7 @@ export default function VehiclesListEnhanced() {
                       {getSortIcon('make_model')}
                     </div>
                   </TableHead>
-                  <TableHead>Colour</TableHead>
+                  <TableHead>Color</TableHead>
                   <TableHead className="cursor-pointer" onClick={() => handleSort('acquisition_type')}>
                     <div className="flex items-center gap-2">
                       Acquisition
@@ -473,13 +473,13 @@ export default function VehiclesListEnhanced() {
                   </TableHead>
                   <TableHead className="cursor-pointer" onClick={() => handleSort('mot_due_date')}>
                     <div className="flex items-center gap-2">
-                      MOT Due
+                      Inspection Due
                       {getSortIcon('mot_due_date')}
                     </div>
                   </TableHead>
                     <TableHead className="cursor-pointer" onClick={() => handleSort('tax_due_date')}>
                       <div className="flex items-center gap-2">
-                        TAX Due
+                        Registration Due
                         {getSortIcon('tax_due_date')}
                        </div>
                      </TableHead>

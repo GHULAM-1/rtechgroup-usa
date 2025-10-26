@@ -396,7 +396,7 @@ export const EnhancedAddPlateDialog = ({
                   <FormItem>
                     <FormLabel>Supplier</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. DVLA Direct" {...field} />
+                      <Input placeholder="e.g. DMV Direct" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -417,7 +417,7 @@ export const EnhancedAddPlateDialog = ({
                             className="w-full pl-3 text-left font-normal"
                           >
                             {field.value ? (
-                              format(field.value, "dd/MM/yyyy")
+                              format(field.value, "MM/dd/yyyy")
                             ) : (
                               <span className="text-muted-foreground">Pick a date</span>
                             )}
@@ -446,7 +446,7 @@ export const EnhancedAddPlateDialog = ({
                 name="cost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cost (£)</FormLabel>
+                    <FormLabel>Cost ($)</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 

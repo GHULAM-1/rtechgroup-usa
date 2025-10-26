@@ -95,7 +95,7 @@ export function AuthorityPaymentDialog({
     onSuccess: (data) => {
       toast({
         title: "Authority Payment Recorded",
-        description: `Payment of £${form.getValues('amount')} recorded successfully`,
+        description: `Payment of $${form.getValues('amount')} recorded successfully`,
       });
       
       // Invalidate relevant queries

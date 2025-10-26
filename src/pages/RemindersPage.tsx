@@ -347,7 +347,7 @@ export default function RemindersPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      £{reminder.ledger_entries?.remaining_amount || reminder.ledger_entries?.amount}
+                      ${reminder.ledger_entries?.remaining_amount || reminder.ledger_entries?.amount}
                     </TableCell>
                     <TableCell>
                       {new Date(reminder.ledger_entries?.due_date).toLocaleDateString()}

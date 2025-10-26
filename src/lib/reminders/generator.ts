@@ -3,7 +3,7 @@ import { getTitleTemplate, getMessageTemplate, getSeverityForRule, ReminderConte
 import { format, addDays, subDays, parseISO } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
 
-const TIMEZONE = 'Europe/London';
+const TIMEZONE = 'America/New_York';
 
 interface ReminderRule {
   code: string;

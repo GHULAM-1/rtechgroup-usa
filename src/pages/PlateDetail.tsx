@@ -161,7 +161,7 @@ export default function PlateDetail() {
                 <div className="text-sm text-muted-foreground">Cost</div>
                 <div className="flex items-center gap-1">
                   <PoundSterling className="h-4 w-4 text-muted-foreground" />
-                  £{plate.cost.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                  ${plate.cost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
               </div>
             )}

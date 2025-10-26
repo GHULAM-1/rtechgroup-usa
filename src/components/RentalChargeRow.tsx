@@ -48,13 +48,13 @@ export const RentalChargeRow = ({ charge }: RentalChargeRowProps) => {
         <TableCell className="text-right">
           <div className="space-y-1">
             <div className="font-medium">
-              £{Math.abs(Number(charge.amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${Math.abs(Number(charge.amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             {charge.allocations.length > 0 && (
               <div className="text-xs text-muted-foreground">
                 {charge.allocations.length === 1 ? (
                   <div>
-                    Allocated £{charge.allocations[0].amount_applied.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from payment on {formatInTimeZone(new Date(charge.allocations[0].payment_date), 'Europe/London', "dd/MM/yyyy")}
+                    Allocated ${charge.allocations[0].amount_applied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} from payment on {formatInTimeZone(new Date(charge.allocations[0].payment_date), 'Europe/London', "dd/MM/yyyy")}
                   </div>
                 ) : (
                   <Button
@@ -64,7 +64,7 @@ export const RentalChargeRow = ({ charge }: RentalChargeRowProps) => {
                     onClick={() => setShowAllocations(!showAllocations)}
                   >
                     {showAllocations ? <ChevronDown className="h-3 w-3 mr-1" /> : <ChevronRight className="h-3 w-3 mr-1" />}
-                    {charge.allocations.length} allocations (£{allocatedAmount.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                    {charge.allocations.length} allocations (${allocatedAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                   </Button>
                 )}
               </div>
@@ -72,7 +72,7 @@ export const RentalChargeRow = ({ charge }: RentalChargeRowProps) => {
           </div>
         </TableCell>
         <TableCell className="text-right font-medium">
-          £{Math.abs(Number(charge.remaining_amount)).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          ${Math.abs(Number(charge.remaining_amount)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </TableCell>
       </TableRow>
       
@@ -84,7 +84,7 @@ export const RentalChargeRow = ({ charge }: RentalChargeRowProps) => {
               {charge.allocations.map((allocation, index) => (
                 <div key={index} className="text-xs text-muted-foreground flex justify-between">
                   <span>Payment on {formatInTimeZone(new Date(allocation.payment_date), 'Europe/London', "dd/MM/yyyy")}</span>
-                  <span>£{allocation.amount_applied.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span>${allocation.amount_applied.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               ))}
             </div>

@@ -267,10 +267,10 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
                 name="reg"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Registration Number</FormLabel>
+                    <FormLabel>License Plate Number</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="e.g. AB12 CDE" 
+                      <Input
+                        placeholder="e.g. AB12 CDE"
                         {...field}
                         onChange={(e) => field.onChange(e.target.value.toUpperCase())}
                       />
@@ -334,7 +334,7 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
                 name="colour"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Colour</FormLabel>
+                    <FormLabel>Color</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. White" {...field} />
                     </FormControl>
@@ -348,11 +348,11 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
                   name="purchase_price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Purchase Price (£)</FormLabel>
+                      <FormLabel>Purchase Price ($)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter amount" 
+                        <Input
+                          type="number"
+                          placeholder="Enter amount"
                           {...field}
                           onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         />
@@ -399,11 +399,11 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
                   name="contract_total"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Contract Total (£) *</FormLabel>
+                      <FormLabel>Contract Total ($) *</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter total contract value" 
+                        <Input
+                          type="number"
+                          placeholder="Enter total contract value"
                           {...field}
                           onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseFloat(e.target.value))}
                         />
@@ -600,9 +600,9 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
               
               <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
-                  <label className="text-sm font-medium">Ghost Immobiliser</label>
+                  <label className="text-sm font-medium">Ghost Immobilizer</label>
                   <div className="text-sm text-muted-foreground">
-                    Vehicle has a Ghost immobiliser installed
+                    Vehicle has a Ghost immobilizer installed
                   </div>
                 </div>
                 <Switch
@@ -644,9 +644,9 @@ export const EditVehicleDialogEnhanced = ({ vehicle, open, onOpenChange }: EditV
 
               <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                 <div className="space-y-0.5">
-                  <label className="text-sm font-medium">Remote Immobiliser</label>
+                  <label className="text-sm font-medium">Remote Immobilizer</label>
                   <div className="text-sm text-muted-foreground">
-                    Vehicle has a remote immobiliser system
+                    Vehicle has a remote immobilizer system
                   </div>
                 </div>
                 <Switch

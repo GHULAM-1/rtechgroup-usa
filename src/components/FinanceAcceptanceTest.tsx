@@ -63,8 +63,8 @@ export const FinanceAcceptanceTest = () => {
         testResults.push({
           name: "Create Financed Vehicle",
           passed: true,
-          message: `Vehicle created successfully (Contract Total: £${calculatedTotal.toLocaleString()})`,
-          details: `Expected: £${expectedContractTotal.toLocaleString()}, Calculated: £${calculatedTotal.toLocaleString()}`
+          message: `Vehicle created successfully (Contract Total: $${calculatedTotal.toLocaleString()})`,
+          details: `Expected: $${expectedContractTotal.toLocaleString()}, Calculated: $${calculatedTotal.toLocaleString()}`
         });
 
         // Test 2: Verify upfront P&L entry was created automatically
@@ -84,9 +84,9 @@ export const FinanceAcceptanceTest = () => {
           name: "Upfront P&L Entry Created",
           passed: upfrontPassed,
           message: upfrontPassed 
-            ? `Upfront acquisition cost of £${Number(upfrontEntry?.amount || 0).toLocaleString()} recorded in P&L`
+            ? `Upfront acquisition cost of $${Number(upfrontEntry?.amount || 0).toLocaleString()} recorded in P&L`
             : "Failed to create upfront P&L acquisition entry",
-          details: `Expected: £${expectedContractTotal.toLocaleString()} acquisition cost, Found: ${upfrontEntry ? `£${Number(upfrontEntry.amount).toLocaleString()}` : 'No entry'}`
+          details: `Expected: $${expectedContractTotal.toLocaleString()} acquisition cost, Found: ${upfrontEntry ? `$${Number(upfrontEntry.amount).toLocaleString()}` : 'No entry'}`
         });
 
         // Test 3: Record deposit payment (should NOT create P&L entry due to upfront entry)
@@ -205,8 +205,8 @@ export const FinanceAcceptanceTest = () => {
         testResults.push({
           name: "Verify P&L Shows Only Upfront Costs",
           passed: totalAcquisitionCosts === expectedContractTotal && totalFinanceCosts === 0,
-          message: `P&L: Acquisition £${totalAcquisitionCosts.toLocaleString()}, Finance £${totalFinanceCosts.toLocaleString()}`,
-          details: `Expected: Acquisition £${expectedContractTotal.toLocaleString()}, Finance £0 (prevented double-counting)`
+          message: `P&L: Acquisition $${totalAcquisitionCosts.toLocaleString()}, Finance $${totalFinanceCosts.toLocaleString()}`,
+          details: `Expected: Acquisition $${expectedContractTotal.toLocaleString()}, Finance $0 (prevented double-counting)`
         });
 
         // Test 6: Verify customer balances unaffected

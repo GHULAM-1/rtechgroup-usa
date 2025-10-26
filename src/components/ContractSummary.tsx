@@ -107,14 +107,14 @@ export const ContractSummary = ({
             <div className="flex justify-between items-center">
               <span className="text-sm">Monthly Amount:</span>
               <span className="font-medium">
-                {monthlyAmount ? `£${monthlyAmount.toFixed(2)}` : '£0.00'}
+                {monthlyAmount ? `$${monthlyAmount.toFixed(2)}` : '$0.00'}
               </span>
             </div>
             
             <div className="flex justify-between items-center">
               <span className="text-sm">Initial Fee:</span>
               <span className="font-medium">
-                {totalInitialFee > 0 ? `£${totalInitialFee.toFixed(2)}` : 'None'}
+                {totalInitialFee > 0 ? `$${totalInitialFee.toFixed(2)}` : 'None'}
               </span>
             </div>
             
@@ -122,7 +122,7 @@ export const ContractSummary = ({
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="text-sm font-medium">Total Rental Charges:</span>
                 <span className="font-semibold text-primary">
-                  £{totalRentalCharges.toFixed(2)}
+                  ${totalRentalCharges.toFixed(2)}
                 </span>
               </div>
             )}

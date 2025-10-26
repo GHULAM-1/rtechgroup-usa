@@ -187,18 +187,18 @@ const Reports = () => {
       title: 'Payments Export',
       description: 'Applied/unapplied payment analysis (CSV/XLSX)',
       icon: CreditCard,
-      value: `£${reportStats?.payments.totalAmount?.toLocaleString() || '0'}`,
+      value: `$${reportStats?.payments.totalAmount?.toLocaleString() || '0'}`,
       subtitle: `${reportStats?.payments.count || 0} payments`,
-      metadata: `Applied: £${reportStats?.payments.appliedAmount?.toLocaleString() || '0'}`
+      metadata: `Applied: $${reportStats?.payments.appliedAmount?.toLocaleString() || '0'}`
     },
     {
       id: 'pl-report',
       title: 'P&L Report',
       description: 'Vehicle & consolidated profit/loss (CSV/XLSX)',
       icon: TrendingUp,
-      value: `£${reportStats?.pl.net_profit?.toLocaleString() || '0'}`,
+      value: `$${reportStats?.pl.net_profit?.toLocaleString() || '0'}`,
       subtitle: 'Net Profit',
-      metadata: `Revenue: £${reportStats?.pl.total_revenue?.toLocaleString() || '0'}`
+      metadata: `Revenue: $${reportStats?.pl.total_revenue?.toLocaleString() || '0'}`
     },
     {
       id: 'customer-statements',
@@ -207,7 +207,7 @@ const Reports = () => {
       icon: FileText,
       value: `${reportStats?.aging.count || 0}`,
       subtitle: 'Customers with balances',
-      metadata: `Total Due: £${reportStats?.aging.totalDue?.toLocaleString() || '0'}`
+      metadata: `Total Due: $${reportStats?.aging.totalDue?.toLocaleString() || '0'}`
     },
     {
       id: 'rentals',
@@ -216,7 +216,7 @@ const Reports = () => {
       icon: Car,
       value: `${reportStats?.rentals.count || 0}`,
       subtitle: 'Active rentals',
-      metadata: `Outstanding: £${reportStats?.rentals.totalBalance?.toLocaleString() || '0'}`
+      metadata: `Outstanding: $${reportStats?.rentals.totalBalance?.toLocaleString() || '0'}`
     },
     {
       id: 'fines',
@@ -225,14 +225,14 @@ const Reports = () => {
       icon: AlertTriangle,
       value: `${reportStats?.fines?.count || 0}`,
       subtitle: 'Total fines',
-      metadata: `Outstanding: £${reportStats?.fines?.totalOutstanding?.toLocaleString() || '0'}`
+      metadata: `Outstanding: $${reportStats?.fines?.totalOutstanding?.toLocaleString() || '0'}`
     },
     {
       id: 'aging',
       title: 'Aging Receivables',
       description: 'Age buckets 0-30/31-60/61-90/90+ days (CSV/XLSX)',
       icon: Clock,
-      value: `£${reportStats?.aging.totalDue?.toLocaleString() || '0'}`,
+      value: `$${reportStats?.aging.totalDue?.toLocaleString() || '0'}`,
       subtitle: 'Total overdue',
       metadata: `${reportStats?.aging.count || 0} customers`
     }
@@ -327,8 +327,8 @@ const Reports = () => {
                   <div className="mb-6">
                     <h2 className="text-lg font-medium mb-2">Available Reports</h2>
                     <p className="text-muted-foreground text-sm">
-                      Click on a report card to preview data or use export icons for direct downloads. 
-                      All amounts shown in GBP with Europe/London timezone.
+                      Click on a report card to preview data or use export icons for direct downloads.
+                      All amounts shown in USD with America/New_York timezone.
                     </p>
                   </div>
 

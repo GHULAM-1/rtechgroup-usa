@@ -26,7 +26,7 @@ export const AgingReceivablesDetail: React.FC<AgingReceivablesDetailProps> = ({ 
   });
 
   const formatCurrency = (value: number) => {
-    return `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const getBucketIcon = (bucket: string) => {

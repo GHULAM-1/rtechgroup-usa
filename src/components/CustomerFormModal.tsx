@@ -371,9 +371,9 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                       Phone
                     </FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="07123 456789" 
-                        {...field} 
+                      <Input
+                        placeholder="(555) 123-4567"
+                        {...field}
                         className="input-focus"
                       />
                     </FormControl>
@@ -473,7 +473,7 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                         <FormItem>
                           <FormLabel>Phone</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter phone number" {...field} className="input-focus" />
+                            <Input placeholder="(555) 123-4567" {...field} className="input-focus" />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

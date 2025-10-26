@@ -38,7 +38,7 @@ const BalancePill = ({ balance, status }: { balance: number; status: string }) =
 
   return (
     <Badge variant={getVariant() as any} className="badge-status">
-      {status} {balance !== 0 && `(£${Math.abs(balance).toLocaleString()})`}
+      {status} {balance !== 0 && `($${Math.abs(balance).toLocaleString()})`}
     </Badge>
   );
 };

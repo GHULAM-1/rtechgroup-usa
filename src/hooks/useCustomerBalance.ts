@@ -257,10 +257,10 @@ export const useRentalChargesAndPayments = (rentalId: string | undefined) => {
 export const getBalanceStatus = (balance: number | undefined, status?: 'In Credit' | 'Settled' | 'In Debt') => {
   if (balance === undefined) return { text: 'Unknown', type: 'secondary' };
   if (balance === 0 || status === 'Settled') return { text: 'Settled', type: 'secondary' };
-  if (status === 'In Debt') return { text: `In Debt £${balance.toFixed(2)}`, type: 'destructive' };
-  if (status === 'In Credit') return { text: `In Credit £${balance.toFixed(2)}`, type: 'success' };
+  if (status === 'In Debt') return { text: `In Debt $${balance.toFixed(2)}`, type: 'destructive' };
+  if (status === 'In Credit') return { text: `In Credit $${balance.toFixed(2)}`, type: 'success' };
   
   // Fallback to old logic if status not provided
-  if (balance > 0) return { text: `In Debt £${balance.toFixed(2)}`, type: 'destructive' };
-  return { text: `In Credit £${Math.abs(balance).toFixed(2)}`, type: 'success' };
+  if (balance > 0) return { text: `In Debt $${balance.toFixed(2)}`, type: 'destructive' };
+  return { text: `In Credit $${Math.abs(balance).toFixed(2)}`, type: 'success' };
 };

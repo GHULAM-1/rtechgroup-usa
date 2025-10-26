@@ -134,7 +134,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.fromDate ? format(filters.fromDate, "dd/MM/yyyy") : "Pick a date"}
+                    {filters.fromDate ? format(filters.fromDate, "MM/dd/yyyy") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -160,7 +160,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.toDate ? format(filters.toDate, "dd/MM/yyyy") : "Pick a date"}
+                    {filters.toDate ? format(filters.toDate, "MM/dd/yyyy") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">

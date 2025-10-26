@@ -183,7 +183,7 @@ export const searchService = {
         const fineResults = (fines || []).map(fine => ({
           id: fine.id,
           title: fine.reference_no || `${fine.type} Fine`,
-          subtitle: `£${fine.amount} • ${(fine.vehicles as any)?.reg} • ${(fine.customers as any)?.name || 'Unknown'} • ${fine.status}`,
+          subtitle: `$${fine.amount} • ${(fine.vehicles as any)?.reg} • ${(fine.customers as any)?.name || 'Unknown'} • ${fine.status}`,
           category: "Fines",
           url: `/fines/${fine.id}`,
           icon: "alert-triangle",
@@ -210,7 +210,7 @@ export const searchService = {
 
         const paymentResults = (payments || []).map(payment => ({
           id: payment.id,
-          title: `£${payment.amount} ${payment.payment_type}`,
+          title: `$${payment.amount} ${payment.payment_type}`,
           subtitle: `${(payment.customers as any)?.name} • ${payment.method || 'Unknown method'} • ${payment.payment_date}`,
           category: "Payments",
           url: `/payments/${payment.id}`,

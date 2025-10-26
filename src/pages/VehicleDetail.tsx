@@ -441,7 +441,7 @@ export default function VehicleDetail() {
                 <MetricItem label="Make" value={vehicle.make} />
                 <MetricItem label="Model" value={vehicle.model} />
                 {vehicle.year && <MetricItem label="Year" value={vehicle.year} />}
-                <MetricItem label="Colour" value={vehicle.colour} />
+                <MetricItem label="Color" value={vehicle.colour} />
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Status:</span>
                   <VehicleStatusBadge status={vehicle.status} showTooltip />
@@ -631,7 +631,7 @@ export default function VehicleDetail() {
                     <div key={rental.id} className="p-2 bg-muted/50 rounded-md border">
                       <div className="text-sm font-medium">{rental.customers.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        £{rental.monthly_amount.toLocaleString()}/month
+                        ${rental.monthly_amount.toLocaleString()}/month
                       </div>
                     </div>
                   ))}
@@ -661,7 +661,7 @@ export default function VehicleDetail() {
                     <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium">Ghost Immobiliser</span>
+                        <span className="text-sm font-medium">Ghost Immobilizer</span>
                       </div>
                       {vehicle.ghost_code && (
                         <div className="flex items-center gap-2">
@@ -696,7 +696,7 @@ export default function VehicleDetail() {
                     <div className="flex items-center justify-between p-2 bg-muted/50 rounded-md border">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium">Remote Immobiliser</span>
+                        <span className="text-sm font-medium">Remote Immobilizer</span>
                       </div>
                     </div>
                   )}
@@ -753,68 +753,68 @@ export default function VehicleDetail() {
                     <div className="flex justify-between">
                       <span className="text-sm">Revenue (Rental)</span>
                       <span className="text-sm font-medium">
-                        £{(plSummary.revenue_rental || 0).toFixed(2)}
+                        ${(plSummary.revenue_rental || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Revenue (Initial Fees)</span>
                       <span className="text-sm font-medium">
-                        £{(plSummary.revenue_initial_fees || 0).toFixed(2)}
+                        ${(plSummary.revenue_initial_fees || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Revenue (Other)</span>
                       <span className="text-sm font-medium">
-                        £{(plSummary.revenue_other || 0).toFixed(2)}
+                        ${(plSummary.revenue_other || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Cost (Acquisition)</span>
                       <span className="text-sm font-medium text-red-600">
-                        -£{(plSummary.cost_acquisition || 0).toFixed(2)}
+                        -${(plSummary.cost_acquisition || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Cost (Service)</span>
                       <span className="text-sm font-medium text-red-600">
-                        -£{(plSummary.cost_service || 0).toFixed(2)}
+                        -${(plSummary.cost_service || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Cost (Plates)</span>
                       <span className="text-sm font-medium text-red-600">
-                        -£{(plSummary.cost_plates || 0).toFixed(2)}
+                        -${(plSummary.cost_plates || 0).toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Cost (Fines)</span>
                       <span className="text-sm font-medium text-red-600">
-                        -£{(plSummary.cost_fines || 0).toFixed(2)}
+                        -${(plSummary.cost_fines || 0).toFixed(2)}
                       </span>
                     </div>
                      <div className="flex justify-between">
                        <span className="text-sm">Cost (Disposal)</span>
                        <span className="text-sm font-medium text-red-600">
-                         -£{(plSummary.cost_disposal || 0).toFixed(2)}
+                         -${(plSummary.cost_disposal || 0).toFixed(2)}
                        </span>
                      </div>
                      <div className="flex justify-between">
                        <span className="text-sm">Revenue (Disposal)</span>
                        <span className="text-sm font-medium">
-                         £{(plSummary.revenue_disposal || 0).toFixed(2)}
+                         ${(plSummary.revenue_disposal || 0).toFixed(2)}
                        </span>
                      </div>
                      <div className="flex justify-between">
                        <span className="text-sm">Cost (Other)</span>
                        <span className="text-sm font-medium text-red-600">
-                         -£{(plSummary.cost_other || 0).toFixed(2)}
+                         -${(plSummary.cost_other || 0).toFixed(2)}
                        </span>
                      </div>
                   </div>
                   <hr />
                   <div className="flex justify-between font-medium">
                     <span>Total Revenue:</span>
-                    <span>£{plSummary.totalRevenue.toLocaleString()}</span>
+                    <span>${plSummary.totalRevenue.toLocaleString()}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -826,24 +826,24 @@ export default function VehicleDetail() {
                 <CardContent className="space-y-2">
                   <div className="flex justify-between">
                     <span>Acquisition:</span>
-                    <span>£{(plSummary.cost_acquisition || 0).toLocaleString()}</span>
+                    <span>${(plSummary.cost_acquisition || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Service:</span>
-                    <span>£{(plSummary.cost_service || 0).toLocaleString()}</span>
+                    <span>${(plSummary.cost_service || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Fines:</span>
-                    <span>£{(plSummary.cost_fines || 0).toLocaleString()}</span>
+                    <span>${(plSummary.cost_fines || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Other:</span>
-                    <span>£{(plSummary.cost_other || 0).toLocaleString()}</span>
+                    <span>${(plSummary.cost_other || 0).toLocaleString()}</span>
                   </div>
                   <hr />
                   <div className="flex justify-between font-medium">
                     <span>Total Costs:</span>
-                    <span>£{plSummary.totalCosts.toLocaleString()}</span>
+                    <span>${plSummary.totalCosts.toLocaleString()}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -862,7 +862,7 @@ export default function VehicleDetail() {
                     ) : (
                       <TrendingDown className="h-5 w-5" />
                     )}
-                    £{Math.abs(netProfit).toLocaleString()}
+                    ${Math.abs(netProfit).toLocaleString()}
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -904,7 +904,7 @@ export default function VehicleDetail() {
                             <TableCell className={`text-right font-medium ${
                               entry.side === 'Revenue' ? 'text-green-600' : 'text-red-600'
                             }`}>
-                              £{Number(entry.amount).toLocaleString()}
+                              ${Number(entry.amount).toLocaleString()}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">
                               {entry.source_ref || '—'}
@@ -962,7 +962,7 @@ export default function VehicleDetail() {
                             {rental.end_date ? format(new Date(rental.end_date), "dd/MM/yyyy") : "Ongoing"}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            £{rental.monthly_amount.toLocaleString()}
+                            ${rental.monthly_amount.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'}>
@@ -1014,7 +1014,7 @@ export default function VehicleDetail() {
                             <TruncatedCell content={fine.type} maxLength={20} />
                           </TableCell>
                           <TableCell className="text-right font-medium text-destructive">
-                            £{fine.amount.toLocaleString()}
+                            ${fine.amount.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <Badge variant={fine.status === 'Open' ? 'destructive' : 'outline'}>
@@ -1161,7 +1161,7 @@ export default function VehicleDetail() {
                             <Badge variant="outline">{expense.category}</Badge>
                           </TableCell>
                           <TableCell className="text-right font-medium text-destructive">
-                            £{expense.amount.toLocaleString()}
+                            ${expense.amount.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <TruncatedCell content={expense.reference || '-'} maxLength={20} />

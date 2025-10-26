@@ -36,7 +36,7 @@ export function formatDueStatusText(status: DueStatus, dueDate: Date | string | 
     case 'ok':
       if (dueDate) {
         const dueDateObj = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
-        return `OK (${dueDateObj.toLocaleDateString('en-GB')})`;
+        return `OK (${dueDateObj.toLocaleDateString('en-US')})`;
       }
       return 'OK';
     case 'missing':

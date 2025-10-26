@@ -195,7 +195,7 @@ export const PaymentFilters = ({ onFiltersChange }: PaymentFiltersProps) => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateFrom ? formatInTimeZone(filters.dateFrom, 'Europe/London', "dd/MM/yyyy") : "From date"}
+                    {filters.dateFrom ? formatInTimeZone(filters.dateFrom, 'America/New_York', "MM/dd/yyyy") : "From date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -221,7 +221,7 @@ export const PaymentFilters = ({ onFiltersChange }: PaymentFiltersProps) => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filters.dateTo ? formatInTimeZone(filters.dateTo, 'Europe/London', "dd/MM/yyyy") : "To date"}
+                    {filters.dateTo ? formatInTimeZone(filters.dateTo, 'America/New_York', "MM/dd/yyyy") : "To date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">

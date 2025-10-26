@@ -128,7 +128,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Create Initial Fee charge",
         passed: !!initialFeeCharge,
-        message: initialFeeCharge ? "Initial Fee charge created (£1,000)" : "Failed to create Initial Fee charge",
+        message: initialFeeCharge ? "Initial Fee charge created ($1,000)" : "Failed to create Initial Fee charge",
         category: "Charges"
       });
 
@@ -158,7 +158,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Create Rental charge",
         passed: !!rentalCharge,
-        message: rentalCharge ? "Rental charge created (£1,000)" : "Failed to create Rental charge",
+        message: rentalCharge ? "Rental charge created ($1,000)" : "Failed to create Rental charge",
         category: "Charges"
       });
 
@@ -182,7 +182,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Record first payment",
         passed: !!payment1,
-        message: payment1 ? "Initial Fee payment recorded (£1,000)" : "Failed to record payment",
+        message: payment1 ? "Initial Fee payment recorded ($1,000)" : "Failed to record payment",
         category: "Payments"
       });
 
@@ -206,7 +206,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Record second payment",
         passed: !!payment2,
-        message: payment2 ? "Rental payment recorded (£1,000)" : "Failed to record payment",
+        message: payment2 ? "Rental payment recorded ($1,000)" : "Failed to record payment",
         category: "Payments"
       });
 
@@ -246,7 +246,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Initial Fee charge fully paid",
         passed: updatedInitialCharge.remaining_amount === 0,
-        message: `Initial Fee remaining: £${updatedInitialCharge.remaining_amount} (expected £0)`,
+        message: `Initial Fee remaining: $${updatedInitialCharge.remaining_amount} (expected $0)`,
         category: "Verification"
       });
 
@@ -262,7 +262,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Rental charge fully paid",
         passed: updatedRentalCharge.remaining_amount === 0,
-        message: `Rental remaining: £${updatedRentalCharge.remaining_amount} (expected £0)`,
+        message: `Rental remaining: $${updatedRentalCharge.remaining_amount} (expected $0)`,
         category: "Verification"
       });
 
@@ -320,7 +320,7 @@ export const RentalAcceptanceTest = () => {
       testResults.push({
         name: "Partial payment handling",
         passed: partialChargeAfter.remaining_amount === 500,
-        message: `Partial charge remaining: £${partialChargeAfter.remaining_amount} (expected £500)`,
+        message: `Partial charge remaining: $${partialChargeAfter.remaining_amount} (expected $500)`,
         category: "Verification"
       });
 

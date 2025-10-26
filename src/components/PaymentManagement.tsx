@@ -145,10 +145,10 @@ export const PaymentManagement = () => {
                       <PaymentStatusBadge status={payment.status} remaining_amount={payment.remaining_amount} />
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      £{Number(payment.amount).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${Number(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      £{Number(payment.remaining_amount || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${Number(payment.remaining_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </TableCell>
                   </TableRow>
                 ))}

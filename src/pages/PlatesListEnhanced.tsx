@@ -321,13 +321,13 @@ export default function PlatesListEnhanced() {
       'Plate Number': plate.plate_number,
       'Vehicle': plate.vehicles?.reg || 'Not Assigned',
       'Supplier': plate.supplier || '',
-      'Order Date': plate.order_date ? format(new Date(plate.order_date), 'dd/MM/yyyy') : '',
+      'Order Date': plate.order_date ? format(new Date(plate.order_date), 'MM/dd/yyyy') : '',
       'Cost': plate.cost || '',
       'Status': plate.status,
       'Retention Ref': plate.retention_doc_reference || '',
       'Notes': plate.notes || '',
       'Has Document': plate.document_url ? 'Yes' : 'No',
-      'Created': format(new Date(plate.created_at), 'dd/MM/yyyy')
+      'Created': format(new Date(plate.created_at), 'MM/dd/yyyy')
     }));
 
     const csvContent = [
@@ -510,10 +510,10 @@ export default function PlatesListEnhanced() {
                     </TableCell>
                     <TableCell>{plate.supplier || "-"}</TableCell>
                     <TableCell>
-                      {plate.order_date ? format(new Date(plate.order_date), "dd/MM/yyyy") : "-"}
+                      {plate.order_date ? format(new Date(plate.order_date), "MM/dd/yyyy") : "-"}
                     </TableCell>
                     <TableCell className="text-right">
-                      {plate.cost ? `£${Number(plate.cost).toFixed(2)}` : "-"}
+                      {plate.cost ? `$${Number(plate.cost).toFixed(2)}` : "-"}
                     </TableCell>
                     <TableCell>
                       <PlateStatusBadge status={plate.status} showTooltip />

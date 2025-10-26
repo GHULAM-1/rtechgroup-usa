@@ -128,7 +128,7 @@ export const PaymentAllocationDrawer = ({
       return { status: 'Applied', variant: 'default' as const, color: 'green' };
     } else if (remaining > 0) {
       return { 
-        status: `Credit £${remaining.toFixed(2)}`, 
+        status: `Credit $${remaining.toFixed(2)}`, 
         variant: 'secondary' as const, 
         color: 'blue' 
       };
@@ -172,7 +172,7 @@ export const PaymentAllocationDrawer = ({
               <div>
                 <div className="text-sm text-muted-foreground">Amount</div>
                 <div className="text-2xl font-bold">
-                  £{paymentDetail.amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                  ${paymentDetail.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </div>
               </div>
               <div>
@@ -294,7 +294,7 @@ export const PaymentAllocationDrawer = ({
                       </div>
                       <div className="text-right">
                         <div className="font-medium">
-                          £{allocation.amount_applied.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                          ${allocation.amount_applied.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </div>
                         <Badge variant="outline" className="text-xs">
                           Applied
@@ -323,7 +323,7 @@ export const PaymentAllocationDrawer = ({
                     </div>
                   </div>
                   <div className="text-lg font-bold text-blue-900">
-                    £{paymentDetail.remaining_amount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+                    ${paymentDetail.remaining_amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </div>
                 </div>
               </div>

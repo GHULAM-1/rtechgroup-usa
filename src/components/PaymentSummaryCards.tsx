@@ -46,7 +46,7 @@ export const PaymentSummaryCards = () => {
           <CreditCard className="h-4 w-4 text-success" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">£{summaryData?.todaysTotal?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}</div>
+          <div className="text-2xl font-bold">${summaryData?.todaysTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}</div>
         </CardContent>
       </Card>
 
@@ -56,7 +56,7 @@ export const PaymentSummaryCards = () => {
           <TrendingUp className="h-4 w-4 text-success" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">£{summaryData?.monthsTotal?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}</div>
+          <div className="text-2xl font-bold">${summaryData?.monthsTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}</div>
         </CardContent>
       </Card>
 

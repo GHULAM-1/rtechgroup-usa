@@ -15,7 +15,7 @@ export const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputPro
     return (
       <div className="relative">
         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
-          £
+          $
         </div>
         <Input
           ref={ref}

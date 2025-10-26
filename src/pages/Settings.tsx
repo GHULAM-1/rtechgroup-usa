@@ -125,7 +125,7 @@ const Settings = () => {
       
       toast({
         title: "Maintenance Complete",
-        description: `Processed ${data[0]?.payments_processed || 0} payments, affected ${data[0]?.customers_affected || 0} customers, applied £${data[0]?.total_credit_applied?.toFixed(2) || '0.00'} in credit. Duration: ${duration}s`,
+        description: `Processed ${data[0]?.payments_processed || 0} payments, affected ${data[0]?.customers_affected || 0} customers, applied $${data[0]?.total_credit_applied?.toFixed(2) || '0.00'} in credit. Duration: ${duration}s`,
       });
       
       // Invalidate queries
@@ -429,14 +429,14 @@ const Settings = () => {
                   </p>
                 </div>
                 
-                <Button 
-                  variant="destructive" 
+                {/* <Button
+                  variant="destructive"
                   onClick={() => setShowDataCleanupDialog(true)}
                   className="w-fit"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Clean Test Data
-                </Button>
+                </Button> */}
               </div>
             </CardContent>
           </Card>

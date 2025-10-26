@@ -78,7 +78,7 @@ export const RecentActivity = () => {
                       <span className="text-metadata text-muted-foreground">{activity.customer}</span>
                     )}
                     {activity.amount && (
-                      <span className="text-metadata font-semibold text-success">£{activity.amount}</span>
+                      <span className="text-metadata font-semibold text-success">${activity.amount}</span>
                     )}
                   </div>
                 </div>

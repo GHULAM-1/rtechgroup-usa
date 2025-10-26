@@ -20,7 +20,7 @@ interface DashboardKPICardsProps {
   error?: Error | null;
 }
 
-const formatCurrency = (amount: number) => `£${amount.toLocaleString()}`;
+const formatCurrency = (amount: number) => `$${amount.toLocaleString()}`;
 
 const KPICard = ({ 
   title, 

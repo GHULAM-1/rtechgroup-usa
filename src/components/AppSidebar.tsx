@@ -75,7 +75,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex h-14 items-center justify-center px-4 border-b">
         {!collapsed ? (
-          <span className="text-lg font-bold text-primary">RTECHGROUP UK</span>
+          <span className="text-lg font-bold text-primary">RTECHGROUP USA</span>
         ) : (
           <span className="text-lg font-bold text-primary">RT</span>
         )}
@@ -168,7 +168,7 @@ export function AppSidebar() {
         <div className="p-4">
           {!collapsed ? (
             <div className="text-xs text-muted-foreground">
-              RTECHGROUP UK Fleet Management
+              RTECHGROUP USA Fleet Management
             </div>
           ) : (
             <div className="text-xs text-muted-foreground text-center">

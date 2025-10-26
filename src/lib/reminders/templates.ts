@@ -39,17 +39,17 @@ export interface ReminderContext {
 
 export function getTitleTemplate(ruleCode: string, context: ReminderContext): string {
   const templates: Record<string, (ctx: ReminderContext) => string> = {
-    // Vehicle MOT reminders
-    VEH_MOT_30D: (ctx) => `MOT due soon — ${ctx.reg} (30 days)`,
-    VEH_MOT_14D: (ctx) => `MOT due soon — ${ctx.reg} (14 days)`,
-    VEH_MOT_7D: (ctx) => `MOT due soon — ${ctx.reg} (7 days)`,
-    VEH_MOT_0D: (ctx) => `MOT due today — ${ctx.reg}`,
-    
-    // Vehicle TAX reminders
-    VEH_TAX_30D: (ctx) => `TAX due soon — ${ctx.reg} (30 days)`,
-    VEH_TAX_14D: (ctx) => `TAX due soon — ${ctx.reg} (14 days)`,
-    VEH_TAX_7D: (ctx) => `TAX due soon — ${ctx.reg} (7 days)`,
-    VEH_TAX_0D: (ctx) => `TAX due today — ${ctx.reg}`,
+    // Vehicle Inspection reminders
+    VEH_MOT_30D: (ctx) => `Inspection due soon — ${ctx.reg} (30 days)`,
+    VEH_MOT_14D: (ctx) => `Inspection due soon — ${ctx.reg} (14 days)`,
+    VEH_MOT_7D: (ctx) => `Inspection due soon — ${ctx.reg} (7 days)`,
+    VEH_MOT_0D: (ctx) => `Inspection due today — ${ctx.reg}`,
+
+    // Vehicle Registration reminders
+    VEH_TAX_30D: (ctx) => `Registration due soon — ${ctx.reg} (30 days)`,
+    VEH_TAX_14D: (ctx) => `Registration due soon — ${ctx.reg} (14 days)`,
+    VEH_TAX_7D: (ctx) => `Registration due soon — ${ctx.reg} (7 days)`,
+    VEH_TAX_0D: (ctx) => `Registration due today — ${ctx.reg}`,
     
     // Vehicle WARRANTY reminders
     VEH_WARRANTY_30D: (ctx) => `Warranty expiring — ${ctx.reg} (30 days)`,
@@ -82,11 +82,11 @@ export function getTitleTemplate(ruleCode: string, context: ReminderContext): st
     FINE_DUE_7D: (ctx) => `Fine due soon — ${ctx.reg} (${ctx.reference}) (7 days)`,
     FINE_DUE_0D: (ctx) => `Fine due today — ${ctx.reg} (${ctx.reference})`,
     
-    // Immobiliser fitting reminders
-    IMM_FIT_30D: (ctx) => `Fit immobiliser — ${ctx.reg} (30 days since acquisition)`,
-    IMM_FIT_14D: (ctx) => `Fit immobiliser — ${ctx.reg} (14 days since acquisition)`,
-    IMM_FIT_7D: (ctx) => `Fit immobiliser — ${ctx.reg} (7 days since acquisition)`,
-    IMM_FIT_0D: (ctx) => `Fit immobiliser — ${ctx.reg} (overdue)`,
+    // Immobilizer fitting reminders
+    IMM_FIT_30D: (ctx) => `Fit immobilizer — ${ctx.reg} (30 days since acquisition)`,
+    IMM_FIT_14D: (ctx) => `Fit immobilizer — ${ctx.reg} (14 days since acquisition)`,
+    IMM_FIT_7D: (ctx) => `Fit immobilizer — ${ctx.reg} (7 days since acquisition)`,
+    IMM_FIT_0D: (ctx) => `Fit immobilizer — ${ctx.reg} (overdue)`,
   };
   
   const template = templates[ruleCode];
@@ -95,17 +95,17 @@ export function getTitleTemplate(ruleCode: string, context: ReminderContext): st
 
 export function getMessageTemplate(ruleCode: string, context: ReminderContext): string {
   const templates: Record<string, (ctx: ReminderContext) => string> = {
-    // Vehicle MOT reminders
-    VEH_MOT_30D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test soon.`,
-    VEH_MOT_14D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please book test immediately.`,
-    VEH_MOT_7D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Book test urgently!`,
-    VEH_MOT_0D: (ctx) => `MOT for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
-    
-    // Vehicle TAX reminders
-    VEH_TAX_30D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew soon.`,
-    VEH_TAX_14D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew immediately.`,
-    VEH_TAX_7D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew urgently!`,
-    VEH_TAX_0D: (ctx) => `TAX for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
+    // Vehicle Inspection reminders
+    VEH_MOT_30D: (ctx) => `Inspection for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please schedule inspection soon.`,
+    VEH_MOT_14D: (ctx) => `Inspection for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Please schedule inspection immediately.`,
+    VEH_MOT_7D: (ctx) => `Inspection for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Schedule inspection urgently!`,
+    VEH_MOT_0D: (ctx) => `Inspection for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
+
+    // Vehicle Registration reminders
+    VEH_TAX_30D: (ctx) => `Registration for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew soon.`,
+    VEH_TAX_14D: (ctx) => `Registration for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew immediately.`,
+    VEH_TAX_7D: (ctx) => `Registration for ${ctx.reg} (${ctx.make} ${ctx.model}) due on ${ctx.due_date}. Renew urgently!`,
+    VEH_TAX_0D: (ctx) => `Registration for ${ctx.reg} (${ctx.make} ${ctx.model}) due today (${ctx.due_date}). Immediate action required!`,
     
     // Vehicle WARRANTY reminders
     VEH_WARRANTY_30D: (ctx) => `Warranty for ${ctx.reg} (${ctx.make} ${ctx.model}) expires on ${ctx.due_date}. Consider renewal.`,
@@ -139,10 +139,10 @@ export function getMessageTemplate(ruleCode: string, context: ReminderContext): 
     FINE_DUE_0D: (ctx) => `Fine ${ctx.reference} for ${ctx.reg} (${formatCurrency(ctx.amount || 0)}) due today (${ctx.due_date}). Immediate payment required!`,
     
     // Immobiliser fitting reminders
-    IMM_FIT_30D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) acquired on ${ctx.acquisition_date} needs an immobiliser fitted. Please schedule installation.`,
-    IMM_FIT_14D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) has been without an immobiliser for ${ctx.days_since_acquisition} days. Schedule fitting urgently.`,
-    IMM_FIT_7D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) urgently needs an immobiliser fitted - ${ctx.days_since_acquisition} days since acquisition.`,
-    IMM_FIT_0D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) is overdue for immobiliser fitting - acquired ${ctx.days_since_acquisition} days ago. Immediate action required!`,
+    IMM_FIT_30D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) acquired on ${ctx.acquisition_date} needs an immobilizer fitted. Please schedule installation.`,
+    IMM_FIT_14D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) has been without an immobilizer for ${ctx.days_since_acquisition} days. Schedule fitting urgently.`,
+    IMM_FIT_7D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) urgently needs an immobilizer fitted - ${ctx.days_since_acquisition} days since acquisition.`,
+    IMM_FIT_0D: (ctx) => `Vehicle ${ctx.reg} (${ctx.make} ${ctx.model}) is overdue for immobilizer fitting - acquired ${ctx.days_since_acquisition} days ago. Immediate action required!`,
   };
   
   const template = templates[ruleCode];

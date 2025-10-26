@@ -25,7 +25,7 @@ const rentalSchema = z.object({
   vehicle_id: z.string().min(1, "Vehicle is required"),
   start_date: z.date(),
   end_date: z.date(),
-  monthly_amount: z.coerce.number().min(1, "Monthly amount must be at least £1"),
+  monthly_amount: z.coerce.number().min(1, "Monthly amount must be at least $1"),
   initial_fee: z.coerce.number().min(0, "Initial fee cannot be negative").optional(),
 }).refine((data) => {
   const monthAfterStart = addMonths(data.start_date, 1);
@@ -187,11 +187,41 @@ const CreateRental = () => {
 
       const customerName = selectedCustomer?.name || "Customer";
       const vehicleReg = selectedVehicle?.reg || "Vehicle";
-      
-      toast({
-        title: "Rental Created",
-        description: `Rental created for ${customerName} • ${vehicleReg}`,
-      });
+
+      // Create DocuSign envelope for rental agreement
+      console.log('Creating DocuSign envelope for rental:', rental.id);
+      try {
+        const { data: envelopeResult, error: envelopeError } = await supabase.functions.invoke('create-docusign-envelope', {
+          body: { rentalId: rental.id }
+        });
+
+        if (envelopeError) {
+          console.error('DocuSign envelope creation error:', envelopeError);
+          toast({
+            title: "Rental Created (Document Signing Pending)",
+            description: `Rental created for ${customerName} • ${vehicleReg}. Document signing setup encountered an issue.`,
+            variant: "default",
+          });
+        } else if (envelopeResult && envelopeResult.ok) {
+          console.log('DocuSign envelope created:', envelopeResult.envelopeId);
+          toast({
+            title: "Rental Created & Agreement Sent",
+            description: `Rental created for ${customerName} • ${vehicleReg}. Rental agreement sent to ${selectedCustomer?.email} for signature.`,
+          });
+        } else {
+          console.error('DocuSign envelope creation failed:', envelopeResult);
+          toast({
+            title: "Rental Created",
+            description: `Rental created for ${customerName} • ${vehicleReg}`,
+          });
+        }
+      } catch (envelopeException) {
+        console.error('Exception creating DocuSign envelope:', envelopeException);
+        toast({
+          title: "Rental Created",
+          description: `Rental created for ${customerName} • ${vehicleReg}`,
+        });
+      }
 
       // Refresh queries and navigate
       queryClient.invalidateQueries({ queryKey: ["rentals-list"] });

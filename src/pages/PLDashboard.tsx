@@ -213,9 +213,9 @@ const PLDashboard: React.FC = () => {
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GBP',
+      currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(amount);
@@ -611,7 +611,7 @@ const PLDashboard: React.FC = () => {
                    >
                     <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`} />
+                    <YAxis className="text-xs" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                     <Tooltip 
                       formatter={(value: number, name: string) => [formatCurrency(value), name]}
                       labelClassName="text-foreground"

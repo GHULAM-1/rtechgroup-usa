@@ -150,14 +150,14 @@ export const PlateHistoryDrawer = ({
               {plate.cost && (
                 <div>
                   <span className="text-muted-foreground">Cost:</span>
-                  <span className="ml-2">£{Number(plate.cost).toFixed(2)}</span>
+                  <span className="ml-2">${Number(plate.cost).toFixed(2)}</span>
                 </div>
               )}
               {plate.order_date && (
                 <div>
                   <span className="text-muted-foreground">Order Date:</span>
                   <span className="ml-2">
-                    {format(new Date(plate.order_date), "dd/MM/yyyy")}
+                    {format(new Date(plate.order_date), "MM/dd/yyyy")}
                   </span>
                 </div>
               )}
@@ -204,7 +204,7 @@ export const PlateHistoryDrawer = ({
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium">{event.summary}</p>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(event.event_date), "dd/MM/yyyy HH:mm")}
+                          {format(new Date(event.event_date), "MM/dd/yyyy HH:mm")}
                         </span>
                       </div>
                       {event.vehicle_id && (

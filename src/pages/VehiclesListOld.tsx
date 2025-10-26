@@ -62,7 +62,7 @@ const PLPill = ({ netProfit }: { netProfit: number }) => {
       ) : (
         <TrendingDown className="h-3 w-3" />
       )}
-      £{Math.abs(netProfit).toLocaleString()}
+      ${Math.abs(netProfit).toLocaleString()}
     </div>
   );
 };
@@ -299,11 +299,11 @@ const VehiclesList = () => {
                   <TableRow>
                     <TableHead>Registration</TableHead>
                     <TableHead>Make/Model</TableHead>
-                    <TableHead>Colour</TableHead>
+                    <TableHead>Color</TableHead>
                     <TableHead>Acquisition</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>MOT Due</TableHead>
-                    <TableHead>TAX Due</TableHead>
+                    <TableHead>Inspection Due</TableHead>
+                    <TableHead>Registration Due</TableHead>
                     <TableHead className="text-right">Net P&L</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -333,7 +333,7 @@ const VehiclesList = () => {
                         <TableCell>
                           <span className="text-sm text-muted-foreground">
                             {vehicle.last_service_date 
-                              ? new Date(vehicle.last_service_date).toLocaleDateString('en-GB')
+                              ? new Date(vehicle.last_service_date).toLocaleDateString('en-US')
                               : "—"
                             }
                           </span>

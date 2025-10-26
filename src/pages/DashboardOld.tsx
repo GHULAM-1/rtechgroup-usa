@@ -183,7 +183,7 @@ const Dashboard = () => {
     {
       title: "Overdue Payments",
       value: `${overduePayments?.count || 0}`,
-      description: `£${(overduePayments?.sum || 0).toLocaleString()} past due`,
+      description: `$${(overduePayments?.sum || 0).toLocaleString()} past due`,
       icon: AlertTriangle,
       color: "text-red-500",
       href: "/charges?filter=overdue"
@@ -192,8 +192,8 @@ const Dashboard = () => {
       title: "Due Today",
       value: `${dueToday?.count || 0}`, 
       description: dueReminders && dueReminders > 0 
-        ? `£${(dueToday?.sum || 0).toLocaleString()} due (${dueReminders} reminders)` 
-        : `£${(dueToday?.sum || 0).toLocaleString()} due today`,
+        ? `$${(dueToday?.sum || 0).toLocaleString()} due (${dueReminders} reminders)` 
+        : `$${(dueToday?.sum || 0).toLocaleString()} due today`,
       icon: Calendar,
       color: "text-yellow-500",
       href: "/charges?filter=due-today"
@@ -201,7 +201,7 @@ const Dashboard = () => {
     {
       title: "Upcoming (7 days)",
       value: `${upcoming?.count || 0}`,
-      description: `£${(upcoming?.sum || 0).toLocaleString()} due within 7 days`,
+      description: `$${(upcoming?.sum || 0).toLocaleString()} due within 7 days`,
       icon: PoundSterling,
       color: "text-blue-500",
       href: "/charges?filter=upcoming"
@@ -218,15 +218,15 @@ const Dashboard = () => {
       title: "Open Fines",
       value: `${openFines?.totalCount || 0}`,
       description: openFines?.overdueCount && openFines.overdueCount > 0 
-        ? `£${(openFines?.totalAmount || 0).toLocaleString()} outstanding (${openFines?.overdueCount} overdue)`
-        : `£${(openFines?.totalAmount || 0).toLocaleString()} outstanding`,
+        ? `$${(openFines?.totalAmount || 0).toLocaleString()} outstanding (${openFines?.overdueCount} overdue)`
+        : `$${(openFines?.totalAmount || 0).toLocaleString()} outstanding`,
       icon: AlertTriangle,
       color: openFines?.overdueCount && openFines.overdueCount > 0 ? "text-red-500" : "text-orange-500",
       href: "/fines?filter=open"
     },
     {
       title: "Finance Costs",
-      value: `£${(financeCosts || 0).toLocaleString()}`,
+      value: `$${(financeCosts || 0).toLocaleString()}`,
       description: "Total finance payments recorded",
       icon: PoundSterling,
       color: "text-purple-500",

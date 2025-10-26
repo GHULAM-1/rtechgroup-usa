@@ -237,7 +237,7 @@ export const AddPlateDialog = ({
                 name="cost"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cost (£)</FormLabel>
+                    <FormLabel>Cost ($)</FormLabel>
                     <FormControl>
                       <Input 
                         {...field} 

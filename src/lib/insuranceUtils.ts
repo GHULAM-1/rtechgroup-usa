@@ -96,9 +96,9 @@ export const INSURANCE_DOCUMENT_TYPES = [
 export type InsuranceDocumentType = typeof INSURANCE_DOCUMENT_TYPES[number];
 
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'GBP'
+    currency: 'USD'
   }).format(amount);
 }
 

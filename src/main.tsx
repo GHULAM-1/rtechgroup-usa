@@ -1,9 +1,9 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { executeDataCleanup } from "./scripts/executeCleanup";
+// import { executeDataCleanup } from "./scripts/executeCleanup";
 
 // Execute data cleanup for client handover
-executeDataCleanup();
+// executeDataCleanup();
 
 createRoot(document.getElementById("root")!).render(<App />);

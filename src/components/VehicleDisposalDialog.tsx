@@ -201,7 +201,7 @@ export function VehicleDisposalDialog({ vehicle, onDisposal }: VehicleDisposalDi
               name="sale_proceeds"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sale Proceeds (£)</FormLabel>
+                  <FormLabel>Sale Proceeds ($)</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -259,13 +259,13 @@ export function VehicleDisposalDialog({ vehicle, onDisposal }: VehicleDisposalDi
                         {bookCost !== null && (
                           <div className="flex justify-between">
                             <span>Book Cost:</span>
-                            <span className="font-mono">£{bookCost.toFixed(2)}</span>
+                            <span className="font-mono">${bookCost.toFixed(2)}</span>
                           </div>
                         )}
                         {saleProceeds > 0 && (
                           <div className="flex justify-between">
                             <span>Sale Proceeds:</span>
-                            <span className="font-mono">£{saleProceeds.toFixed(2)}</span>
+                            <span className="font-mono">${saleProceeds.toFixed(2)}</span>
                           </div>
                         )}
                         {gainLoss !== null && (
@@ -275,7 +275,7 @@ export function VehicleDisposalDialog({ vehicle, onDisposal }: VehicleDisposalDi
                           )}>
                             <span>{gainLoss > 0 ? "Gain:" : gainLoss < 0 ? "Loss:" : "Break-even:"}</span>
                             <span className="font-mono">
-                              {gainLoss !== 0 && (gainLoss > 0 ? "+" : "")}£{Math.abs(gainLoss).toFixed(2)}
+                              {gainLoss !== 0 && (gainLoss > 0 ? "+" : "")}${Math.abs(gainLoss).toFixed(2)}
                             </span>
                           </div>
                         )}

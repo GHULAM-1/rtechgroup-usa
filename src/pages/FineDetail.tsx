@@ -300,14 +300,14 @@ const FineDetail = () => {
                     Record Authority Payment
                     {hasAuthorityPayments && (
                       <Badge variant="secondary" className="ml-2 text-xs">
-                        £{totalAuthorityPayments.toLocaleString()}
+                        ${totalAuthorityPayments.toLocaleString()}
                       </Badge>
                     )}
                   </Button>
                 </TooltipTrigger>
                 {hasAuthorityPayments && (
                   <TooltipContent>
-                    <p>Payments already recorded: £{totalAuthorityPayments.toLocaleString()}</p>
+                    <p>Payments already recorded: ${totalAuthorityPayments.toLocaleString()}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -344,7 +344,7 @@ const FineDetail = () => {
         <div className="grid gap-4 md:grid-cols-4">
           <KPICard
             title="Fine Amount"
-            value={`£${Number(fine.amount).toLocaleString()}`}
+            value={`$${Number(fine.amount).toLocaleString()}`}
             valueClassName="text-destructive dark:text-destructive"
             icon={<PoundSterling className="h-4 w-4" />}
             className="bg-destructive/10 border-destructive/20"
@@ -367,9 +367,9 @@ const FineDetail = () => {
 
           <KPICard
             title="Authority Payments"
-            value={hasAuthorityPayments ? `£${totalAuthorityPayments.toLocaleString()}` : "£0"}
+            value={hasAuthorityPayments ? `$${totalAuthorityPayments.toLocaleString()}` : "$0"}
             valueClassName={hasAuthorityPayments ? "text-success dark:text-success" : "text-muted-foreground"}
-            subtitle={hasAuthorityPayments ? `of £${fine.amount.toLocaleString()}` : undefined}
+            subtitle={hasAuthorityPayments ? `of $${fine.amount.toLocaleString()}` : undefined}
             icon={<Receipt className="h-4 w-4" />}
             className={hasAuthorityPayments ? "bg-success/10 border-success/20" : "bg-muted/30 border-muted-foreground/20"}
           />
@@ -482,7 +482,7 @@ const FineDetail = () => {
                     {authorityPayments.map((payment) => (
                       <div key={payment.id} className="flex justify-between p-3 bg-muted rounded-lg">
                         <div>
-                          <p className="font-medium text-green-600">£{Number(payment.amount).toLocaleString()}</p>
+                          <p className="font-medium text-green-600">${Number(payment.amount).toLocaleString()}</p>
                           <p className="text-sm text-muted-foreground">{new Date(payment.payment_date).toLocaleDateString()}</p>
                         </div>
                         <Badge variant="outline">{payment.payment_method || 'Unknown'}</Badge>

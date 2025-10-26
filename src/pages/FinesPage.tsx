@@ -113,19 +113,19 @@ export default function FinesPage() {
       <TableCell>
         <div className="space-y-1">
           <div className="text-sm">
-            <strong>Issue:</strong> {format(new Date(fine.issue_date), "dd/MM/yyyy")}
+            <strong>Issue:</strong> {format(new Date(fine.issue_date), "MM/dd/yyyy")}
           </div>
           <div className="text-sm">
-            <strong>Due:</strong> {format(new Date(fine.due_date), "dd/MM/yyyy")}
+            <strong>Due:</strong> {format(new Date(fine.due_date), "MM/dd/yyyy")}
           </div>
         </div>
       </TableCell>
       <TableCell className="text-right">
         <div className="space-y-1">
-          <div className="font-medium">£{fine.amount.toFixed(2)}</div>
+          <div className="font-medium">${fine.amount.toFixed(2)}</div>
           {getRemainingAmount(fine) > 0 && (
             <div className="text-sm text-muted-foreground">
-              £{getRemainingAmount(fine).toFixed(2)} remaining
+              ${getRemainingAmount(fine).toFixed(2)} remaining
             </div>
           )}
         </div>
@@ -190,7 +190,7 @@ export default function FinesPage() {
           <CardContent>
             <div className="text-2xl font-bold">{openFines.length}</div>
             <p className="text-xs text-muted-foreground">
-              £{openFines.reduce((sum, fine) => sum + getRemainingAmount(fine), 0).toFixed(2)} outstanding
+              ${openFines.reduce((sum, fine) => sum + getRemainingAmount(fine), 0).toFixed(2)} outstanding
             </p>
           </CardContent>
         </Card>
@@ -203,7 +203,7 @@ export default function FinesPage() {
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{overdueFines.length}</div>
             <p className="text-xs text-muted-foreground">
-              £{overdueFines.reduce((sum, fine) => sum + getRemainingAmount(fine), 0).toFixed(2)} overdue
+              ${overdueFines.reduce((sum, fine) => sum + getRemainingAmount(fine), 0).toFixed(2)} overdue
             </p>
           </CardContent>
         </Card>

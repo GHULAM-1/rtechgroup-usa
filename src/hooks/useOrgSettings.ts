@@ -75,9 +75,9 @@ export const useOrgSettings = () => {
     placeholderData: {
       org_id: 'placeholder',
       company_name: 'Fleet Management System',
-      timezone: 'Europe/London',
-      currency_code: 'GBP',
-      date_format: 'DD/MM/YYYY',
+      timezone: 'America/New_York',
+      currency_code: 'USD',
+      date_format: 'MM/DD/YYYY',
       reminder_due_today: true,
       reminder_overdue_1d: true,
       reminder_overdue_multi: true,

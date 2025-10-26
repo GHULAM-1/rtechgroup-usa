@@ -91,7 +91,7 @@ export const FineKPIs = () => {
           <PoundSterling className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">£{kpiData?.outstandingAmount?.toLocaleString() || 0}</div>
+          <div className="text-2xl font-bold">${kpiData?.outstandingAmount?.toLocaleString() || 0}</div>
           <p className="text-xs text-muted-foreground">
             To collect from customers
           </p>

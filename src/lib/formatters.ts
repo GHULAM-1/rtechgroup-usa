@@ -3,25 +3,26 @@
 import { format } from 'date-fns';
 
 // Default values when settings are not available
-const DEFAULT_CURRENCY = 'GBP';
-const DEFAULT_DATE_FORMAT = 'DD/MM/YYYY';
-const DEFAULT_TIMEZONE = 'Europe/London';
+const DEFAULT_CURRENCY = 'USD';
+const DEFAULT_DATE_FORMAT = 'MM/DD/YYYY';
+const DEFAULT_TIMEZONE = 'America/New_York';
 
 // Currency formatting
 export const formatCurrency = (
   amount: number | null | undefined, 
   currencyCode: string = DEFAULT_CURRENCY
 ): string => {
-  if (amount === null || amount === undefined) return '£0.00';
+  if (amount === null || amount === undefined) return '$0.00';
 
   const currencySymbols: Record<string, string> = {
-    GBP: '£',
+    USD: '$',
+    GBP: '$',
     EUR: '€',
-    
+
   };
 
-  const symbol = currencySymbols[currencyCode] || '£';
-  const formatter = new Intl.NumberFormat('en-GB', {
+  const symbol = currencySymbols[currencyCode] || '$';
+  const formatter = new Intl.NumberFormat('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -112,7 +113,7 @@ export const formatPercentage = (value: number | null | undefined): string => {
 // Number formatting with thousands separators
 export const formatNumber = (value: number | null | undefined): string => {
   if (value === null || value === undefined) return '0';
-  return new Intl.NumberFormat('en-GB').format(value);
+  return new Intl.NumberFormat('en-US').format(value);
 };
 
 // Status badge variant mapping

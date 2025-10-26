@@ -66,7 +66,7 @@ export const CloseRentalDialog = ({ open, onOpenChange, rental }: CloseRentalDia
         .from('rentals')
         .update({
           status: 'Closed',
-          end_date: formatInTimeZone(data.end_date, 'Europe/London', 'yyyy-MM-dd'),
+          end_date: formatInTimeZone(data.end_date, 'America/New_York', 'yyyy-MM-dd'),
           updated_at: new Date().toISOString()
         })
         .eq('id', rental.id);
@@ -139,7 +139,7 @@ export const CloseRentalDialog = ({ open, onOpenChange, rental }: CloseRentalDia
                 <p><span className="font-medium">Customer:</span> {rental.customer.name}</p>
                 <p><span className="font-medium">Vehicle:</span> {rental.vehicle.reg} ({rental.vehicle.make} {rental.vehicle.model})</p>
                 <p><span className="font-medium">Start Date:</span> {new Date(rental.start_date).toLocaleDateString()}</p>
-                <p><span className="font-medium">Monthly Amount:</span> £{rental.monthly_amount.toLocaleString()}</p>
+                <p><span className="font-medium">Monthly Amount:</span> ${rental.monthly_amount.toLocaleString()}</p>
               </div>
             </div>
 
@@ -162,7 +162,7 @@ export const CloseRentalDialog = ({ open, onOpenChange, rental }: CloseRentalDia
                               )}
                             >
                               {field.value ? (
-                                formatInTimeZone(field.value, 'Europe/London', "dd/MM/yyyy")
+                                formatInTimeZone(field.value, 'America/New_York', "MM/dd/yyyy")
                               ) : (
                                 <span>Pick end date</span>
                               )}
@@ -205,7 +205,7 @@ export const CloseRentalDialog = ({ open, onOpenChange, rental }: CloseRentalDia
               <AlertTriangle className="h-4 w-4 text-orange-600" />
               <AlertDescription className="text-orange-800">
                 <strong>Warning:</strong> This will permanently close the rental agreement. 
-                The rental status will be changed to "Closed" and the end date will be set to {formatInTimeZone(form.getValues('end_date'), 'Europe/London', "dd/MM/yyyy")}.
+                The rental status will be changed to "Closed" and the end date will be set to {formatInTimeZone(form.getValues('end_date'), 'America/New_York', "MM/dd/yyyy")}.
               </AlertDescription>
             </Alert>
 
@@ -215,7 +215,7 @@ export const CloseRentalDialog = ({ open, onOpenChange, rental }: CloseRentalDia
                 <p><span className="font-medium">Rental:</span> {rental.rental_number}</p>
                 <p><span className="font-medium">Customer:</span> {rental.customer.name}</p>
                 <p><span className="font-medium">Vehicle:</span> {rental.vehicle.reg}</p>
-                <p><span className="font-medium">End Date:</span> {formatInTimeZone(form.getValues('end_date'), 'Europe/London', "dd/MM/yyyy")}</p>
+                <p><span className="font-medium">End Date:</span> {formatInTimeZone(form.getValues('end_date'), 'America/New_York', "MM/dd/yyyy")}</p>
               </div>
             </div>
 

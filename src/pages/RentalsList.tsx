@@ -76,8 +76,8 @@ const RentalsList = () => {
         rental.start_date,
         rental.end_date || '',
         formatDuration(rental.duration_months),
-        rental.initial_payment ? `£${rental.initial_payment}` : '—',
-        `£${rental.monthly_amount}`,
+        rental.initial_payment ? `$${rental.initial_payment}` : '—',
+        `$${rental.monthly_amount}`,
         rental.computed_status
       ].join(','))
     ].join('\n');
@@ -244,10 +244,10 @@ const RentalsList = () => {
                         <TableCell>{rental.end_date ? new Date(rental.end_date).toLocaleDateString() : '—'}</TableCell>
                         <TableCell>{formatDuration(rental.duration_months)}</TableCell>
                         <TableCell className="text-right">
-                          {rental.initial_payment ? `£${Number(rental.initial_payment).toLocaleString()}` : '—'}
+                          {rental.initial_payment ? `$${Number(rental.initial_payment).toLocaleString()}` : '—'}
                         </TableCell>
                         <TableCell className="text-right">
-                          £{Number(rental.monthly_amount).toLocaleString()}
+                          ${Number(rental.monthly_amount).toLocaleString()}
                         </TableCell>
                         <TableCell>
                           <Badge 

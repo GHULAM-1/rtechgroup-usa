@@ -158,9 +158,9 @@ const MonthlyPLDrilldown = () => {
   }, [vehicleData, sortField, sortDirection]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'GBP',
+      currency: 'USD',
     }).format(amount);
   };
 
@@ -401,7 +401,7 @@ const MonthlyPLDrilldown = () => {
                 <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                   <XAxis dataKey="vehicle" className="text-xs" />
-                  <YAxis className="text-xs" tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`} />
+                  <YAxis className="text-xs" tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
                   <Tooltip 
                     formatter={(value: number, name: string) => [formatCurrency(value), name]}
                     labelClassName="text-foreground"

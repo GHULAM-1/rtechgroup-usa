@@ -300,8 +300,8 @@ export const PaymentsAcceptanceTest = () => {
         name: "Initial Fee Payment (Automated)",
         passed: initialFeeTestPassed,
         message: initialFeeTestPassed 
-          ? `Initial fee auto-processed correctly - charge remains £${chargeRemaining} outstanding, payment £${paymentAmount}, date/method correct`
-          : `Initial fee test failed - charge outstanding: £${chargeRemaining}, payment: £${paymentAmount}, date correct: ${paymentDateCorrect}, method correct: ${methodCorrect}`
+          ? `Initial fee auto-processed correctly - charge remains $${chargeRemaining} outstanding, payment $${paymentAmount}, date/method correct`
+          : `Initial fee test failed - charge outstanding: $${chargeRemaining}, payment: $${paymentAmount}, date correct: ${paymentDateCorrect}, method correct: ${methodCorrect}`
       });
 
       // Step 9: Verify P&L totals
@@ -316,7 +316,7 @@ export const PaymentsAcceptanceTest = () => {
       testResults.push({
         name: "P&L Verification",
         passed: initialFeesTotal === 1500 && rentalTotal === 2000, // 500 + 1000 initial fees, 2000 rental
-        message: `Initial Fees: £${initialFeesTotal}, Rental: £${rentalTotal}`
+        message: `Initial Fees: $${initialFeesTotal}, Rental: $${rentalTotal}`
       });
 
       // Step 10: Verify customer balance
@@ -326,8 +326,8 @@ export const PaymentsAcceptanceTest = () => {
 
       testResults.push({
         name: "Customer Balance",
-        passed: customerBalance === 1000, // Should owe £1000 (new rental charge not covered by initial fee)
-        message: `Customer balance: £${customerBalance || 0} (should be £1000 - in debt)`
+        passed: customerBalance === 1000, // Should owe $1000 (new rental charge not covered by initial fee)
+        message: `Customer balance: $${customerBalance || 0} (should be $1000 - in debt)`
       });
 
       // Step 11: Test idempotency

@@ -54,7 +54,7 @@ export function MetricItem({ label, value, trend, isAmount, className }: MetricI
 
   const formatValue = (val: string | number) => {
     if (isAmount && typeof val === "number") {
-      return `£${Math.abs(val).toLocaleString()}`;
+      return `$${Math.abs(val).toLocaleString()}`;
     }
     return val;
   };

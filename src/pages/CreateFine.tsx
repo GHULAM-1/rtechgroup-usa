@@ -24,7 +24,7 @@ const fineSchema = z.object({
   reference_no: z.string().optional(),
   issue_date: z.date(),
   due_date: z.date(),
-  amount: z.number().min(1, "Amount must be at least £1"),
+  amount: z.number().min(1, "Amount must be at least $1"),
   liability: z.enum(["Customer", "Business"]),
   notes: z.string().optional(),
 }).refine((data) => data.due_date >= data.issue_date, {
@@ -378,7 +378,7 @@ const CreateFine = () => {
                     name="amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Amount (£) *</FormLabel>
+                        <FormLabel>Amount ($) *</FormLabel>
                         <FormControl>
                           <CurrencyInput
                             value={field.value}
@@ -481,7 +481,7 @@ const CreateFine = () => {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Amount</p>
                 <p className="font-medium text-lg text-destructive">
-                  £{form.watch("amount")?.toLocaleString() || "0"}
+                  ${form.watch("amount")?.toLocaleString() || "0"}
                 </p>
               </div>
 

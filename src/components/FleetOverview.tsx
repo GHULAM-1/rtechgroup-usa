@@ -88,17 +88,17 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
       <CardContent className="space-y-2 text-xs sm:text-sm">
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground">Acquisition</span>
-          <span className="font-medium">£{(vehicle.purchase_price || 0).toLocaleString()}</span>
+          <span className="font-medium">${(vehicle.purchase_price || 0).toLocaleString()}</span>
         </div>
         {pl ? (
           <>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Revenue</span>
-              <span className="font-medium text-emerald-600">£{Number(pl.total_revenue).toLocaleString()}</span>
+              <span className="font-medium text-emerald-600">${Number(pl.total_revenue).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Op. Costs</span>
-              <span className="font-medium text-orange-600">£{operationalCosts.toLocaleString()}</span>
+              <span className="font-medium text-orange-600">${operationalCosts.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Op. Profit</span>
@@ -109,7 +109,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
                   <TrendingDown className="h-3 w-3 text-red-600" />
                 )}
                 <span className={`font-medium ${isOperationalProfit ? 'text-emerald-600' : 'text-red-600'}`}>
-                  £{Math.abs(operationalProfit).toLocaleString()}
+                  ${Math.abs(operationalProfit).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -123,7 +123,7 @@ const VehicleCard = ({ vehicle, pl }: { vehicle: Vehicle; pl?: VehiclePL }) => {
                   <TrendingDown className="h-4 w-4 text-red-600" />
                 )}
                 <span className={`font-semibold ${isTotalProfit ? 'text-emerald-600' : 'text-red-600'}`}>
-                  £{Math.abs(totalPL).toLocaleString()}
+                  ${Math.abs(totalPL).toLocaleString()}
                 </span>
               </div>
             </div>

@@ -246,12 +246,12 @@ export default function Login() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 
-              src="/rtechgroup-logo.png" 
+              src="/logo.jpg" 
               alt="RTECHGROUP USA Logo" 
               className="h-32 w-auto object-contain"
             />
           </div>
-          
+
           <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
           <CardDescription>
             Enter your email and password to access the fleet management system

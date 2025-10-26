@@ -24,7 +24,7 @@ import { AddPaymentDialog } from "@/components/AddPaymentDialog";
 import { AddFineDialog } from "@/components/AddFineDialog";
 import { CustomerFormModal } from "@/components/CustomerFormModal";
 import DocumentStatusBadge from "@/components/DocumentStatusBadge";
-import { DocumentSigningStatusBadge } from "@/components/DocumentSigningStatusBadge";
+import { DocumentSigningStatusBadge } from "@/components/DocumentSigningStatusBadge.tsx";
 import { NextOfKinCard } from "@/components/NextOfKinCard";
 import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { FineStatusBadge } from "@/components/FineStatusBadge";

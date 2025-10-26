@@ -24,6 +24,7 @@ import { AddPaymentDialog } from "@/components/AddPaymentDialog";
 import { AddFineDialog } from "@/components/AddFineDialog";
 import { CustomerFormModal } from "@/components/CustomerFormModal";
 import DocumentStatusBadge from "@/components/DocumentStatusBadge";
+import { DocumentSigningStatusBadge } from "@/components/DocumentSigningStatusBadge";
 import { NextOfKinCard } from "@/components/NextOfKinCard";
 import { PaymentStatusBadge } from "@/components/PaymentStatusBadge";
 import { FineStatusBadge } from "@/components/FineStatusBadge";
@@ -85,6 +86,35 @@ const CustomerDetail = () => {
   const { data: fineStats } = useCustomerFineStats(id!);
   const { data: vehicleHistory } = useCustomerVehicleHistory(id!);
   const { data: documents } = useCustomerDocuments(id!);
+
+  // Fetch rentals with DocuSign status for documents tab
+  const { data: rentalAgreements } = useQuery({
+    queryKey: ["customer-rental-agreements", id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rentals")
+        .select(`
+          id,
+          created_at,
+          docusign_envelope_id,
+          document_status,
+          signed_document_id,
+          signed_document:signed_document_id (
+            id,
+            file_url,
+            document_name
+          ),
+          vehicles:vehicle_id (reg, make, model)
+        `)
+        .eq("customer_id", id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!id,
+    refetchInterval: 5000, // Auto-refresh every 5 seconds to show updated status
+  });
 
   if (isLoading) {
     return <div>Loading customer details...</div>;
@@ -214,7 +244,7 @@ const CustomerDetail = () => {
             <p className="text-xs text-muted-foreground">Total Payments</p>
             {paymentStats?.totalPayments && paymentStats.totalPayments > 0 && (
               <p className="text-sm font-medium text-muted-foreground">
-                £{paymentStats.totalPayments.toLocaleString()}
+                ${paymentStats.totalPayments.toLocaleString()}
               </p>
             )}
           </CardContent>
@@ -232,7 +262,7 @@ const CustomerDetail = () => {
             <p className="text-xs text-muted-foreground">Open Fines</p>
             {fineStats?.openFineAmount && fineStats.openFineAmount > 0 && (
               <p className="text-sm font-medium text-destructive">
-                £{fineStats.openFineAmount.toLocaleString()}
+                ${fineStats.openFineAmount.toLocaleString()}
               </p>
             )}
           </CardContent>
@@ -339,13 +369,13 @@ const CustomerDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(rental.start_date), "dd/MM/yyyy")}
+                            {format(new Date(rental.start_date), "MM/dd/yyyy")}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {rental.end_date ? format(new Date(rental.end_date), "dd/MM/yyyy") : "Ongoing"}
+                            {rental.end_date ? format(new Date(rental.end_date), "MM/dd/yyyy") : "Ongoing"}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            £{rental.monthly_amount.toLocaleString()}
+                            ${rental.monthly_amount.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <Badge variant={rental.status === 'Active' ? 'default' : 'secondary'}>
@@ -411,10 +441,10 @@ const CustomerDetail = () => {
                       {payments.map((payment) => (
                         <TableRow key={payment.id} className="hover:bg-muted/50 transition-colors">
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(payment.payment_date), "dd/MM/yyyy")}
+                            {format(new Date(payment.payment_date), "MM/dd/yyyy")}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            £{payment.amount.toLocaleString()}
+                            ${payment.amount.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{payment.method}</Badge>
@@ -439,7 +469,7 @@ const CustomerDetail = () => {
                           <TableCell className="text-right">
                             {payment.remaining_amount > 0 ? (
                               <span className="text-orange-600 font-medium">
-                                £{payment.remaining_amount.toLocaleString()}
+                                ${payment.remaining_amount.toLocaleString()}
                               </span>
                             ) : (
                               <span className="text-green-600 font-medium">Fully Applied</span>
@@ -517,13 +547,13 @@ const CustomerDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            £{fine.amount.toLocaleString()}
+                            ${fine.amount.toLocaleString()}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(fine.issue_date), "dd/MM/yyyy")}
+                            {format(new Date(fine.issue_date), "MM/dd/yyyy")}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(fine.due_date), "dd/MM/yyyy")}
+                            {format(new Date(fine.due_date), "MM/dd/yyyy")}
                           </TableCell>
                           <TableCell>
                             <FineStatusBadge 
@@ -589,13 +619,13 @@ const CustomerDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(history.start_date), "dd/MM/yyyy")}
+                            {format(new Date(history.start_date), "MM/dd/yyyy")}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {history.end_date ? format(new Date(history.end_date), "dd/MM/yyyy") : "Ongoing"}
+                            {history.end_date ? format(new Date(history.end_date), "MM/dd/yyyy") : "Ongoing"}
                           </TableCell>
                           <TableCell className="text-right font-medium">
-                            £{history.monthly_amount.toLocaleString()}
+                            ${history.monthly_amount.toLocaleString()}
                           </TableCell>
                           <TableCell>
                             <Badge variant={history.status === 'Active' ? 'default' : 'secondary'}>
@@ -641,66 +671,97 @@ const CustomerDetail = () => {
                   Add Document
                 </Button>
               </CardTitle>
-              <CardDescription>All documents uploaded for this customer</CardDescription>
+              <CardDescription>All documents uploaded for this customer, including rental agreements</CardDescription>
             </CardHeader>
             <CardContent>
-              {documents && documents.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead className="font-semibold">Document</TableHead>
-                        <TableHead className="font-semibold">Type</TableHead>
-                        <TableHead className="font-semibold">Status</TableHead>
-                        <TableHead className="font-semibold">Uploaded</TableHead>
-                        <TableHead className="font-semibold text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {documents.map((doc) => (
-                        <TableRow key={doc.id} className="hover:bg-muted/50 transition-colors">
-                          <TableCell>
-                            <div>
-                              <TruncatedCell 
-                                content={doc.document_name}
-                                maxLength={30}
-                                className="font-semibold text-foreground"
-                              />
-                              {doc.file_name && (
-                                <TruncatedCell 
-                                  content={doc.file_name}
-                                  maxLength={35}
-                                  className="text-sm text-muted-foreground"
-                                />
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{doc.document_type}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DocumentStatusBadge endDate={doc.end_date} />
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            {format(new Date(doc.created_at), "dd/MM/yyyy")}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                                <Download className="h-3 w-3" />
-                              </Button>
-                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+              {(documents && documents.length > 0) || (rentalAgreements && rentalAgreements.length > 0) ? (
+                <div className="space-y-6">
+                  {/* Rental Agreements Section */}
+                  {rentalAgreements && rentalAgreements.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Rental Agreements</h3>
+                      <div className="rounded-md border">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="font-semibold">Document</TableHead>
+                              <TableHead className="font-semibold">Vehicle</TableHead>
+                              <TableHead className="font-semibold">Signing Status</TableHead>
+                              <TableHead className="font-semibold">Created</TableHead>
+                              <TableHead className="font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rentalAgreements.map((rental) => (
+                              <TableRow key={rental.id} className="hover:bg-muted/50 transition-colors">
+                                <TableCell>
+                                  <div className="font-semibold text-foreground">
+                                    Rental Agreement
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <TruncatedCell
+                                    content={`${rental.vehicles?.reg} - ${rental.vehicles?.make} ${rental.vehicles?.model}`}
+                                    maxLength={25}
+                                    className="text-sm"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <DocumentSigningStatusBadge status={rental.document_status || 'pending'} />
+                                </TableCell>
+                                <TableCell className="whitespace-nowrap">
+                                  {format(new Date(rental.created_at), "MM/dd/yyyy")}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-end gap-1">
+                                    {rental.signed_document_id && rental.signed_document?.file_url ? (
+                                      <>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          title="View signed document"
+                                          onClick={() => window.open(rental.signed_document.file_url, '_blank')}
+                                        >
+                                          <Eye className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-8 w-8 p-0"
+                                          title="Download signed document"
+                                          onClick={() => {
+                                            console.log('Downloading signed document...');
+                                            const link = document.createElement('a');
+                                            link.href = rental.signed_document.file_url;
+                                            link.download = rental.signed_document.document_name || 'rental-agreement.pdf';
+                                            link.click();
+                                          }}
+                                        >
+                                          <Download className="h-3 w-3" />
+                                        </Button>
+                                      </>
+                                    ) : (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => navigate(`/rentals/${rental.id}`)}
+                                        className="hover:bg-primary hover:text-primary-foreground"
+                                      >
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        View Rental
+                                      </Button>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               ) : (
                 <EmptyState

@@ -10,7 +10,8 @@ import {
   Users, 
   Bell, 
   Info,
-  ExternalLink
+  ExternalLink,
+  DollarSign
 } from "lucide-react";
 import { DashboardKPIs } from "@/hooks/useDashboardKPIs";
 
@@ -222,7 +223,7 @@ export const DashboardKPICards = ({ data, isLoading, error }: DashboardKPICardsP
         title="Finance Costs"
         value={formatCurrency(data.financeCosts.amount)}
         subtitle="Selected period"
-        icon={PoundSterling}
+        icon={DollarSign}
         variant="default"
         onClick={() => navigate('/pl-dashboard?category=Finance')}
         tooltip="Finance-related costs for the selected date range"

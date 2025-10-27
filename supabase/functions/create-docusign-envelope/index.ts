@@ -25,13 +25,13 @@ function generateRentalAgreementPDF(rental: any, customer: any, vehicle: any): s
   const agreementText = `
 RENTAL AGREEMENT
 
-Agreement Date: ${new Date().toLocaleDateString('en-GB')}
+Agreement Date: ${new Date().toLocaleDateString('en-US')}
 Agreement Reference: ${rental.id}
 
 ===============================================================================
 
 LANDLORD:
-RTech Group UK
+RTech Group USA
 [Company Address]
 [Company Contact Details]
 
@@ -51,19 +51,19 @@ Model: ${vehicle.model}
 ===============================================================================
 
 RENTAL TERMS:
-Start Date: ${new Date(rental.start_date).toLocaleDateString('en-GB')}
-End Date: ${new Date(rental.end_date).toLocaleDateString('en-GB')}
-Monthly Rental Amount: GBP ${rental.monthly_amount.toLocaleString()}
+Start Date: ${new Date(rental.start_date).toLocaleDateString('en-US')}
+End Date: ${new Date(rental.end_date).toLocaleDateString('en-US')}
+Monthly Rental Amount: $${rental.monthly_amount.toLocaleString('en-US')}
 
 ===============================================================================
 
 TERMS AND CONDITIONS:
 
-1. The Customer agrees to rent the above-described vehicle from RTech Group UK.
+1. The Customer agrees to rent the above-described vehicle from RTech Group USA.
 2. The Customer shall pay the specified monthly rental amount on time.
 3. The Customer agrees to maintain the vehicle in good condition.
 4. The Customer is responsible for any damage to the vehicle during the rental period.
-5. This agreement is subject to the full terms and conditions of RTech Group UK.
+5. This agreement is subject to the full terms and conditions of RTech Group USA.
 
 ===============================================================================
 
@@ -80,7 +80,7 @@ Landlord Signature: _________________________    Date: ______________
 
 ===============================================================================
 
-RTech Group UK - Rental Agreement
+RTech Group USA - Rental Agreement
 Generated: ${new Date().toISOString()}
 `;
 

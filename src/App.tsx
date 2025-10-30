@@ -35,6 +35,7 @@ import CreateFine from "@/pages/CreateFine";
 import FineDetail from "@/pages/FineDetail";
 import RemindersPageNew from "@/pages/RemindersPageNew";
 import InsuranceListEnhanced from "@/pages/InsuranceListEnhanced";
+import Pipeline from "@/pages/Pipeline";
 import Login from "@/pages/Login";
 import ResetPassword from "@/pages/ResetPassword";
 import UsersManagement from "@/pages/UsersManagement";
@@ -100,6 +101,7 @@ function App() {
             <Route path="/fines/new" element={<AuthGuard><Layout><CreateFine /></Layout></AuthGuard>} />
             <Route path="/fines/:id" element={<AuthGuard><Layout><FineDetail /></Layout></AuthGuard>} />
             <Route path="/insurance" element={<AuthGuard><Layout><InsuranceListEnhanced /></Layout></AuthGuard>} />
+            <Route path="/pipeline" element={<AuthGuard><Layout><Pipeline /></Layout></AuthGuard>} />
             <Route path="/test" element={<Navigate to="/settings?tab=testing" replace />} />
             <Route path="*" element={<NotFound />} />
             </Routes>

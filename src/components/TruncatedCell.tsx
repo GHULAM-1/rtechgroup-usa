@@ -1,28 +1,45 @@
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { useState } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TruncatedCellProps {
-  content: string;
+  content: string | null;
   maxLength?: number;
-  className?: string;
 }
 
-export function TruncatedCell({ content, maxLength = 30, className }: TruncatedCellProps) {
-  const shouldTruncate = content.length > maxLength;
-  const truncated = shouldTruncate ? `${content.slice(0, maxLength)}...` : content;
+export function TruncatedCell({ content, maxLength = 30 }: TruncatedCellProps) {
+  const [isOpen, setIsOpen] = useState(false);
 
-  if (!shouldTruncate) {
-    return <span className={className}>{content}</span>;
+  if (!content) return <span className="text-muted-foreground">-</span>;
+
+  const needsTruncation = content.length > maxLength;
+  const displayContent = needsTruncation
+    ? `${content.substring(0, maxLength)}...`
+    : content;
+
+  if (!needsTruncation) {
+    return <span>{content}</span>;
   }
 
   return (
     <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={cn("cursor-help", className)}>{truncated}</span>
+      <Tooltip open={isOpen} onOpenChange={setIsOpen}>
+        <TooltipTrigger
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          className="cursor-pointer underline decoration-dotted"
+        >
+          {displayContent}
         </TooltipTrigger>
-        <TooltipContent>
-          <p className="max-w-xs">{content}</p>
+        <TooltipContent className="max-w-xs">
+          <p className="whitespace-pre-wrap">{content}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

@@ -3,14 +3,43 @@ import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Plus, Mail, Phone, Edit, Search, Building2, TrendingUp, ArrowUpDown, UserPlus } from "lucide-react";
+import {
+  Users,
+  Plus,
+  Mail,
+  Phone,
+  Edit,
+  Search,
+  Building2,
+  TrendingUp,
+  ArrowUpDown,
+  UserPlus,
+} from "lucide-react";
 import { AddLeadDialog } from "@/components/AddLeadDialog";
 import { TruncatedCell } from "@/components/TruncatedCell";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -47,7 +76,11 @@ export default function Pipeline() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Fetch leads
-  const { data: leads, isLoading, error } = useQuery({
+  const {
+    data: leads,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["leads"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -69,7 +102,13 @@ export default function Pipeline() {
 
   // Update lead status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ leadId, newStatus }: { leadId: string; newStatus: string }) => {
+    mutationFn: async ({
+      leadId,
+      newStatus,
+    }: {
+      leadId: string;
+      newStatus: string;
+    }) => {
       const { error } = await supabase
         .from("leads")
         .update({ status: newStatus })
@@ -79,8 +118,8 @@ export default function Pipeline() {
     },
     onSuccess: (_, { leadId, newStatus }) => {
       // Update local state immediately
-      setLocalLeads(prevLeads =>
-        prevLeads.map(lead =>
+      setLocalLeads((prevLeads) =>
+        prevLeads.map((lead) =>
           lead.id === leadId ? { ...lead, status: newStatus } : lead
         )
       );
@@ -102,17 +141,16 @@ export default function Pipeline() {
     },
   });
 
-
   const handleStatusChange = async (leadId: string, newStatus: string) => {
-    const lead = localLeads.find(l => l.id === leadId);
+    const lead = localLeads.find((l) => l.id === leadId);
     if (!lead) return;
 
     const currentStatus = lead.status;
 
     // Validate status transitions
     const invalidTransitions: Record<string, string[]> = {
-      'Declined': ['New', 'In Progress'], // Can't go back from Declined
-      'Completed': ['New', 'In Progress'], // Can't go back from Completed
+      Declined: ["New", "In Progress"], // Can't go back from Declined
+      Completed: ["New", "In Progress"], // Can't go back from Completed
     };
 
     if (invalidTransitions[currentStatus]?.includes(newStatus)) {
@@ -136,8 +174,8 @@ export default function Pipeline() {
       if (error) throw error;
 
       // Update local state
-      setLocalLeads(prevLeads =>
-        prevLeads.map(lead =>
+      setLocalLeads((prevLeads) =>
+        prevLeads.map((lead) =>
           lead.id === leadId ? { ...lead, status: newStatus } : lead
         )
       );
@@ -165,8 +203,10 @@ export default function Pipeline() {
   const handleAddCustomer = async (lead: Lead) => {
     try {
       // Check if customer with same email or phone already exists
-      let duplicateQuery = supabase.from("customers").select("id, name, email, phone");
-      
+      let duplicateQuery = supabase
+        .from("customers")
+        .select("id, name, email, phone");
+
       if (lead.email) {
         duplicateQuery = duplicateQuery.eq("email", lead.email);
       } else if (lead.phone) {
@@ -176,7 +216,7 @@ export default function Pipeline() {
       const { data: duplicates, error: duplicateError } = await duplicateQuery;
 
       if (duplicateError) {
-        console.error('Error checking duplicates:', duplicateError);
+        console.error("Error checking duplicates:", duplicateError);
       } else if (duplicates && duplicates.length > 0) {
         const duplicate = duplicates[0];
         toast({
@@ -216,13 +256,15 @@ export default function Pipeline() {
       // Refresh customers list if needed
       queryClient.invalidateQueries({ queryKey: ["customers-list"] });
       queryClient.invalidateQueries({ queryKey: ["customer-balances-list"] });
-      queryClient.invalidateQueries({ queryKey: ["customer-balances-enhanced"] });
-
+      queryClient.invalidateQueries({
+        queryKey: ["customer-balances-enhanced"],
+      });
     } catch (error: any) {
-      console.error('Error creating customer:', error);
+      console.error("Error creating customer:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create customer. Please try again.",
+        description:
+          error.message || "Failed to create customer. Please try again.",
         variant: "destructive",
       });
     }
@@ -239,47 +281,56 @@ export default function Pipeline() {
 
   const getStatusBadge = (status: string) => {
     const statusStyles = {
-      'New': {
-        backgroundColor: '#3B82F6',
-        color: 'white',
-        hoverColor: '#2563EB'
+      New: {
+        backgroundColor: "#3B82F6",
+        color: "white",
+        hoverColor: "#2563EB",
       },
-      'In Progress': {
-        backgroundColor: '#F59E0B',
-        color: 'white',
-        hoverColor: '#D97706'
+      "In Progress": {
+        backgroundColor: "#F59E0B",
+        color: "white",
+        hoverColor: "#D97706",
       },
-      'Completed': {
-        backgroundColor: '#10B981',
-        color: 'white',
-        hoverColor: '#059669'
+      Completed: {
+        backgroundColor: "#10B981",
+        color: "white",
+        hoverColor: "#059669",
       },
-      'Declined': {
-        backgroundColor: '#EF4444',
-        color: 'white',
-        hoverColor: '#DC2626'
+      Declined: {
+        backgroundColor: "#EF4444",
+        color: "white",
+        hoverColor: "#DC2626",
       },
     };
 
-    const style = statusStyles[status as keyof typeof statusStyles] || statusStyles['New'];
+    const style =
+      statusStyles[status as keyof typeof statusStyles] || statusStyles["New"];
+
+    const label = status.replace(/\s+/g, "\u00A0");
 
     return (
-      <Badge
-        className="whitespace-nowrap"
+      <span
+        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
         style={{
           backgroundColor: style.backgroundColor,
           color: style.color,
-          transition: 'opacity 0.2s',
+          transition: "opacity 0.2s",
+          display: "inline-flex",
+          whiteSpace: "nowrap",
+          wordBreak: "keep-all",
+          overflowWrap: "normal",
+          minWidth: "fit-content",
+          flexShrink: 0,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = '0.8';
+          e.currentTarget.style.opacity = "0.8";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = '1';
+          e.currentTarget.style.opacity = "1";
         }}
       >
-        {status}
-      </Badge>
+        {label}
+      </span>
     );
   };
 
@@ -289,17 +340,24 @@ export default function Pipeline() {
 
     // Apply status filter
     if (filterStatus !== "all") {
-      filtered = filtered.filter(lead => lead.status === filterStatus);
+      filtered = filtered.filter((lead) => lead.status === filterStatus);
     }
 
     // Apply search filter
     if (debouncedSearchTerm) {
-      filtered = filtered.filter(lead =>
-        lead.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        lead.phone?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        lead.company?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        lead.source?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (lead) =>
+          lead.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+          lead.email
+            ?.toLowerCase()
+            .includes(debouncedSearchTerm.toLowerCase()) ||
+          lead.phone
+            ?.toLowerCase()
+            .includes(debouncedSearchTerm.toLowerCase()) ||
+          lead.company
+            ?.toLowerCase()
+            .includes(debouncedSearchTerm.toLowerCase()) ||
+          lead.source?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
 
@@ -316,7 +374,13 @@ export default function Pipeline() {
     });
 
     return filtered;
-  }, [localLeads, filterStatus, debouncedSearchTerm, sortColumn, sortDirection]);
+  }, [
+    localLeads,
+    filterStatus,
+    debouncedSearchTerm,
+    sortColumn,
+    sortDirection,
+  ]);
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -326,23 +390,31 @@ export default function Pipeline() {
       return acc;
     }, {} as Record<string, number>);
 
-    const totalValue = localLeads.reduce((sum, lead) => sum + (lead.expected_value || 0), 0);
+    const totalValue = localLeads.reduce(
+      (sum, lead) => sum + (lead.expected_value || 0),
+      0
+    );
 
     return {
       total,
-      new: byStatus['New'] || 0,
-      inProgress: byStatus['In Progress'] || 0,
-      completed: byStatus['Completed'] || 0,
-      declined: byStatus['Declined'] || 0,
+      new: byStatus["New"] || 0,
+      inProgress: byStatus["In Progress"] || 0,
+      completed: byStatus["Completed"] || 0,
+      declined: byStatus["Declined"] || 0,
       totalValue,
-      conversionRate: total > 0 ? ((byStatus['Completed'] || 0) / total * 100).toFixed(1) : '0',
+      conversionRate:
+        total > 0
+          ? (((byStatus["Completed"] || 0) / total) * 100).toFixed(1)
+          : "0",
     };
   }, [localLeads]);
 
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-destructive">Error loading leads: {(error as Error).message}</p>
+        <p className="text-destructive">
+          Error loading leads: {(error as Error).message}
+        </p>
       </div>
     );
   }
@@ -353,12 +425,16 @@ export default function Pipeline() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Pipeline</h1>
-          <p className="text-muted-foreground">Manage your sales pipeline and track leads</p>
+          <p className="text-muted-foreground">
+            Manage your sales pipeline and track leads
+          </p>
         </div>
-        <Button onClick={() => {
-          setEditingLead(null);
-          setIsAddDialogOpen(true);
-        }}>
+        <Button
+          onClick={() => {
+            setEditingLead(null);
+            setIsAddDialogOpen(true);
+          }}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Add Lead
         </Button>
@@ -390,12 +466,16 @@ export default function Pipeline() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats.totalValue.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              ${stats.totalValue.toLocaleString()}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Conversion Rate
+            </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -433,145 +513,207 @@ export default function Pipeline() {
       <Card className="w-full overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table style={{ tableLayout: 'fixed', minWidth: '1400px' }}>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 w-[150px]"
-                  onClick={() => handleSort("name")}
-                >
-                  Name {sortColumn === "name" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead className="w-[250px]">Contact</TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 w-[150px]"
-                  onClick={() => handleSort("company")}
-                >
-                  Company {sortColumn === "company" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 w-[150px]"
-                  onClick={() => handleSort("status")}
-                >
-                  Status {sortColumn === "status" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead className="w-[120px]">Source</TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 w-[100px]"
-                  onClick={() => handleSort("expected_value")}
-                >
-                  Value {sortColumn === "expected_value" && (sortDirection === "asc" ? "↑" : "↓")}
-                </TableHead>
-                <TableHead className="w-[130px]">Follow-up</TableHead>
-                <TableHead className="w-[350px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                // Loading skeletons
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="w-[150px]"><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell className="w-[250px]"><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell className="w-[150px]"><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell className="w-[150px]"><Skeleton className="h-6 w-24" /></TableCell>
-                    <TableCell className="w-[120px]"><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell className="w-[100px]"><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell className="w-[130px]"><Skeleton className="h-4 w-full" /></TableCell>
-                    <TableCell className="w-[350px]"><Skeleton className="h-8 w-32" /></TableCell>
-                  </TableRow>
-                ))
-              ) : filteredAndSortedLeads.length === 0 ? (
+            <Table style={{ tableLayout: "fixed", minWidth: "1470px", width: "100%" }}>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No leads found
-                  </TableCell>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50 w-[150px] min-w-[150px]"
+                    onClick={() => handleSort("name")}
+                  >
+                    Name{" "}
+                    {sortColumn === "name" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead className="w-[250px] min-w-[250px]">Contact</TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50 w-[150px] min-w-[150px]"
+                    onClick={() => handleSort("company")}
+                  >
+                    Company{" "}
+                    {sortColumn === "company" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50 w-[220px] min-w-[220px]"
+                    onClick={() => handleSort("status")}
+                    style={{ whiteSpace: "nowrap", overflow: "visible" }}
+                  >
+                    Status{" "}
+                    {sortColumn === "status" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead className="w-[120px] min-w-[120px]">Source</TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50 w-[100px] min-w-[100px]"
+                    onClick={() => handleSort("expected_value")}
+                  >
+                    Value{" "}
+                    {sortColumn === "expected_value" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </TableHead>
+                  <TableHead className="w-[130px] min-w-[130px]">Follow-up</TableHead>
+                  <TableHead className="w-[350px] min-w-[350px]">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredAndSortedLeads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="font-medium w-[150px]">
-                      <TruncatedCell content={lead.name} maxLength={20} />
-                    </TableCell>
-                    <TableCell className="w-[250px]">
-                      <div className="space-y-1">
-                        {lead.email && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Mail className="h-3 w-3 shrink-0" />
-                            <TruncatedCell content={lead.email} maxLength={25} />
-                          </div>
-                        )}
-                        {lead.phone && (
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Phone className="h-3 w-3 shrink-0" />
-                            <TruncatedCell content={lead.phone} maxLength={15} />
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="w-[150px]">
-                      {lead.company && (
-                        <div className="flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
-                          <TruncatedCell content={lead.company} maxLength={20} />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="w-[150px]">
-                      {getStatusBadge(lead.status)}
-                    </TableCell>
-                    <TableCell className="w-[120px]">
-                      <TruncatedCell content={lead.source} maxLength={15} />
-                    </TableCell>
-                    <TableCell className="w-[100px] whitespace-nowrap">
-                      {lead.expected_value && `$${lead.expected_value.toLocaleString()}`}
-                    </TableCell>
-                    <TableCell className="w-[130px] whitespace-nowrap">
-                      {lead.follow_up_date && format(new Date(lead.follow_up_date), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell className="w-[350px]">
-                      <div className="flex items-center gap-2 flex-nowrap">
-                        <Select
-                          value={lead.status}
-                          onValueChange={(value) => handleStatusChange(lead.id, value)}
-                          disabled={updatingLeadId === lead.id}
-                        >
-                          <SelectTrigger className="h-8 w-[130px] shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent onClick={(e) => e.stopPropagation()}>
-                            <SelectItem value="New">New</SelectItem>
-                            <SelectItem value="In Progress">In Progress</SelectItem>
-                            <SelectItem value="Completed">Completed</SelectItem>
-                            <SelectItem value="Declined">Declined</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {lead.status === "Completed" && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleAddCustomer(lead)}
-                            className="bg-gradient-primary whitespace-nowrap shrink-0"
-                          >
-                            <UserPlus className="h-4 w-4 mr-1" />
-                            Add Customer
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(lead)}
-                          className="shrink-0"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  // Loading skeletons
+                  Array.from({ length: 5 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="w-[150px] min-w-[150px]">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="w-[250px] min-w-[250px]">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="w-[150px] min-w-[150px]">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell 
+                        className="w-[220px] min-w-[220px]" 
+                        style={{ 
+                          overflow: "visible",
+                          whiteSpace: "nowrap",
+                          padding: "0.75rem 1rem"
+                        }}
+                      >
+                        <Skeleton className="h-6 w-32" />
+                      </TableCell>
+                      <TableCell className="w-[120px] min-w-[120px]">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="w-[100px] min-w-[100px]">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="w-[130px] min-w-[130px]">
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                      <TableCell className="w-[350px] min-w-[350px]">
+                        <Skeleton className="h-8 w-32" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredAndSortedLeads.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={8}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      No leads found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredAndSortedLeads.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell className="font-medium w-[150px] min-w-[150px]">
+                        <TruncatedCell content={lead.name} maxLength={20} />
+                      </TableCell>
+                      <TableCell className="w-[250px] min-w-[250px]">
+                        <div className="space-y-1">
+                          {lead.email && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <TruncatedCell
+                                content={lead.email}
+                                maxLength={25}
+                              />
+                            </div>
+                          )}
+                          {lead.phone && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Phone className="h-3 w-3 shrink-0" />
+                              <TruncatedCell
+                                content={lead.phone}
+                                maxLength={15}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="w-[150px] min-w-[150px]">
+                        {lead.company && (
+                          <div className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <TruncatedCell
+                              content={lead.company}
+                              maxLength={20}
+                            />
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell 
+                        className="w-[220px] min-w-[220px]" 
+                        style={{ 
+                          overflow: "visible", 
+                          whiteSpace: "nowrap",
+                          padding: "0.75rem 1rem"
+                        }}
+                      >
+                        {getStatusBadge(lead.status)}
+                      </TableCell>
+                      <TableCell className="w-[120px] min-w-[120px]">
+                        <TruncatedCell content={lead.source} maxLength={15} />
+                      </TableCell>
+                      <TableCell className="w-[100px] min-w-[100px] whitespace-nowrap">
+                        {lead.expected_value &&
+                          `$${lead.expected_value.toLocaleString()}`}
+                      </TableCell>
+                      <TableCell className="w-[130px] min-w-[130px] whitespace-nowrap">
+                        {lead.follow_up_date &&
+                          format(new Date(lead.follow_up_date), "MMM d, yyyy")}
+                      </TableCell>
+                      <TableCell className="w-[350px] min-w-[350px]">
+                        <div className="flex items-center gap-2 flex-nowrap">
+                          <Select
+                            value={lead.status}
+                            onValueChange={(value) =>
+                              handleStatusChange(lead.id, value)
+                            }
+                            disabled={updatingLeadId === lead.id}
+                          >
+                            <SelectTrigger
+                              className="h-8 w-[130px] shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent onClick={(e) => e.stopPropagation()}>
+                              <SelectItem value="New">New</SelectItem>
+                              <SelectItem value="In Progress">
+                                In Progress
+                              </SelectItem>
+                              <SelectItem value="Completed">
+                                Completed
+                              </SelectItem>
+                              <SelectItem value="Declined">Declined</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(lead)}
+                            className="shrink-0"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {lead.status === "Completed" && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleAddCustomer(lead)}
+                              className="bg-gradient-primary whitespace-nowrap shrink-0"
+                            >
+                              <UserPlus className="h-4 w-4 mr-1" />
+                              Add Customer
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>

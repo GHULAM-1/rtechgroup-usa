@@ -246,7 +246,7 @@ export default function Login() {
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <img 
-              src="/logo.jpg" 
+              src="/logo.png" 
               alt="RTECHGROUP USA Logo" 
               className="h-32 w-auto object-contain"
             />

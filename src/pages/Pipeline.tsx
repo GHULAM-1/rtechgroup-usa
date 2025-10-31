@@ -29,6 +29,19 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Users,
   Plus,
   Mail,
@@ -39,8 +52,12 @@ import {
   TrendingUp,
   ArrowUpDown,
   UserPlus,
+  Eye,
+  MoreVertical,
+  Trash2,
 } from "lucide-react";
 import { AddLeadDialog } from "@/components/AddLeadDialog";
+import { CustomerFormModal } from "@/components/CustomerFormModal";
 import { TruncatedCell } from "@/components/TruncatedCell";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "@/hooks/use-toast";
@@ -72,6 +89,8 @@ export default function Pipeline() {
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
   const [localLeads, setLocalLeads] = useState<Lead[]>([]);
+  const [viewingLead, setViewingLead] = useState<Lead | null>(null);
+  const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
@@ -200,74 +219,32 @@ export default function Pipeline() {
     setIsAddDialogOpen(true);
   };
 
-  const handleAddCustomer = async (lead: Lead) => {
+  const handleDelete = async (leadId: string) => {
     try {
-      // Check if customer with same email or phone already exists
-      let duplicateQuery = supabase
-        .from("customers")
-        .select("id, name, email, phone");
-
-      if (lead.email) {
-        duplicateQuery = duplicateQuery.eq("email", lead.email);
-      } else if (lead.phone) {
-        duplicateQuery = duplicateQuery.eq("phone", lead.phone);
-      }
-
-      const { data: duplicates, error: duplicateError } = await duplicateQuery;
-
-      if (duplicateError) {
-        console.error("Error checking duplicates:", duplicateError);
-      } else if (duplicates && duplicates.length > 0) {
-        const duplicate = duplicates[0];
-        toast({
-          title: "Customer Already Exists",
-          description: `A customer with this contact info already exists: ${duplicate.name}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Prepare customer data from lead
-      const customerData = {
-        type: lead.company ? "Company" : "Individual",
-        customer_type: lead.company ? "Company" : "Individual",
-        name: lead.name,
-        email: lead.email || null,
-        phone: lead.phone || null,
-        whatsapp_opt_in: false,
-        high_switcher: false,
-        status: "Active",
-      };
-
-      // Insert customer
-      const { data: newCustomer, error } = await supabase
-        .from("customers")
-        .insert(customerData)
-        .select()
-        .single();
+      const { error } = await supabase.from("leads").delete().eq("id", leadId);
 
       if (error) throw error;
 
-      toast({
-        title: "Customer Created",
-        description: `${lead.name} has been added as a customer successfully.`,
-      });
+      setLocalLeads((prevLeads) =>
+        prevLeads.filter((lead) => lead.id !== leadId)
+      );
 
-      // Refresh customers list if needed
-      queryClient.invalidateQueries({ queryKey: ["customers-list"] });
-      queryClient.invalidateQueries({ queryKey: ["customer-balances-list"] });
-      queryClient.invalidateQueries({
-        queryKey: ["customer-balances-enhanced"],
+      toast({
+        title: "Lead deleted",
+        description: "Lead has been deleted successfully.",
       });
     } catch (error: any) {
-      console.error("Error creating customer:", error);
       toast({
         title: "Error",
-        description:
-          error.message || "Failed to create customer. Please try again.",
+        description: error.message || "Failed to delete lead",
         variant: "destructive",
       });
     }
+  };
+
+  const handleAddCustomer = async (lead: Lead) => {
+    // Open customer form dialog with empty form
+    setIsCustomerDialogOpen(true);
   };
 
   const handleSort = (column: keyof Lead) => {
@@ -284,22 +261,18 @@ export default function Pipeline() {
       New: {
         backgroundColor: "#3B82F6",
         color: "white",
-        hoverColor: "#2563EB",
       },
       "In Progress": {
         backgroundColor: "#F59E0B",
         color: "white",
-        hoverColor: "#D97706",
       },
       Completed: {
         backgroundColor: "#10B981",
         color: "white",
-        hoverColor: "#059669",
       },
       Declined: {
         backgroundColor: "#EF4444",
         color: "white",
-        hoverColor: "#DC2626",
       },
     };
 
@@ -314,19 +287,12 @@ export default function Pipeline() {
         style={{
           backgroundColor: style.backgroundColor,
           color: style.color,
-          transition: "opacity 0.2s",
           display: "inline-flex",
           whiteSpace: "nowrap",
           wordBreak: "keep-all",
           overflowWrap: "normal",
           minWidth: "fit-content",
           flexShrink: 0,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.opacity = "0.8";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.opacity = "1";
         }}
       >
         {label}
@@ -434,9 +400,9 @@ export default function Pipeline() {
             setEditingLead(null);
             setIsAddDialogOpen(true);
           }}
+          size="icon"
         >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Lead
+          <Plus className="h-4 w-4" />
         </Button>
       </div>
 
@@ -513,46 +479,26 @@ export default function Pipeline() {
       <Card className="w-full overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table style={{ tableLayout: "fixed", minWidth: "1470px", width: "100%" }}>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead
-                    className="cursor-pointer hover:bg-muted/50 w-[150px] min-w-[150px]"
+                    className="cursor-pointer hover:bg-muted/50 w-[30%]"
                     onClick={() => handleSort("name")}
                   >
                     Name{" "}
                     {sortColumn === "name" &&
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </TableHead>
-                  <TableHead className="w-[250px] min-w-[250px]">Contact</TableHead>
                   <TableHead
-                    className="cursor-pointer hover:bg-muted/50 w-[150px] min-w-[150px]"
-                    onClick={() => handleSort("company")}
-                  >
-                    Company{" "}
-                    {sortColumn === "company" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
-                  </TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 w-[220px] min-w-[220px]"
+                    className="cursor-pointer hover:bg-muted/50 w-[20%]"
                     onClick={() => handleSort("status")}
-                    style={{ whiteSpace: "nowrap", overflow: "visible" }}
                   >
                     Status{" "}
                     {sortColumn === "status" &&
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </TableHead>
-                  <TableHead className="w-[120px] min-w-[120px]">Source</TableHead>
-                  <TableHead
-                    className="cursor-pointer hover:bg-muted/50 w-[100px] min-w-[100px]"
-                    onClick={() => handleSort("expected_value")}
-                  >
-                    Value{" "}
-                    {sortColumn === "expected_value" &&
-                      (sortDirection === "asc" ? "↑" : "↓")}
-                  </TableHead>
-                  <TableHead className="w-[130px] min-w-[130px]">Follow-up</TableHead>
-                  <TableHead className="w-[350px] min-w-[350px]">Actions</TableHead>
+                  <TableHead className="w-[50%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -560,35 +506,13 @@ export default function Pipeline() {
                   // Loading skeletons
                   Array.from({ length: 5 }).map((_, index) => (
                     <TableRow key={index}>
-                      <TableCell className="w-[150px] min-w-[150px]">
+                      <TableCell>
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
-                      <TableCell className="w-[250px] min-w-[250px]">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="w-[150px] min-w-[150px]">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell 
-                        className="w-[220px] min-w-[220px]" 
-                        style={{ 
-                          overflow: "visible",
-                          whiteSpace: "nowrap",
-                          padding: "0.75rem 1rem"
-                        }}
-                      >
+                      <TableCell>
                         <Skeleton className="h-6 w-32" />
                       </TableCell>
-                      <TableCell className="w-[120px] min-w-[120px]">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="w-[100px] min-w-[100px]">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="w-[130px] min-w-[130px]">
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                      <TableCell className="w-[350px] min-w-[350px]">
+                      <TableCell>
                         <Skeleton className="h-8 w-32" />
                       </TableCell>
                     </TableRow>
@@ -596,7 +520,7 @@ export default function Pipeline() {
                 ) : filteredAndSortedLeads.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={8}
+                      colSpan={3}
                       className="text-center py-8 text-muted-foreground"
                     >
                       No leads found
@@ -605,65 +529,16 @@ export default function Pipeline() {
                 ) : (
                   filteredAndSortedLeads.map((lead) => (
                     <TableRow key={lead.id}>
-                      <TableCell className="font-medium w-[150px] min-w-[150px]">
-                        <TruncatedCell content={lead.name} maxLength={20} />
-                      </TableCell>
-                      <TableCell className="w-[250px] min-w-[250px]">
-                        <div className="space-y-1">
-                          {lead.email && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Mail className="h-3 w-3 shrink-0" />
-                              <TruncatedCell
-                                content={lead.email}
-                                maxLength={25}
-                              />
-                            </div>
-                          )}
-                          {lead.phone && (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Phone className="h-3 w-3 shrink-0" />
-                              <TruncatedCell
-                                content={lead.phone}
-                                maxLength={15}
-                              />
-                            </div>
-                          )}
+                      <TableCell className="font-medium w-[30%] max-w-0">
+                        <div className="truncate" title={lead.name}>
+                          {lead.name}
                         </div>
                       </TableCell>
-                      <TableCell className="w-[150px] min-w-[150px]">
-                        {lead.company && (
-                          <div className="flex items-center gap-1">
-                            <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <TruncatedCell
-                              content={lead.company}
-                              maxLength={20}
-                            />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell 
-                        className="w-[220px] min-w-[220px]" 
-                        style={{ 
-                          overflow: "visible", 
-                          whiteSpace: "nowrap",
-                          padding: "0.75rem 1rem"
-                        }}
-                      >
+                      <TableCell className="w-[20%]">
                         {getStatusBadge(lead.status)}
                       </TableCell>
-                      <TableCell className="w-[120px] min-w-[120px]">
-                        <TruncatedCell content={lead.source} maxLength={15} />
-                      </TableCell>
-                      <TableCell className="w-[100px] min-w-[100px] whitespace-nowrap">
-                        {lead.expected_value &&
-                          `$${lead.expected_value.toLocaleString()}`}
-                      </TableCell>
-                      <TableCell className="w-[130px] min-w-[130px] whitespace-nowrap">
-                        {lead.follow_up_date &&
-                          format(new Date(lead.follow_up_date), "MMM d, yyyy")}
-                      </TableCell>
-                      <TableCell className="w-[350px] min-w-[350px]">
-                        <div className="flex items-center gap-2 flex-nowrap">
+                      <TableCell className="w-[50%]">
+                        <div className="flex items-center justify-end gap-2">
                           <Select
                             value={lead.status}
                             onValueChange={(value) =>
@@ -672,7 +547,7 @@ export default function Pipeline() {
                             disabled={updatingLeadId === lead.id}
                           >
                             <SelectTrigger
-                              className="h-8 w-[130px] shrink-0"
+                              className="h-8 w-[150px]"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <SelectValue />
@@ -691,22 +566,41 @@ export default function Pipeline() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleEdit(lead)}
-                            className="shrink-0"
+                            onClick={() => setViewingLead(lead)}
                           >
-                            <Edit className="h-4 w-4" />
+                            <Eye className="h-4 w-4" />
                           </Button>
-                          {lead.status === "Completed" && (
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleAddCustomer(lead)}
-                              className="bg-gradient-primary whitespace-nowrap shrink-0"
-                            >
-                              <UserPlus className="h-4 w-4 mr-1" />
-                              Add Customer
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleAddCustomer(lead)}
+                            disabled={lead.status !== "Completed"}
+                            className={lead.status === "Completed" ? "text-primary" : ""}
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleEdit(lead)}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleDelete(lead.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -727,6 +621,138 @@ export default function Pipeline() {
         }}
         lead={editingLead}
       />
+
+      <CustomerFormModal
+        open={isCustomerDialogOpen}
+        onOpenChange={setIsCustomerDialogOpen}
+      />
+
+      {/* View Lead Details Dialog */}
+      <Dialog open={!!viewingLead} onOpenChange={() => setViewingLead(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Lead Details</DialogTitle>
+            <DialogDescription>
+              View all information about this lead
+            </DialogDescription>
+          </DialogHeader>
+          {viewingLead && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Name
+                  </label>
+                  <p className="text-sm mt-1 truncate" title={viewingLead.name}>
+                    {viewingLead.name}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Status
+                  </label>
+                  <div className="mt-1">
+                    {getStatusBadge(viewingLead.status)}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Email
+                  </label>
+                  <p
+                    className="text-sm mt-1 truncate"
+                    title={viewingLead.email || ""}
+                  >
+                    {viewingLead.email || "—"}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Phone
+                  </label>
+                  <p
+                    className="text-sm mt-1 truncate"
+                    title={viewingLead.phone || ""}
+                  >
+                    {viewingLead.phone || "—"}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Company
+                  </label>
+                  <p
+                    className="text-sm mt-1 truncate"
+                    title={viewingLead.company || ""}
+                  >
+                    {viewingLead.company || "—"}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Source
+                  </label>
+                  <p
+                    className="text-sm mt-1 truncate"
+                    title={viewingLead.source || ""}
+                  >
+                    {viewingLead.source || "—"}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Expected Value
+                  </label>
+                  <p className="text-sm mt-1">
+                    {viewingLead.expected_value
+                      ? `$${viewingLead.expected_value.toLocaleString()}`
+                      : "—"}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Follow-up Date
+                  </label>
+                  <p className="text-sm mt-1">
+                    {viewingLead.follow_up_date
+                      ? format(
+                          new Date(viewingLead.follow_up_date),
+                          "MMM d, yyyy"
+                        )
+                      : "—"}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Created
+                  </label>
+                  <p className="text-sm mt-1">
+                    {format(new Date(viewingLead.created_at), "MMM d, yyyy")}
+                  </p>
+                </div>
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Updated
+                  </label>
+                  <p className="text-sm mt-1">
+                    {format(new Date(viewingLead.updated_at), "MMM d, yyyy")}
+                  </p>
+                </div>
+              </div>
+              {viewingLead.notes && (
+                <div className="min-w-0">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    Notes
+                  </label>
+                  <p className="text-sm mt-1 whitespace-pre-wrap break-words">
+                    {viewingLead.notes}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

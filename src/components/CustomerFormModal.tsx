@@ -19,19 +19,42 @@ import { useQueryClient } from "@tanstack/react-query";
 const customerSchema = z.object({
   type: z.enum(['Individual', 'Company']),
   customer_type: z.enum(['Individual', 'Company']),
-  name: z.string().min(1, "Name is required"),
+  name: z.string()
+    .min(1, "Name is required")
+    .refine((val) => !/\d/.test(val), "Name cannot contain numbers"),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
-  phone: z.string().optional(),
+  phone: z.string()
+    .optional()
+    .refine((val) => !val || /^[0-9\s\-\(\)\+]+$/.test(val), "Phone number can only contain numbers and formatting characters"),
   whatsapp_opt_in: z.boolean(),
   high_switcher: z.boolean(),
   status: z.enum(['Active', 'Inactive']),
   notes: z.string().optional(),
   // Next of Kin fields
-  nok_full_name: z.string().optional(),
-  nok_relationship: z.string().optional(),
-  nok_phone: z.string().optional(),
+  nok_full_name: z.string()
+    .optional()
+    .refine((val) => !val || !/\d/.test(val), "Name cannot contain numbers"),
+  nok_relationship: z.string()
+    .optional()
+    .refine((val) => !val || /^[a-zA-Z\s]+$/.test(val), "Relationship can only contain letters"),
+  nok_phone: z.string()
+    .optional()
+    .refine((val) => !val || /^[0-9\s\-\(\)\+]+$/.test(val), "Phone number can only contain numbers and formatting characters"),
   nok_email: z.string().email("Invalid email format").optional().or(z.literal("")),
   nok_address: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.email && !data.phone) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Either email or phone is required",
+      path: ["email"],
+    });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Either email or phone is required",
+      path: ["phone"],
+    });
+  }
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -327,11 +350,15 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                     {customerType === "Company" ? "Company Name *" : "Name *"}
                   </FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder={customerType === "Company" ? "Enter company name" : "Enter customer name"} 
-                      {...field} 
+                    <Input
+                      placeholder={customerType === "Company" ? "Enter company name" : "Enter customer name"}
+                      {...field}
                       className="input-focus"
                       autoFocus
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\d/g, "");
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -347,13 +374,13 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Mail className="h-4 w-4" />
-                      Email
+                      Email *
                     </FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
                         type="email"
-                        placeholder="email@example.com" 
-                        {...field} 
+                        placeholder="email@example.com"
+                        {...field}
                         className="input-focus"
                       />
                     </FormControl>
@@ -368,13 +395,17 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
-                      Phone
+                      Phone *
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="(555) 123-4567"
                         {...field}
                         className="input-focus"
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9\s\-\(\)\+]/g, "");
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -445,7 +476,15 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                         <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter full name" {...field} className="input-focus" />
+                            <Input
+                              placeholder="Enter full name"
+                              {...field}
+                              className="input-focus"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\d/g, "");
+                                field.onChange(value);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -459,7 +498,15 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                         <FormItem>
                           <FormLabel>Relationship</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Spouse, Parent, Friend" {...field} className="input-focus" />
+                            <Input
+                              placeholder="e.g., Spouse, Parent, Friend"
+                              {...field}
+                              className="input-focus"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^a-zA-Z\s]/g, "");
+                                field.onChange(value);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -473,7 +520,15 @@ export const CustomerFormModal = ({ open, onOpenChange, customer }: CustomerForm
                         <FormItem>
                           <FormLabel>Phone</FormLabel>
                           <FormControl>
-                            <Input placeholder="(555) 123-4567" {...field} className="input-focus" />
+                            <Input
+                              placeholder="(555) 123-4567"
+                              {...field}
+                              className="input-focus"
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^0-9\s\-\(\)\+]/g, "");
+                                field.onChange(value);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

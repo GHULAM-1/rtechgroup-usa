@@ -8,36 +8,53 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Users, Mail, Phone, Building2, Calendar } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Users, Mail, Phone, Building2, Calendar, CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const leadSchema = z.object({
-  name: z.string().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  name: z.string()
+    .min(1, "Name is required")
+    .max(100, "Name must be less than 100 characters")
+    .refine((val) => !/\d/.test(val), "Name cannot contain numbers"),
   email: z.string().email("Invalid email format").optional().or(z.literal("")),
   phone: z.string()
     .optional()
-    .refine((val) => !val || val.length >= 10, "Phone number must be at least 10 digits"),
-  company: z.string().max(100, "Company name must be less than 100 characters").optional(),
+    .refine((val) => !val || /^[0-9\s\-\(\)\+]+$/.test(val), "Phone number can only contain numbers and formatting characters")
+    .refine((val) => !val || val.replace(/\D/g, "").length >= 10, "Phone number must be at least 10 digits"),
+  company: z.string()
+    .max(100, "Company name must be less than 100 characters")
+    .optional()
+    .refine((val) => !val || !/^\d+$/.test(val), "Company name cannot be only numbers"),
   status: z.enum(['New', 'In Progress', 'Completed', 'Declined']),
-  source: z.string().max(50, "Source must be less than 50 characters").optional(),
+  source: z.string()
+    .max(50, "Source must be less than 50 characters")
+    .optional()
+    .refine((val) => !val || !/^\d+$/.test(val), "Source cannot be only numbers"),
   notes: z.string().max(500, "Notes must be less than 500 characters").optional(),
   expected_value: z.string()
     .optional()
+    .refine((val) => !val || /^\d*\.?\d*$/.test(val), "Expected value must be a number")
     .refine((val) => !val || parseFloat(val) >= 0, "Expected value must be a positive number"),
-  follow_up_date: z.string()
-    .optional()
-    .refine((val) => {
-      if (!val) return true;
-      const selectedDate = new Date(val);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return selectedDate >= today;
-    }, "Follow-up date cannot be in the past"),
-}).refine((data) => data.email || data.phone, {
-  message: "Either email or phone is required",
-  path: ["email"],
+  follow_up_date: z.date().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (!data.email && !data.phone) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Either email or phone is required",
+      path: ["email"],
+    });
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Either email or phone is required",
+      path: ["phone"],
+    });
+  }
 });
 
 type LeadFormData = z.infer<typeof leadSchema>;
@@ -78,7 +95,7 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
       source: "",
       notes: "",
       expected_value: "",
-      follow_up_date: "",
+      follow_up_date: undefined,
     },
   });
 
@@ -94,7 +111,7 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
         source: lead.source || "",
         notes: lead.notes || "",
         expected_value: lead.expected_value?.toString() || "",
-        follow_up_date: lead.follow_up_date || "",
+        follow_up_date: lead.follow_up_date ? new Date(lead.follow_up_date) : undefined,
       });
     } else {
       form.reset({
@@ -106,7 +123,7 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
         source: "",
         notes: "",
         expected_value: "",
-        follow_up_date: "",
+        follow_up_date: undefined,
       });
     }
   }, [lead, open, form]);
@@ -157,7 +174,7 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
         source: data.source?.trim() || null,
         notes: data.notes?.trim() || null,
         expected_value: data.expected_value ? parseFloat(data.expected_value) : null,
-        follow_up_date: data.follow_up_date || null,
+        follow_up_date: data.follow_up_date ? format(data.follow_up_date, "yyyy-MM-dd") : null,
       };
 
       if (isEditing) {
@@ -233,6 +250,10 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
                       {...field}
                       className="input-focus"
                       autoFocus
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\d/g, "");
+                        field.onChange(value);
+                      }}
                     />
                   </FormControl>
                   <FormMessage />
@@ -248,7 +269,7 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Mail className="h-4 w-4" />
-                      Email
+                      Email *
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -269,13 +290,17 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
                       <Phone className="h-4 w-4" />
-                      Phone
+                      Phone *
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="(555) 123-4567"
                         {...field}
                         className="input-focus"
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9\s\-\(\)\+]/g, "");
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -357,11 +382,13 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
                     <FormLabel>Expected Value ($)</FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.01"
                         placeholder="0.00"
                         {...field}
                         className="input-focus"
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/[^0-9.]/g, "");
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -377,13 +404,37 @@ export const AddLeadDialog = ({ open, onOpenChange, lead }: AddLeadDialogProps) 
                       <Calendar className="h-4 w-4" />
                       Follow-up Date
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                        className="input-focus"
-                      />
-                    </FormControl>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal input-focus",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <CalendarComponent
+                          mode="single"
+                          selected={field.value || undefined}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date < new Date(new Date().setHours(0, 0, 0, 0))
+                          }
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
